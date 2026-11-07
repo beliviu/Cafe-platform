@@ -1,0 +1,5 @@
+project_id = "cafe-platform"
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]

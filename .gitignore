@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.expo/
+.env
+.env.*
+!.env.example
+*.local
+supabase/.temp/
+supabase/.branches/
+mobile-customer/
