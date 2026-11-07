@@ -11,6 +11,8 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
+import { formatRupiah } from '../lib/format.js'
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '../lib/status.js'
 
 const DATE_RANGES = [
   { days: 7, label: '7 hari' },
@@ -23,31 +25,6 @@ const INITIAL_DATA = {
   revenue_by_day: [],
   popular_products: [],
   recent_orders: [],
-}
-
-const ORDER_STATUS_LABELS = {
-  pending: 'Menunggu',
-  confirmed: 'Dikonfirmasi',
-  preparing: 'Disiapkan',
-  ready: 'Siap',
-  completed: 'Selesai',
-  cancelled: 'Dibatalkan',
-}
-
-const PAYMENT_STATUS_LABELS = {
-  unpaid: 'Belum dibayar',
-  pending: 'Diproses',
-  paid: 'Dibayar',
-  failed: 'Gagal',
-  refunded: 'Dikembalikan',
-}
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0)
 }
 
 function formatDate(date, options = {}) {
@@ -135,7 +112,7 @@ function RevenueChart({ entries }) {
         <path d={line} className="chart-line" />
         {points.map((point) => (
           <circle key={point.date} cx={point.x} cy={point.y} r="3.2" className="chart-point">
-            <title>{`${formatDate(`${point.date}T00:00:00Z`, { timeZone: 'UTC' })}: ${formatCurrency(point.amount)}`}</title>
+            <title>{`${formatDate(`${point.date}T00:00:00Z`, { timeZone: 'UTC' })}: ${formatRupiah(point.amount)}`}</title>
           </circle>
         ))}
       </svg>
@@ -296,7 +273,7 @@ export function DashboardPage() {
             <MetricCard
               icon={CircleDollarSign}
               label="Total pendapatan"
-              value={formatCurrency(dashboardData.summary.revenue)}
+              value={formatRupiah(dashboardData.summary.revenue)}
               caption="Dari transaksi yang sudah dibayar"
               tone="green"
             />
@@ -310,7 +287,7 @@ export function DashboardPage() {
             <MetricCard
               icon={CreditCard}
               label="Rata-rata transaksi"
-              value={formatCurrency(dashboardData.summary.average_order_value)}
+              value={formatRupiah(dashboardData.summary.average_order_value)}
               caption="Rata-rata dari transaksi dibayar"
               tone="clay"
             />
@@ -331,7 +308,7 @@ export function DashboardPage() {
               <RevenueChart entries={dashboardData.revenue_by_day} />
               <div className="chart-footnote">
                 <span><TrendingUp size={14} /> Hanya pesanan berstatus pembayaran lunas</span>
-                <span>{formatCurrency(dashboardData.summary.revenue)} total</span>
+                <span>{formatRupiah(dashboardData.summary.revenue)} total</span>
               </div>
             </article>
 
@@ -354,7 +331,7 @@ export function DashboardPage() {
                         <strong>{product.name}</strong>
                         <span>{Number(product.quantity_sold).toLocaleString('id-ID')} terjual</span>
                       </span>
-                      <span className="popular-revenue">{formatCurrency(product.revenue)}</span>
+                      <span className="popular-revenue">{formatRupiah(product.revenue)}</span>
                     </li>
                   ))}
                 </ol>
@@ -403,7 +380,7 @@ export function DashboardPage() {
                       <span>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</span>
                       {order.payment_method && <small>{order.payment_method}</small>}
                     </span>
-                    <strong className="transaction-amount">{formatCurrency(order.total_amount)}</strong>
+                    <strong className="transaction-amount">{formatRupiah(order.total_amount)}</strong>
                   </article>
                 ))}
               </div>

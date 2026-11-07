@@ -5,6 +5,11 @@ import { useAuth } from './auth/useAuth.js'
 import { OwnerLayout } from './components/OwnerLayout.jsx'
 import { LoadingScreen } from './components/LoadingScreen.jsx'
 import { RouteErrorBoundary } from './components/RouteErrorBoundary.jsx'
+import { ToastProvider } from './components/ui/index.js'
+
+const DesignSystemPage = import.meta.env.DEV
+  ? lazy(() => import('./pages/DesignSystemPage.jsx').then((module) => ({ default: module.DesignSystemPage })))
+  : null
 
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage.jsx').then((module) => ({ default: module.DashboardPage })),
@@ -43,6 +48,7 @@ function AppRoutes() {
     <Suspense fallback={<LoadingScreen label="Membuka halaman..." />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {DesignSystemPage && <Route path="/design" element={<DesignSystemPage />} />}
         <Route element={<RequireAuth />}>
           <Route path="staff" element={<StaffLayout />}>
             <Route index element={<StaffOrdersPage />} />
@@ -65,9 +71,11 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <RouteErrorBoundary>
-          <AppRoutes />
-        </RouteErrorBoundary>
+        <ToastProvider>
+          <RouteErrorBoundary>
+            <AppRoutes />
+          </RouteErrorBoundary>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   )

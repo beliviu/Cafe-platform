@@ -1,0 +1,94 @@
+/*
+ * dailybrew design tokens — sumber kebenaran untuk web owner & staff.
+ * Nilai yang sama dipakai di aplikasi customer: mobile-customer/src/theme/tokens.js.
+ * Ubah keduanya bersamaan.
+ */
+:root {
+  /* Sage — warna utama brand */
+  --sage-50: #f1f5f1;
+  --sage-100: #e2ebe3;
+  --sage-200: #c6d6c8;
+  --sage-300: #a2bca6;
+  --sage-400: #7e9e84;
+  --sage-500: #63846b;
+  --sage-600: #52705a; /* primary */
+  --sage-700: #435c4a;
+  --sage-800: #36493c;
+  --sage-900: #283629;
+
+  /* Permukaan */
+  --surface-canvas: #f6f4f0;  /* krem latar */
+  --surface-card: #fffefb;    /* putih hangat */
+  --surface-sunken: #efece6;
+  --surface-hover: #f3f0ea;
+  --surface-overlay: rgb(40 33 26 / 42%);
+
+  /* Teks — semua lolos WCAG AA (>= 4.5:1) di atas canvas & card */
+  --text-primary: #2f2720;    /* 14.2:1 */
+  --text-secondary: #5a5047;  /* 7.4:1 */
+  --text-muted: #6e655b;      /* 5.2:1 */
+  --text-on-primary: #fffefb;
+  --text-link: var(--sage-700);
+
+  /* Garis */
+  --border-subtle: #ece8e0;
+  --border-default: #e2ddd3;
+  --border-strong: #cfc8bb;
+  --focus-ring: 0 0 0 3px rgb(82 112 90 / 32%);
+
+  /* Status — dipakai identik di owner, staff, dan customer */
+  --status-amber-bg: #fbf0dc;
+  --status-amber-fg: #8a5a0b;
+  --status-amber-dot: #d99a2b;
+  --status-blue-bg: #e5eef7;
+  --status-blue-fg: #2f5d8a;
+  --status-blue-dot: #5b8bc0;
+  --status-green-bg: #e3f1e5;
+  --status-green-fg: #2e6b3d;
+  --status-green-dot: #4c9a5f;
+  --status-neutral-bg: #eceae4;
+  --status-neutral-fg: #57524a;
+  --status-neutral-dot: #8f887c;
+  --status-red-bg: #f9e7e3;
+  --status-red-fg: #9b3b2c;
+  --status-red-dot: #d0705f;
+
+  --danger: #a5402f;
+  --danger-hover: #8c3426;
+
+  /* Tipografi */
+  --font-serif: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Segoe UI", system-ui, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+
+  /* Bentuk & kedalaman */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgb(49 40 30 / 6%);
+  --shadow-md: 0 4px 14px rgb(49 40 30 / 8%);
+  --shadow-lg: 0 18px 50px rgb(49 40 30 / 16%);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --tap-target: 44px;
+  --ease: cubic-bezier(.2, .7, .3, 1);
+}
+
+.tabular, .num { font-variant-numeric: tabular-nums; }

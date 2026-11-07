@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  font-family: Inter, "Segoe UI", "Helvetica Neue", sans-serif;
-  color: #342d26;
-  background: #f7f6f2;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background: var(--surface-canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -14,8 +14,8 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; min-height: 100vh; }
-button, input { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 a { color: inherit; text-decoration: none; }
-::selection { color: #263d2d; background: #dce8dc; }
+::selection { color: var(--sage-900); background: var(--sage-200); }

@@ -4,33 +4,10 @@ import { CreditCard, Eye, ReceiptText, ShoppingBag } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
 import { Modal, PageEmpty, PageError, PageLoading } from '../components/PageState.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
+import { formatRupiah } from '../lib/format.js'
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '../lib/status.js'
 
-const ORDER_STATUSES = [
-  ['all', 'Semua status'],
-  ['pending', 'Menunggu'],
-  ['confirmed', 'Dikonfirmasi'],
-  ['preparing', 'Disiapkan'],
-  ['ready', 'Siap'],
-  ['completed', 'Selesai'],
-  ['cancelled', 'Dibatalkan'],
-]
-
-const ORDER_STATUS_LABELS = Object.fromEntries(ORDER_STATUSES.slice(1))
-const PAYMENT_STATUS_LABELS = {
-  unpaid: 'Belum dibayar',
-  pending: 'Diproses',
-  paid: 'Dibayar',
-  failed: 'Gagal',
-  refunded: 'Dikembalikan',
-}
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0)
-}
+const ORDER_STATUSES = [['all', 'Semua status'], ...Object.entries(ORDER_STATUS_LABELS)]
 
 function formatDate(value, withYear = true) {
   const date = new Date(value)
@@ -101,11 +78,11 @@ function OrderDetails({ order, cafeId, supabase }) {
             <h3>Item pesanan</h3>
             {items.length ? items.map((item) => (
               <div className="order-item-row" key={item.id}>
-                <div><strong>{item.product_name}</strong><span>{item.quantity} × {formatCurrency(item.price)}</span></div>
-                <strong>{formatCurrency(item.subtotal)}</strong>
+                <div><strong>{item.product_name}</strong><span>{item.quantity} × {formatRupiah(item.price)}</span></div>
+                <strong>{formatRupiah(item.subtotal)}</strong>
               </div>
             )) : <p className="detail-muted">Tidak ada item untuk transaksi ini.</p>}
-            <div className="order-total-row"><span>Total pesanan</span><strong>{formatCurrency(order.total_amount)}</strong></div>
+            <div className="order-total-row"><span>Total pesanan</span><strong>{formatRupiah(order.total_amount)}</strong></div>
           </section>
 
           <section className="detail-section">
@@ -113,12 +90,12 @@ function OrderDetails({ order, cafeId, supabase }) {
             {payments.length ? payments.map((payment) => (
               <div className="payment-row" key={payment.id}>
                 <div><strong>{payment.payment_method}</strong><span>{PAYMENT_STATUS_LABELS[payment.payment_status] || payment.payment_status} · {formatDate(payment.created_at)}</span></div>
-                <strong>{formatCurrency(payment.amount)}</strong>
+                <strong>{formatRupiah(payment.amount)}</strong>
               </div>
             )) : (
               <div className="payment-row">
                 <div><strong>{order.payment_method || 'Metode belum tercatat'}</strong><span>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</span></div>
-                <strong>{formatCurrency(order.total_amount)}</strong>
+                <strong>{formatRupiah(order.total_amount)}</strong>
               </div>
             )}
           </section>
@@ -223,7 +200,7 @@ export function OrdersPage() {
                 <span>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</span>
                 {order.payment_method && <small>{order.payment_method}</small>}
               </span>
-              <strong className="transaction-amount">{formatCurrency(order.total_amount)}</strong>
+              <strong className="transaction-amount">{formatRupiah(order.total_amount)}</strong>
               <button type="button" className="icon-button order-view-button" aria-label={`Lihat transaksi ${order.order_number}`} onClick={() => setSelectedOrder(order)}>
                 <Eye size={16} />
               </button>

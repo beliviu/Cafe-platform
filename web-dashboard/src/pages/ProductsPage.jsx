@@ -4,6 +4,7 @@ import { ImagePlus, MoreHorizontal, Pencil, Plus, Search, Trash2 } from 'lucide-
 import { useAuth } from '../auth/useAuth.js'
 import { Modal, PageEmpty, PageError, PageLoading } from '../components/PageState.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
+import { formatRupiah } from '../lib/format.js'
 
 const EMPTY_FORM = {
   name: '',
@@ -15,14 +16,6 @@ const EMPTY_FORM = {
 }
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0)
-}
 
 function productImagePath(imageUrl) {
   if (!imageUrl) return null
@@ -193,7 +186,7 @@ function ProductForm({ product, categories, cafeId, supabase, onCancel, onSaved 
     }
 
     if (product && Number(result.data.price) !== parsedPrice) {
-      setSaveError(`Harga yang tersimpan (${formatCurrency(result.data.price)}) berbeda dari harga yang dimasukkan (${formatCurrency(parsedPrice)}).`)
+      setSaveError(`Harga yang tersimpan (${formatRupiah(result.data.price)}) berbeda dari harga yang dimasukkan (${formatRupiah(parsedPrice)}).`)
       setSaving(false)
       return
     }
@@ -538,7 +531,7 @@ export function ProductsPage() {
                 <h2>{product.name}</h2>
                 <p>{product.description || 'Belum ada deskripsi produk.'}</p>
                 <div className="product-card-footer">
-                  <strong>{formatCurrency(product.price)}</strong>
+                  <strong>{formatRupiah(product.price)}</strong>
                   <div className="product-actions">
                     <button
                       type="button"

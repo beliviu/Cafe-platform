@@ -4,22 +4,11 @@ import { Bell, Check, Clock3, Eye, History, RefreshCw, ShoppingBag, Utensils } f
 import { useAuth } from '../auth/useAuth.js'
 import { Modal, PageEmpty, PageError, PageLoading } from '../components/PageState.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
+import { formatRupiah } from '../lib/format.js'
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '../lib/status.js'
 
-const STATUS_LABELS = {
-  pending: 'Pesanan masuk',
-  confirmed: 'Dikonfirmasi',
-  preparing: 'Sedang disiapkan',
-  ready: 'Siap diambil',
-  completed: 'Selesai',
-  cancelled: 'Dibatalkan',
-}
-const PAYMENT_LABELS = {
-  unpaid: 'Belum dibayar',
-  pending: 'Diproses',
-  paid: 'Dibayar',
-  failed: 'Gagal',
-  refunded: 'Dikembalikan',
-}
+const STATUS_LABELS = ORDER_STATUS_LABELS
+const PAYMENT_LABELS = PAYMENT_STATUS_LABELS
 const NEXT_STATUS = {
   pending: 'confirmed',
   confirmed: 'preparing',
@@ -39,14 +28,6 @@ const DATE_FILTERS = [
   ['30days', '30 hari'],
   ['all', 'Semua tanggal'],
 ]
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0)
-}
 
 function formatDate(value) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -77,12 +58,12 @@ function StaffOrderDetails({ order }) {
         <h3>Item pesanan</h3>
         {order.items.map((item) => (
           <div className="staff-detail-item" key={item.id}>
-            <div><strong>{item.product_name}</strong><span>{item.quantity} × {formatCurrency(item.price)}</span></div>
-            <strong>{formatCurrency(item.subtotal)}</strong>
+            <div><strong>{item.product_name}</strong><span>{item.quantity} × {formatRupiah(item.price)}</span></div>
+            <strong>{formatRupiah(item.subtotal)}</strong>
           </div>
         ))}
         {!order.items.length && <p className="detail-muted">Item pesanan tidak tersedia.</p>}
-        <div className="order-total-row"><span>Total pesanan</span><strong>{formatCurrency(order.total_amount)}</strong></div>
+        <div className="order-total-row"><span>Total pesanan</span><strong>{formatRupiah(order.total_amount)}</strong></div>
       </section>
       {order.notes && (
         <section className="staff-detail-block">
@@ -113,7 +94,7 @@ function OrderCard({ order, onOpen, onAdvance, updating }) {
         {order.items.slice(0, 3).map((item) => (
           <div className="staff-order-item" key={item.id}>
             <span><b>{item.quantity}×</b> {item.product_name}</span>
-            <strong>{formatCurrency(item.subtotal)}</strong>
+            <strong>{formatRupiah(item.subtotal)}</strong>
           </div>
         ))}
         {order.items.length > 3 && <span className="staff-more-items">+{order.items.length - 3} item lainnya</span>}
@@ -121,7 +102,7 @@ function OrderCard({ order, onOpen, onAdvance, updating }) {
       </div>
       <div className="staff-order-total">
         <span>Total <small>{PAYMENT_LABELS[order.payment_status] || order.payment_status}</small></span>
-        <strong>{formatCurrency(order.total_amount)}</strong>
+        <strong>{formatRupiah(order.total_amount)}</strong>
       </div>
       <footer className="staff-order-actions">
         <button className="button button-secondary staff-detail-button" type="button" onClick={() => onOpen(order)}>
