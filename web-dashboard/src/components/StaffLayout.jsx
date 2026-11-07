@@ -3,6 +3,7 @@ import { Coffee, ClipboardList, History, LogOut } from 'lucide-react'
 import { Link, NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { LoadingScreen } from './LoadingScreen.jsx'
+import { cafeColumns, detectDbFeatures } from '../lib/db.js'
 
 const STAFF_NAVIGATION = [
   { to: '/staff', label: 'Pesanan', icon: ClipboardList, end: true },
@@ -43,9 +44,11 @@ export function StaffLayout() {
         return
       }
 
+      const features = await detectDbFeatures(supabase)
+      if (!active) return
       const { data: cafe, error: cafeError } = await supabase
         .from('cafes')
-        .select('id, name')
+        .select(cafeColumns(features))
         .eq('id', profile.cafe_id)
         .maybeSingle()
 
@@ -53,7 +56,7 @@ export function StaffLayout() {
       if (cafeError) {
         setLoadError(`Data cafe tidak dapat dimuat: ${cafeError.message}`)
       } else if (cafe) {
-        setStaffData({ profile, cafe })
+        setStaffData({ profile, cafe, features })
       } else {
         setLoadError('Cafe yang ditugaskan ke akun staff ini tidak ditemukan.')
       }

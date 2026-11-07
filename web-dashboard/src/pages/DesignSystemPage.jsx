@@ -4,6 +4,8 @@ import {
   Badge, Button, Card, CardHeader, ConfirmDialog, Drawer, EmptyState, ErrorState, IconButton, OrderStatusBadge,
   PaymentBadge, SearchInput, SegmentedControl, Select, Skeleton, SkeletonRows, StatCard, Switch, TextField, useToast,
 } from '../components/ui/index.js'
+import { CancelOrderDialog } from '../components/orders/CancelOrderDialog.jsx'
+import { MarkPaidDialog } from '../components/orders/MarkPaidDialog.jsx'
 import { formatDateTime, formatQueueNumber, formatRupiah, summarizeItems } from '../lib/format.js'
 import { ORDER_STATUS, PAYMENT_STATUS } from '../lib/status.js'
 
@@ -34,6 +36,8 @@ export function DesignSystemPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [now] = useState(() => new Date())
+  const [orderDialog, setOrderDialog] = useState(null)
+  const demoOrder = { id: 'demo', queue_number: 12, order_number: '95449854819529334', total_amount: 22000, payment_status: 'unpaid', payment_method: 'cash', order_status: 'ready' }
   const sampleOrders = [
     { id: 'a', queue_number: 12, order_number: '95449854819529334' },
     { id: 'b', order_number: '95449854819529334' },
@@ -152,6 +156,8 @@ export function DesignSystemPage() {
           <Button variant="secondary" onClick={() => toast({ title: 'Gagal menyimpan', description: 'Periksa koneksi lalu coba lagi.', tone: 'error' })}>Toast error</Button>
           <Button variant="danger-soft" onClick={() => setConfirmOpen(true)}>ConfirmDialog</Button>
           <Button variant="secondary" onClick={() => setDrawerOpen(true)}>Drawer</Button>
+          <Button variant="secondary" onClick={() => setOrderDialog('pay')}>Dialog tandai lunas</Button>
+          <Button variant="secondary" onClick={() => setOrderDialog('cancel')}>Dialog batalkan</Button>
         </div>
       </Section>
 
@@ -177,6 +183,10 @@ export function DesignSystemPage() {
           onClose={() => setConfirmOpen(false)}
         />
       )}
+      {orderDialog === 'pay' && (
+        <MarkPaidDialog order={demoOrder} cafe={{ accepted_payment_methods: ['cash', 'qris', 'bank_transfer', 'ewallet'] }} onClose={() => setOrderDialog(null)} />
+      )}
+      {orderDialog === 'cancel' && <CancelOrderDialog order={demoOrder} onClose={() => setOrderDialog(null)} />}
       {drawerOpen && (
         <Drawer
           title="Pesanan #9334"

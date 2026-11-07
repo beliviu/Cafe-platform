@@ -4,6 +4,7 @@ import { Link, Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { OWNER_NAVIGATION } from '../config/ownerNavigation.js'
 import { LoadingScreen } from './LoadingScreen.jsx'
+import { cafeColumns, detectDbFeatures } from '../lib/db.js'
 
 function OwnerAccessState({ title, message, onRetry }) {
   return (
@@ -61,9 +62,11 @@ export function OwnerLayout() {
         return
       }
 
+      const features = await detectDbFeatures(supabase)
+      if (!active) return
       const { data: cafe, error: cafeError } = await supabase
         .from('cafes')
-        .select('id, name')
+        .select(cafeColumns(features))
         .eq('id', profile.cafe_id)
         .maybeSingle()
 
@@ -71,7 +74,7 @@ export function OwnerLayout() {
       if (cafeError) {
         setLoadError(`Data cafe tidak dapat dimuat: ${cafeError.message}`)
       } else if (cafe) {
-        setOwnerData({ profile, cafe })
+        setOwnerData({ profile, cafe, features })
       } else {
         setLoadError('Cafe untuk akun owner ini tidak ditemukan.')
       }

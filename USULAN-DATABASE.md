@@ -8,9 +8,20 @@
 
 | Langkah | Status |
 |---|---|
-| 0. Cek kondisi database (read-only) | ⏳ menunggu hasil query di bawah |
-| 1. Migrasi inti (pembayaran, batal, antrean, riwayat status, nama customer) | 📝 draf — SQL final ditulis setelah hasil langkah 0 |
+| 0. Cek kondisi database (read-only) | ✅ 0a, 0b, 0c diterima (8 Nov) |
+| 1a. **Tutup celah keamanan profil** — [`supabase/usulan/01-tutup-celah-profil.sql`](supabase/usulan/01-tutup-celah-profil.sql) | 🔴 **siap dijalankan, prioritas** |
+| 1b. Fitur operasional — [`supabase/usulan/02-fitur-operasional.sql`](supabase/usulan/02-fitur-operasional.sql) | 🟢 siap dijalankan (setelah 1a) |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### Cara menjalankan
+
+1. Supabase Dashboard → **SQL Editor** → New query.
+2. Buka file `01-tutup-celah-profil.sql`, copy **seluruh isinya**, paste, **Run**. Hasil di bawah harus 2 baris: `full_name`, `phone`.
+3. New query lagi → copy seluruh isi `02-fitur-operasional.sql` → **Run**. Hasil harus 7 fungsi + 7 kolom.
+4. Kalau ada error merah, **tidak ada yang berubah** (semua dalam satu transaksi) — kirim pesan error-nya.
+5. Muat ulang web owner/staff (Ctrl+Shift+R). Tombol "Lunas" & "Batalkan" otomatis muncul, nomor antrean berubah ke `A-001`.
+
+> Database hanya satu (produksi), jadi uji alur dengan **pesanan uji baru** (mis. akun customer milikmu), bukan pesanan customer sungguhan.
 
 ---
 
@@ -95,9 +106,59 @@ order by created_at desc
 limit 10;
 ```
 
+### Hasil 0a & 0b (8 Nov 2026)
+
+- **Tidak ada fungsi `has_cafe_role`** di schema public, padahal migrasi memakainya → policy live ditulis berbeda dari file migrasi. SQL final akan mandiri (cek role langsung ke `profiles`).
+- **Ada 2 versi `create_order`**: `(p_items jsonb)` versi lama dan `(p_cafe_id, p_items, p_payment_method, p_notes)` yang dipakai app.
+- Trigger aktif: `enforce_order_status_workflow` (orders), `set_order_item_snapshot_fields` & `trg_update_order_total` (order_items). Tidak ada trigger yang mengisi `updated_at` atau menyinkronkan kolom `status` → **kolom `status` basi** (mis. `pending` padahal `order_status = completed`). App hanya memakai `order_status`.
+- Klien hanya boleh update `orders.order_status` → "Tandai lunas" & "Batalkan" memang butuh RPC.
+- Policy profil: hanya `Users read own profile` & `Users update own profile` → owner tidak bisa membaca nama customer.
+- `Public read products` → kemungkinan customer sudah bisa membaca produk habis (perlu dicek di 0c; kalau ya, usulan G tidak diperlukan).
+- **Bukti bug zona waktu:** pesanan `…334` dibuat `2026-11-07 21:53 UTC` = **8 Nov 04:53 WIB**. Dashboard memakai tanggal UTC, jadi pesanan itu masuk ke 7 Nov dan rentang "7 hari" berhenti di 7 Nov.
+- Pesanan Rp 1 (`d9b5…`, `23be…`) tanpa metode bayar — data uji, dibiarkan; UI menanganinya.
+
+### ⚠️ Perlu dicek: grant tabel sangat lebar
+
+`anon` & `authenticated` punya `INSERT, UPDATE, DELETE` penuh pada `cafes`, `categories`, `products`, `profiles` (ini default Supabase). Aman **hanya jika RLS aktif** dan policy-nya ketat. Yang paling berisiko: policy `Users update own profile` + grant UPDATE semua kolom → bila policy tidak membatasi kolom, customer bisa mengubah `role`/`cafe_id` miliknya sendiri menjadi owner kafe mana pun. Query 0c memastikan ini.
+
+### Query 0c — status RLS, isi policy, definisi fungsi & trigger (AMAN, read-only)
+
+```sql
+-- READ-ONLY: membaca katalog sistem Postgres.
+select 'rls' as kind, c.relname as name,
+       case when c.relrowsecurity then 'ON' else 'OFF' end
+       || case when c.relforcerowsecurity then ' (force)' else '' end as detail
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and c.relkind = 'r'
+union all
+select 'policy', tablename || '.' || policyname,
+       cmd || ' | using: ' || coalesce(qual, '-') || ' | check: ' || coalesce(with_check, '-')
+from pg_policies
+where schemaname = 'public'
+union all
+select 'trigger_def', t.tgname, pg_get_triggerdef(t.oid)
+from pg_trigger t
+join pg_class c on c.oid = t.tgrelid
+join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and not t.tgisinternal
+union all
+select 'function_def', p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
+       case when p.prosecdef then 'SECURITY DEFINER' else 'SECURITY INVOKER' end
+       || chr(10) || pg_get_functiondef(p.oid)
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname in (
+    'enforce_order_status_workflow', 'staff_order_customer_names', 'update_order_total',
+    'handle_new_user', 'create_order', 'set_order_item_snapshot_fields'
+  )
+order by 1, 2;
+```
+
 ---
 
-## Langkah 1 — migrasi inti (draf, SQL final menyusul)
+## Langkah 1 — isi migrasi (SQL final ada di `supabase/usulan/`)
 
 | # | Perubahan | Untuk fitur | Fallback UI sebelum diterapkan |
 |---|---|---|---|
@@ -105,10 +166,10 @@ limit 10;
 | B | Izinkan transisi ke `cancelled` dari `pending/confirmed/preparing/ready` + RPC `staff_cancel_order(order_id, reason)`; kolom `orders.cancel_reason`, `orders.cancelled_at`. | Tombol **Batalkan** dengan alasan | Tombol batal disembunyikan. |
 | C | Kolom `orders.queue_number int` + trigger `before insert` (urutan per kafe per hari WIB) + isi kolom baru untuk pesanan lama (hanya mengisi kolom baru, data lama tidak diubah). | Nomor antrean **A-012** di 3 aplikasi | `#9334` = 4 digit terakhir `order_number` (deterministik, sama di 3 aplikasi). |
 | D | Tabel `order_status_events (order_id, status, changed_by, created_at)` + trigger `after update of order_status`; RLS: owner/staff kafe & customer pemilik pesanan boleh baca. | Timeline status & "diproses oleh" di detail transaksi; estimasi di customer | Timeline hanya menampilkan waktu dibuat & status sekarang. |
-| E | RPC nama customer untuk **owner** (sekarang `staff_order_customer_names` hanya untuk role staff). | Kolom Customer di Transaksi owner | "Pelanggan" + 4 karakter ID. |
+| E | ~~RPC nama customer untuk owner~~ — **tidak perlu**: `staff_order_customer_names` live sudah mengizinkan owner. Sudah dipakai di frontend. | Kolom Customer di Transaksi owner | — |
 | F | RPC `staff_set_product_availability(product_id, is_available)` — hanya kolom `is_available`. | Toggle cepat **Produk habis** di staff | Toggle disembunyikan untuk staff. |
-| G | Policy baca produk: customer boleh melihat produk `is_available = false` (checkout tetap menolak). | Produk **Habis** tampil abu-abu di menu | Produk habis tidak tampil (seperti sekarang). |
-| H | `grant update (phone)` + policy: customer hanya baris profilnya sendiri. | Edit nomor HP di profil | Field HP hanya-baca/disembunyikan. |
+| G | ~~Policy baca produk habis~~ — **tidak perlu**: policy live `Public read products` sudah `using (true)`. | Produk **Habis** tampil abu-abu di menu | — |
+| H | `grant update (full_name, phone)` + policy dengan `with check` — **masuk file 01**. | Edit nomor HP di profil | Field HP disembunyikan. |
 | I | `cafes.opening_hours jsonb`, `cafes.description text`. | Jam buka, status Buka/Tutup, halaman Pengaturan | Bagian jam buka disembunyikan. |
 
 ## Langkah 2 — checkout v2 (draf, untuk fase 5)

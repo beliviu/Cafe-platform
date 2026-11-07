@@ -533,3 +533,37 @@
 @media (min-width: 681px) {
   .mobile-brand { display: none; }
 }
+
+/* ---- Fase 2: staff (sementara, dirombak jadi Kanban di fase 4) ---- */
+.staff-stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 22px; }
+.staff-order-card-header h2 { font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: 750; letter-spacing: -.02em; }
+.staff-order-label { color: var(--text-muted); font-size: var(--text-sm); font-weight: 600; letter-spacing: 0; }
+.staff-order-total > strong { color: var(--text-primary); font-family: var(--font-sans); font-size: var(--text-lg); font-weight: 700; }
+.staff-order-actions { flex-wrap: wrap; align-items: center; }
+.staff-item-note { display: block; margin-top: 4px; padding: 6px 9px; color: var(--status-amber-fg); background: var(--status-amber-bg); border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: 600; }
+.staff-realtime-warning { justify-content: space-between; color: var(--status-amber-fg); font-size: var(--text-sm); }
+.staff-new-order-notice { font-size: var(--text-base); }
+.staff-filter-controls { flex-wrap: wrap; align-items: center; }
+.staff-filter-controls .ui-field { min-width: 160px; }
+.staff-order-detail .staff-detail-topline { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+
+/* ---- Fase 2: dashboard (sementara, dirombak di fase 3) ---- */
+.metrics-grid-v2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 18px; }
+.dashboard-skeleton-v2 { display: grid; gap: 16px; }
+.dashboard-hint { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 13px 16px; color: var(--status-amber-fg); background: var(--status-amber-bg); border-radius: var(--radius-lg); font-size: var(--text-sm); line-height: 1.5; }
+.dashboard-hint svg { flex: 0 0 auto; margin-top: 2px; }
+.recent-list { display: grid; }
+.recent-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto auto 110px; align-items: center; gap: 12px; padding: 12px 4px; border-top: 1px solid var(--border-subtle); }
+.recent-queue { font-size: var(--text-md); }
+.recent-customer { display: grid; gap: 2px; min-width: 0; font-size: var(--text-sm); font-weight: 600; }
+.recent-customer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-customer small { color: var(--text-muted); font-size: var(--text-xs); font-weight: 500; }
+.recent-amount { text-align: right; font-size: var(--text-base); }
+@media (max-width: 760px) {
+  .recent-row { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .recent-row .ui-badge:nth-of-type(2) { display: none; }
+  .recent-row .ui-badge:first-of-type { grid-column: 2; grid-row: 2; justify-self: start; }
+  .recent-amount { grid-column: 3; grid-row: 1; }
+}
+
+.form-hint { color: var(--text-muted); font-size: var(--text-xs); font-weight: 500; }

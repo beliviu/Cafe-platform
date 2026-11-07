@@ -4,22 +4,14 @@ import { CreditCard, Eye, ReceiptText, ShoppingBag } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
 import { Modal, PageEmpty, PageError, PageLoading } from '../components/PageState.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
-import { formatRupiah } from '../lib/format.js'
-import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '../lib/status.js'
+import { customerLabel, fetchCustomerNames, friendlyError, orderColumns } from '../lib/db.js'
+import { formatDateTime, formatOrderReference, formatQueueNumber, formatRupiah } from '../lib/format.js'
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, paymentMethodLabel } from '../lib/status.js'
 
 const ORDER_STATUSES = [['all', 'Semua status'], ...Object.entries(ORDER_STATUS_LABELS)]
 
-function formatDate(value, withYear = true) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Tanggal tidak tersedia'
-
-  return new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    ...(withYear ? { year: 'numeric' } : {}),
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+function formatDate(value) {
+  return formatDateTime(value)
 }
 
 function OrderDetails({ order, cafeId, supabase }) {
@@ -60,7 +52,8 @@ function OrderDetails({ order, cafeId, supabase }) {
     <div className="order-detail">
       <div className="order-detail-summary">
         <span className="order-detail-icon"><ReceiptText size={19} /></span>
-        <div><span>Nomor transaksi</span><strong>#{order.order_number}</strong></div>
+        <div><span>Nomor antrean</span><strong className="tabular">{formatQueueNumber(order)}</strong><small>{formatOrderReference(order)}</small></div>
+        <div><span>Customer</span><strong>{customerLabel(order)}</strong></div>
         <div><span>Waktu pesanan</span><strong>{formatDate(order.created_at)}</strong></div>
       </div>
       <div className="order-detail-status">
@@ -89,12 +82,12 @@ function OrderDetails({ order, cafeId, supabase }) {
             <h3><CreditCard size={15} /> Pembayaran</h3>
             {payments.length ? payments.map((payment) => (
               <div className="payment-row" key={payment.id}>
-                <div><strong>{payment.payment_method}</strong><span>{PAYMENT_STATUS_LABELS[payment.payment_status] || payment.payment_status} · {formatDate(payment.created_at)}</span></div>
+                <div><strong>{paymentMethodLabel(payment.payment_method)}</strong><span>{PAYMENT_STATUS_LABELS[payment.payment_status] || payment.payment_status} · {formatDate(payment.created_at)}</span></div>
                 <strong>{formatRupiah(payment.amount)}</strong>
               </div>
             )) : (
               <div className="payment-row">
-                <div><strong>{order.payment_method || 'Metode belum tercatat'}</strong><span>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</span></div>
+                <div><strong>{paymentMethodLabel(order.payment_method)}</strong><span>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</span></div>
                 <strong>{formatRupiah(order.total_amount)}</strong>
               </div>
             )}
@@ -113,7 +106,7 @@ function OrderDetails({ order, cafeId, supabase }) {
 }
 
 export function OrdersPage() {
-  const { cafe } = useOutletContext()
+  const { cafe, features } = useOutletContext()
   const { supabase } = useAuth()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -126,7 +119,7 @@ export function OrdersPage() {
     setLoading(true)
     setLoadError('')
     let request = supabase.from('orders')
-      .select('id, cafe_id, order_number, customer_id, total_amount, order_status, payment_status, payment_method, notes, created_at')
+      .select(orderColumns(features))
       .eq('cafe_id', cafe.id)
       .order('created_at', { ascending: false })
       .limit(200)
@@ -134,12 +127,13 @@ export function OrdersPage() {
 
     const { data, error } = await request
     if (error) {
-      setLoadError(`Transaksi gagal dimuat: ${error.message}`)
+      setLoadError(friendlyError(error))
     } else {
-      setOrders(data || [])
+      const { names } = await fetchCustomerNames(supabase, (data || []).map((order) => order.id))
+      setOrders((data || []).map((order) => ({ ...order, customer_name: names.get(order.id) || '' })))
     }
     setLoading(false)
-  }, [cafe.id, statusFilter, supabase])
+  }, [cafe.id, features, statusFilter, supabase])
 
   useEffect(() => {
     const timer = window.setTimeout(loadOrders, 0)
@@ -178,7 +172,7 @@ export function OrdersPage() {
         <section className="panel orders-panel">
           <div className="transaction-table-head order-table-head">
             <span>ORDER</span>
-            <span>TANGGAL</span>
+            <span>WAKTU · CUSTOMER</span>
             <span>STATUS</span>
             <span>PEMBAYARAN</span>
             <span className="amount-heading">TOTAL</span>
@@ -188,20 +182,20 @@ export function OrdersPage() {
             <article className="transaction-row order-list-row" key={order.id}>
               <span className="transaction-order">
                 <span className="order-icon"><ShoppingBag size={15} /></span>
-                <strong>#{order.order_number}</strong>
+                <strong className="tabular">{formatQueueNumber(order)}</strong>
               </span>
               <span className="transaction-date">
                 {formatDate(order.created_at)}
-                <small>{String(order.customer_id || 'Pelanggan').slice(0, 8)}</small>
+                <small>{customerLabel(order)}</small>
               </span>
               <span><span className={`status-pill status-${order.order_status}`}>{ORDER_STATUS_LABELS[order.order_status] || order.order_status}</span></span>
               <span className="payment-cell">
                 <span className={`payment-dot payment-${order.payment_status}`} />
                 <span>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</span>
-                {order.payment_method && <small>{order.payment_method}</small>}
+                <small>{paymentMethodLabel(order.payment_method)}</small>
               </span>
               <strong className="transaction-amount">{formatRupiah(order.total_amount)}</strong>
-              <button type="button" className="icon-button order-view-button" aria-label={`Lihat transaksi ${order.order_number}`} onClick={() => setSelectedOrder(order)}>
+              <button type="button" className="icon-button order-view-button" aria-label={`Lihat transaksi ${formatQueueNumber(order)}`} onClick={() => setSelectedOrder(order)}>
                 <Eye size={16} />
               </button>
             </article>

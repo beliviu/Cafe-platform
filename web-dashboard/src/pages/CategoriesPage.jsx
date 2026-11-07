@@ -5,22 +5,38 @@ import { useAuth } from '../auth/useAuth.js'
 import { Modal, PageEmpty, PageError, PageLoading } from '../components/PageState.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
 
-function CategoryForm({ category, cafeId, supabase, onCancel, onSaved }) {
+const CATEGORY_NAME_MIN = 2
+const CATEGORY_NAME_MAX = 40
+
+/** Rapikan nama: buang spasi di awal/akhir dan spasi ganda. */
+function normalizeCategoryName(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim()
+}
+
+function validateCategoryName(name, categories, currentId) {
+  if (!name) return 'Nama kategori wajib diisi.'
+  if (name.length < CATEGORY_NAME_MIN) return `Nama kategori minimal ${CATEGORY_NAME_MIN} karakter.`
+  if (name.length > CATEGORY_NAME_MAX) return `Nama kategori maksimal ${CATEGORY_NAME_MAX} karakter.`
+  const duplicate = categories.find((item) => item.id !== currentId && item.name.trim().toLocaleLowerCase('id') === name.toLocaleLowerCase('id'))
+  if (duplicate) return `Kategori "${duplicate.name}" sudah ada.`
+  return ''
+}
+
+function CategoryForm({ category, categories, cafeId, supabase, onCancel, onSaved }) {
   const [name, setName] = useState(category?.name || '')
   const [errorMessage, setErrorMessage] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
-    const trimmedName = name.trim()
-    setErrorMessage('')
-
-    if (!trimmedName) {
-      setErrorMessage('Nama kategori wajib diisi.')
-      return
-    }
+    const trimmedName = normalizeCategoryName(name)
+    setName(trimmedName)
+    const validationError = validateCategoryName(trimmedName, categories, category?.id)
+    setErrorMessage(validationError)
+    if (validationError) return
 
     setSaving(true)
+    const nextSortOrder = categories.reduce((max, item) => Math.max(max, Number(item.sort_order) || 0), 0) + 1
     const result = category
       ? await supabase.from('categories')
         .update({ name: trimmedName })
@@ -29,13 +45,15 @@ function CategoryForm({ category, cafeId, supabase, onCancel, onSaved }) {
         .select('id')
         .maybeSingle()
       : await supabase.from('categories')
-        .insert({ cafe_id: cafeId, name: trimmedName })
+        .insert({ cafe_id: cafeId, name: trimmedName, sort_order: nextSortOrder })
         .select('id')
         .maybeSingle()
 
     if (result.error || !result.data) {
       if (result.error) {
-        setErrorMessage(`Kategori gagal disimpan: ${result.error.message}`)
+        setErrorMessage(result.error.code === '23505'
+          ? 'Nama kategori ini sudah dipakai.'
+          : `Kategori gagal disimpan: ${result.error.message}`)
       } else if (category) {
         const { data: existingCategory, error: lookupError } = await supabase
           .from('categories')
@@ -65,11 +83,17 @@ function CategoryForm({ category, cafeId, supabase, onCancel, onSaved }) {
         <span>Nama kategori <b>*</b></span>
         <input
           value={name}
-          onChange={(event) => setName(event.target.value)}
-          maxLength={80}
-          placeholder="Contoh: Kopi"
+          onChange={(event) => {
+            setName(event.target.value)
+            if (errorMessage) setErrorMessage('')
+          }}
+          onBlur={() => setName((current) => normalizeCategoryName(current))}
+          maxLength={CATEGORY_NAME_MAX + 10}
+          placeholder="Contoh: Kopi Susu"
+          aria-invalid={errorMessage ? true : undefined}
           autoFocus
         />
+        <small className="form-hint">{normalizeCategoryName(name).length}/{CATEGORY_NAME_MAX} karakter · nama tampil di menu customer</small>
       </label>
       {errorMessage && <div className="form-alert" role="alert">{errorMessage}</div>}
       <footer className="form-actions">
@@ -99,8 +123,9 @@ export function CategoriesPage() {
     setLoadError('')
     const [categoryResult, productResult] = await Promise.all([
       supabase.from('categories')
-        .select('id, cafe_id, name, created_at')
+        .select('id, cafe_id, name, sort_order, created_at')
         .eq('cafe_id', cafe.id)
+        .order('sort_order', { ascending: true })
         .order('name', { ascending: true }),
       supabase.from('products')
         .select('category_id')
@@ -216,6 +241,7 @@ export function CategoriesPage() {
           <CategoryForm
             key={editingCategory?.id || 'new-category'}
             category={editingCategory}
+            categories={categories}
             cafeId={cafe.id}
             supabase={supabase}
             onCancel={() => setEditingCategory(undefined)}
