@@ -17,6 +17,7 @@ const FEATURES = [
   { key: 'loyalty', label: 'Poin & tingkat member' },
   { key: 'qr_ordering', label: 'Pesan dari QR meja' },
   { key: 'payment_gateway', label: 'QRIS online (gateway)' },
+  { key: 'ai_advisor', label: 'Tanya AI di Advisor bisnis' },
 ]
 const LIMITS = [
   { key: 'staff', label: 'Staff aktif' },
@@ -89,7 +90,7 @@ export function SubscriptionSettings() {
                 </li>
               )
             })}
-            <li><Check size={16} aria-hidden="true" /><span>Kasir, pesanan app, menu, tim, laporan penjualan</span></li>
+            <li><Check size={16} aria-hidden="true" /><span>Kasir, pesanan app, menu, tim, laporan, prediksi & analitik pelanggan</span></li>
           </ul>
         </Card>
       </div>

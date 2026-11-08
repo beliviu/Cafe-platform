@@ -8,6 +8,7 @@ import { createPosFixtures, posRpc } from './mockPos.js'
 import { createFinanceFixtures, financeRpc } from './mockFinance.js'
 import { createCustomerFixtures, customerRpc } from './mockCustomer.js'
 import { createPaymentFixtures, paymentInvoke, paymentRpc, payLatestIntent } from './mockPayments.js'
+import { advisorInvoke, biRpc } from './mockBi.js'
 
 function seeded(seed) {
   let value = seed
@@ -381,6 +382,11 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
         return financeResult
       }
+      const biResult = biRpc(store, name, args)
+      if (biResult) {
+        await new Promise((resolve) => window.setTimeout(resolve, 200))
+        return biResult
+      }
       const inventoryResult = inventoryRpc(store, name, args)
       if (inventoryResult) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
@@ -403,6 +409,10 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
       invoke: async (_name, { body }) => {
         await new Promise((resolve) => window.setTimeout(resolve, 300))
         if (_name === 'payments') return paymentInvoke(store, body, userId)
+        if (_name === 'advisor') {
+          await new Promise((resolve) => window.setTimeout(resolve, 900))
+          return advisorInvoke(store, body)
+        }
         if (body.action === 'create') {
           fixtures.team.push({ id: `staff-${fixtures.team.length + 1}`, full_name: body.full_name, role: 'staff', job_title: body.job_title || null, is_active: true, email: body.email, last_sign_in_at: null, created_at: new Date().toISOString() })
         }

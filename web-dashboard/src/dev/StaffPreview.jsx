@@ -34,7 +34,7 @@ export function StaffPreview() {
             profile: { id: 'staff-1', full_name: 'Nadia Barista', role: 'staff', cafe_id: fixtures.cafe.id },
             // ?izin=terbatas → staff hanya boleh mengatur menu habis (uji gerbang izin)
             permissions: new URLSearchParams(window.location.search).get('izin') === 'terbatas' ? ['menu.availability'] : null,
-            features: { operations: true, branding: true, phase3: true, inventory: true, pos: true, finance: true, customer: true, payments: true, security: true },
+            features: { operations: true, branding: true, phase3: true, inventory: true, pos: true, finance: true, customer: true, payments: true, security: true, bi: true },
             setPendingCount,
           }}
         />

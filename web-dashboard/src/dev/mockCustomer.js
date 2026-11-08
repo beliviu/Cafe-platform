@@ -108,11 +108,11 @@ export function customerRpc(store, name, args, names) {
       return ok({
         plan: { code: 'pro', name: 'Pro', description: 'Semua modul operasional & keuangan', price_monthly: 349000 },
         subscribed_plan: 'pro', status: 'trialing', trial_ends_at: new Date(Date.now() + 18 * 86400000).toISOString(), current_period_end: null,
-        features: ['inventory', 'finance', 'loyalty', 'qr_ordering', 'payment_gateway'], limits: { staff: 15, tables: 50, products: 500 },
+        features: ['inventory', 'finance', 'loyalty', 'qr_ordering', 'payment_gateway', 'ai_advisor'], limits: { staff: 15, tables: 50, products: 500, ai_daily: 30 },
         usage: { staff: 3, tables: store.cafe_tables.length, products: store.products.length },
         plans: [
           { code: 'basic', name: 'Basic', description: 'Kasir, pesanan app, menu & tim kecil', price_monthly: 149000, limits: { staff: 3, tables: 10, products: 80 }, features: [] },
-          { code: 'pro', name: 'Pro', description: 'Semua modul operasional & keuangan', price_monthly: 349000, limits: { staff: 15, tables: 50, products: 500 }, features: ['inventory', 'finance', 'loyalty', 'qr_ordering', 'payment_gateway'] },
+          { code: 'pro', name: 'Pro', description: 'Semua modul operasional & keuangan', price_monthly: 349000, limits: { staff: 15, tables: 50, products: 500, ai_daily: 30 }, features: ['inventory', 'finance', 'loyalty', 'qr_ordering', 'payment_gateway', 'ai_advisor'] },
         ],
       })
     default:

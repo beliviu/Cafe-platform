@@ -70,6 +70,9 @@ const JournalPage = lazy(() => import('./pages/finance/JournalPage.jsx').then((m
 const LedgerPage = lazy(() => import('./pages/finance/LedgerPage.jsx').then((module) => ({ default: module.LedgerPage })))
 const AccountsPage = lazy(() => import('./pages/finance/AccountsPage.jsx').then((module) => ({ default: module.AccountsPage })))
 const ExpensesPage = lazy(() => import('./pages/ExpensesPage.jsx').then((module) => ({ default: module.ExpensesPage })))
+const AdvisorPage = lazy(() => import('./pages/analytics/AdvisorPage.jsx').then((module) => ({ default: module.AdvisorPage })))
+const SalesForecastPage = lazy(() => import('./pages/analytics/SalesForecastPage.jsx').then((module) => ({ default: module.SalesForecastPage })))
+const CustomerAnalyticsPage = lazy(() => import('./pages/analytics/CustomerAnalyticsPage.jsx').then((module) => ({ default: module.CustomerAnalyticsPage })))
 const SuppliersPage = lazy(() => import('./pages/purchases/SuppliersPage.jsx').then((module) => ({ default: module.SuppliersPage })))
 
 /** Rute owner — dipakai aplikasi asli dan pratinjau dev. */
@@ -105,6 +108,9 @@ function ownerRoutes() {
       <Route path="loyalty" element={<LoyaltyPage />} />
       <Route path="reviews" element={<ReviewsPage />} />
       <Route path="support" element={<SupportPage />} />
+      <Route path="advisor" element={<AdvisorPage />} />
+      <Route path="sales-forecast" element={<SalesForecastPage />} />
+      <Route path="customer-analytics" element={<CustomerAnalyticsPage />} />
       <Route path="team" element={<TeamLayout />}>
         <Route index element={<MembersPage />} />
         <Route path="shifts" element={<ShiftsPage />} />
