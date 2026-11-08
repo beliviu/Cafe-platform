@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { OrderingPauseButton } from '../components/staff/OrderingPauseButton.jsx'
 import { brandOf } from '../lib/branding.js'
 import {
   Bell, Check, CircleDollarSign, Inbox, Keyboard, PackageX, RefreshCw, SlidersHorizontal, Volume2, VolumeX, Wallet,
@@ -315,6 +316,7 @@ export function StaffBoardPage() {
               {permission === 'default' && <IconButton icon={Bell} variant="secondary" label="Izinkan notifikasi browser" onClick={requestPermission} />}
               <IconButton icon={SlidersHorizontal} variant="secondary" label="Pengaturan papan" onClick={() => setDialog({ type: 'settings' })} />
               <IconButton icon={Keyboard} variant="secondary" label="Tombol pintas (?)" onClick={() => setDialog({ type: 'shortcuts' })} className="hide-on-touch" />
+              {features?.customer && <OrderingPauseButton cafeId={cafe.id} />}
               <Button variant="secondary" icon={PackageX} onClick={() => setPanel('menu')}>
                 Menu habis{soldOutCount ? <span className="btn-count tabular"><span className="sr-only">: </span>{soldOutCount}</span> : null}
               </Button>

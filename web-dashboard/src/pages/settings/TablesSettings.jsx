@@ -2,14 +2,18 @@
  * Pengaturan → Meja (tabel cafe_tables, file usulan 04).
  * Dipakai POS untuk pesanan makan di tempat (fase 5) dan QR meja di aplikasi customer (fase 7).
  */
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Printer, QrCode, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import {
   Badge, Button, Card, CardHeader, ConfirmDialog, EmptyState, ErrorState, IconButton, SkeletonRows, Switch, TextField, useToast,
 } from '../../components/ui/index.js'
-import { friendlyError, PHASE3_REQUIRED } from '../../lib/db.js'
+import { CUSTOMER_REQUIRED, friendlyError, PHASE3_REQUIRED } from '../../lib/db.js'
+import { formatTime } from '../../lib/format.js'
+import { brandOf } from '../../lib/branding.js'
+import { TableQrDialog } from '../../components/settings/TableQrDialog.jsx'
+import { printTableQrSheet } from '../../lib/qr.js'
 
 const COLUMNS = 'id, label, area, capacity, is_active, sort_order'
 
@@ -29,6 +33,22 @@ export function TablesSettings() {
   const [draftError, setDraftError] = useState('')
   const [busy, setBusy] = useState(false)
   const [removing, setRemoving] = useState(null)
+  const [qr, setQr] = useState({ map: new Map(), error: '' })
+  const [qrTable, setQrTable] = useState(null)
+  const cafeName = brandOf(cafe).name
+
+  // QR & keterisian meja (file 08): token hanya bisa dibaca owner lewat fungsi
+  const loadQr = useCallback(async () => {
+    if (!features?.customer) return
+    const { data, error } = await supabase.rpc('cafe_tables_qr', { p_cafe_id: cafe.id })
+    setQr({ map: new Map((data || []).map((row) => [row.table_id, row])), error: error ? friendlyError(error) : '' })
+  }, [cafe.id, features?.customer, supabase])
+
+  useEffect(() => {
+    const timer = setTimeout(loadQr, 0)
+    const interval = setInterval(loadQr, 60000)
+    return () => { clearTimeout(timer); clearInterval(interval) }
+  }, [loadQr, state.tables.length])
 
   useEffect(() => {
     if (!features?.phase3) return undefined
@@ -105,6 +125,7 @@ export function TablesSettings() {
     if (error) throw new Error(tableError(error))
     setState((current) => ({ ...current, tables: current.tables.filter((row) => row.id !== removing.id) }))
     toast({ tone: 'success', title: `Meja ${removing.label} dihapus` })
+    setRemoving(null)
   }
 
   return (
@@ -114,6 +135,13 @@ export function TablesSettings() {
           <CardHeader
             title="Daftar meja"
             description={`${state.tables.filter((table) => table.is_active).length} aktif dari ${state.tables.length} meja`}
+            actions={features?.customer && qr.map.size > 0 ? (
+              <Button variant="secondary" size="sm" icon={Printer}
+                onClick={() => printTableQrSheet(state.tables.filter((table) => table.is_active).map((table) => ({ ...table, qr_token: qr.map.get(table.id)?.qr_token })).filter((table) => table.qr_token), cafeName)
+                  || toast({ tone: 'error', title: 'Jendela cetak diblokir', description: 'Izinkan pop-up untuk situs ini.' })}>
+                Cetak semua QR
+              </Button>
+            ) : null}
           />
         </div>
         {state.loading ? <div className="table-card-body"><SkeletonRows rows={4} label="Memuat meja" /></div>
@@ -121,9 +149,10 @@ export function TablesSettings() {
             : !state.tables.length ? (
               <div className="table-card-body"><EmptyState compact title="Belum ada meja" description="Tambahkan meja satu per satu atau sekaligus dengan rentang nomor." /></div>
             ) : (
+              <div className="table-scroll">
               <table className="data-table">
                 <thead>
-                  <tr><th scope="col">Meja</th><th scope="col">Area</th><th scope="col" className="num">Kursi</th><th scope="col">Status</th><th scope="col"><span className="sr-only">Aksi</span></th></tr>
+                  <tr><th scope="col">Meja</th><th scope="col">Area</th><th scope="col" className="num">Kursi</th>{features?.customer && <th scope="col">Saat ini</th>}<th scope="col">Status</th><th scope="col"><span className="sr-only">Aksi</span></th></tr>
                 </thead>
                 <tbody>
                   {state.tables.map((table) => (
@@ -131,17 +160,22 @@ export function TablesSettings() {
                       <td><strong>{table.label}</strong></td>
                       <td>{table.area || <span className="text-muted">—</span>}</td>
                       <td className="num tabular">{table.capacity ?? '—'}</td>
+                      {features?.customer && <td><Occupancy info={qr.map.get(table.id)} /></td>}
                       <td>
                         <Switch size="sm" checked={table.is_active} onChange={(value) => patch(table, { is_active: value })}
                           label={`Meja ${table.label} aktif`} onLabel="Aktif" offLabel="Nonaktif" />
                       </td>
                       <td className="cell-actions">
+                        {features?.customer && qr.map.get(table.id)?.qr_token && (
+                          <IconButton icon={QrCode} label={`QR meja ${table.label}`} size="sm" onClick={() => setQrTable({ ...table, qr_token: qr.map.get(table.id).qr_token })} />
+                        )}
                         <IconButton icon={Trash2} label={`Hapus meja ${table.label}`} size="sm" variant="danger" onClick={() => setRemoving(table)} />
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
       </Card>
 
@@ -172,10 +206,16 @@ export function TablesSettings() {
         </Card>
 
         <p className="settings-note">
-          <Badge tone="neutral" dot={false}>Segera</Badge> Meja dipilih kasir di POS (fase 5). QR per meja untuk pesan dari HP menyusul bersama aplikasi customer baru (fase 7).
+          {features?.customer
+            ? <>Setiap meja punya QR sendiri. Pelanggan scan → menu terbuka dengan meja terpilih, pesanan masuk ke papan staff dengan nomor meja. Meja nonaktif tidak bisa dipesan lewat QR.{qr.error ? ` (${qr.error})` : ''}</>
+            : <><Badge tone="neutral" dot={false}>QR meja</Badge> {CUSTOMER_REQUIRED}</>}
         </p>
       </div>
 
+      {qrTable && (
+        <TableQrDialog table={qrTable} cafeName={cafeName} onClose={() => setQrTable(null)}
+          onRotated={(token) => { setQrTable((current) => ({ ...current, qr_token: token })); loadQr() }} />
+      )}
       {removing && (
         <ConfirmDialog
           title={`Hapus meja ${removing.label}?`}
@@ -188,4 +228,11 @@ export function TablesSettings() {
       )}
     </div>
   )
+}
+
+function Occupancy({ info }) {
+  if (!info) return <span className="text-muted">—</span>
+  return info.active_orders > 0
+    ? <Badge tone="amber" size="sm">Terisi · {info.active_orders} pesanan sejak {formatTime(info.occupied_since)}</Badge>
+    : <Badge tone="green" size="sm">Kosong</Badge>
 }

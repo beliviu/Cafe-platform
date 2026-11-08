@@ -1,4 +1,4 @@
-import { ClipboardList, History, PackageX, ShoppingCart, Wallet } from 'lucide-react'
+import { ClipboardList, History, LifeBuoy, PackageX, ShoppingCart, Wallet } from 'lucide-react'
 
 export function staffNavigation(pendingCount = 0) {
   return [
@@ -12,8 +12,11 @@ export function staffNavigation(pendingCount = 0) {
       ],
     },
     {
-      label: 'Menu',
-      items: [{ to: '/staff/menu', label: 'Menu habis', icon: PackageX }],
+      label: 'Menu & pelanggan',
+      items: [
+        { to: '/staff/menu', label: 'Menu habis', icon: PackageX },
+        { to: '/staff/support', label: 'Bantuan pelanggan', icon: LifeBuoy },
+      ],
     },
   ]
 }

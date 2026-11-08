@@ -17,7 +17,46 @@
 | 5. Inventori, resep & supplier — [`supabase/usulan/05-inventori-supplier.sql`](supabase/usulan/05-inventori-supplier.sql) | ✅ sudah dijalankan (dari diagnostik 8 Nov) |
 | 6. Pesanan v2 & kasir (POS) (place_order, varian, diskon, pajak, cadangan stok, HABIS di app, sesi kasir, split payment, hold, refund) — [`supabase/usulan/06-pesanan-v2-pos.sql`](supabase/usulan/06-pesanan-v2-pos.sql) | ✅ sudah dijalankan (kasir dipakai) |
 | 7. **Akuntansi & keuangan** (bagan akun, jurnal otomatis, beban, laporan, saldo awal, tutup periode) — [`supabase/usulan/07-akuntansi.sql`](supabase/usulan/07-akuntansi.sql) | 🟢 **siap dijalankan** · diuji 83 skenario (+ 05 & 06 diuji ulang) |
+| 8. **Aplikasi customer & QR meja** (status buka/tutup, jeda, terjadwal, estimasi, QR meja, voucher, poin & member, pesan ulang, ulasan, wishlist, bantuan, notifikasi & push) — [`supabase/usulan/08-pelanggan-qr.sql`](supabase/usulan/08-pelanggan-qr.sql) | 🟢 **siap dijalankan** · diuji 93 skenario (dengan & tanpa 07) |
+| 8b. Edge Function `push-send` (kirim notifikasi push) — [`supabase/functions/push-send/index.ts`](supabase/functions/push-send/index.ts) | 📝 opsional — kotak masuk notifikasi di app tetap jalan tanpa ini |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 08 — aplikasi customer & QR meja
+
+Jalankan **setelah file 06** (file 07 tidak wajib; urutan 07 → 08 juga aman). **Dampak ke data yang sudah ada:**
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| `cafe_settings` | 12 kolom: jeda pesanan + pesan, pesanan terjadwal, estimasi waktu siap, QR meja aktif, aturan poin & tingkat member | Nilai bawaan. **Loyalti & pesanan terjadwal NONAKTIF** sampai owner menyalakan. |
+| `cafe_tables` | Kolom `qr_token` (token acak 32 karakter, unik) | Semua meja lama otomatis mendapat token. Kolom ini **tidak bisa dibaca lewat API publik** (hak baca per kolom) — hanya owner lewat fungsi, jadi QR tidak bisa ditebak. Kolom meja lain tetap terbaca seperti sekarang. |
+| `orders` | 8 kolom: jadwal ambil, perkiraan siap, siapa yang membatalkan, voucher & poin yang dipakai | Kosong/0 untuk pesanan lama. Total lama tidak diubah. |
+| `create_order` (app versi lama) | Kini lewat `customer_place_order` | **Menolak pesanan saat kafe tutup atau dijeda.** Bila jam buka belum diatur, kafe dianggap selalu buka (perilaku lama). |
+| 10 tabel baru | voucher & pemakaiannya, akun & riwayat poin, ulasan, wishlist, tiket & pesan bantuan, notifikasi, token push | Kosong. |
+| Trigger baru (AFTER) | `orders` (poin saat selesai; voucher & poin dikembalikan saat batal; notifikasi status), `refunds` (poin dikurangi saat refund disetujui), `support_messages` (notifikasi balasan) | Hanya berlaku untuk perubahan berikutnya. Tidak mengubah total pesanan. |
+| Realtime | `notifications`, `support_messages` ditambahkan ke publikasi realtime | — |
+
+**Keamanan:** QR kafe lain ditolak (server mencocokkan token dengan kafe); voucher, poin, harga, dan jadwal dihitung & dicek ulang di database (bukan di aplikasi); kunci anti-dobel mencegah pesanan/voucher/poin terpakai dua kali saat koneksi buruk; poin hanya diubah lewat fungsi (riwayat tidak bisa diedit); nama pengulas disingkat ("Rani P."); customer hanya melihat tiket, poin, notifikasi, dan wishlist miliknya.
+
+**Cara menjalankan:**
+1. SQL Editor → tempel **seluruh isi** `supabase/usulan/08-pelanggan-qr.sql` → **Run**.
+2. Verifikasi harus **32 baris**: 10 `table`, 16 `function`, 6 `trigger`.
+3. Error merah = tidak ada yang berubah. Aman dijalankan ulang.
+
+**Setelah dijalankan (owner):**
+1. **Pengaturan → Operasional**: pastikan jam buka benar (app menolak pesanan di luar jam buka).
+2. **Pengaturan → Pesanan app**: nyalakan pesanan terjadwal bila mau, atur estimasi waktu siap.
+3. **Pengaturan → Meja**: isi `VITE_CUSTOMER_APP_URL` (alamat app customer versi web) di `web-dashboard/.env.local`, lalu **Cetak semua QR** dan tempel di meja.
+4. **Pelanggan → Loyalti & voucher**: nyalakan program poin, atur tingkat member, buat voucher.
+
+**Lupa password (app):** Supabase Dashboard → Authentication → URL Configuration → *Redirect URLs* → tambahkan `mobilecustomer://reset-password` dan `<alamat app web>/reset-password`.
+
+**Notifikasi push (opsional, butuh build EAS):**
+1. Edge Functions → Deploy a new function → Via Editor → nama `push-send` → tempel `supabase/functions/push-send/index.ts` → Deploy (Verify JWT: **OFF**).
+2. Edge Functions → Secrets → tambah `PUSH_WEBHOOK_SECRET` (teks acak panjang).
+3. Database → Webhooks → Create: tabel `notifications`, event **Insert**, tipe HTTP Request POST ke URL fungsi `push-send`, header `x-push-secret: <secret yang sama>`.
+4. App: isi `extra.eas.projectId` di `app.json` (dari `eas init`), lalu build ulang dengan EAS. Tanpa langkah ini notifikasi tetap tampil di kotak masuk app (ikon lonceng), hanya tidak muncul sebagai push.
+
+**Uji ulang lokal:** `cd supabase/tests && npm test` (05 + 06 + 07 + 08).
 
 ### File 07 — akuntansi & keuangan
 

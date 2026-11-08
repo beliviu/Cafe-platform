@@ -1,8 +1,8 @@
 import { forwardRef } from 'react'
-import { Ban, Check, MessageSquareText, Timer, Wallet } from 'lucide-react'
+import { Ban, CalendarClock, Check, MessageSquareText, Timer, Wallet } from 'lucide-react'
 import { Button, IconButton, OrderStatusBadge, PaymentBadge } from '../ui/index.js'
 import { customerLabel } from '../../lib/db.js'
-import { formatQueueNumber, formatRupiah, formatTime, minutesSince } from '../../lib/format.js'
+import { formatDateShort, formatQueueNumber, formatRupiah, formatTime, jakartaDateKey, minutesSince } from '../../lib/format.js'
 import { primaryAction } from '../../lib/staffBoard.js'
 import { waitTone } from '../../lib/staffPrefs.js'
 import { ACTIVE_ORDER_STATUSES } from '../../lib/status.js'
@@ -48,6 +48,9 @@ export const OrderTicket = forwardRef(function OrderTicket({
               {[order.source === 'pos' ? 'Kasir' : null, order.order_type ? (order.order_type === 'takeaway' ? 'Bawa pulang' : 'Makan di tempat') : null,
                 order.table_label ? `Meja ${order.table_label}` : null].filter(Boolean).join(' · ')}
             </span>
+          )}
+          {order.scheduled_for && (
+            <span className="ticket-scheduled"><CalendarClock size={13} aria-hidden="true" /> Ambil {formatTime(order.scheduled_for)}{jakartaDateKey(order.scheduled_for) !== jakartaDateKey() ? ` · ${formatDateShort(order.scheduled_for)}` : ''}</span>
           )}
         </div>
         <div className="ticket-meta">

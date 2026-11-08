@@ -41,6 +41,11 @@ const GeneralSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').
 const OperationsSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.OperationsSettings })))
 const ChargesSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.ChargesSettings })))
 const ReceiptSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.ReceiptSettings })))
+const OrderingSettings = lazy(() => import('./pages/settings/OrderingSettings.jsx').then((module) => ({ default: module.OrderingSettings })))
+const LoyaltyPage = lazy(() => import('./pages/customers/LoyaltyPage.jsx').then((module) => ({ default: module.LoyaltyPage })))
+const ReviewsPage = lazy(() => import('./pages/customers/ReviewsPage.jsx').then((module) => ({ default: module.ReviewsPage })))
+const SupportPage = lazy(() => import('./pages/customers/SupportPage.jsx').then((module) => ({ default: module.SupportPage })))
+const StaffSupportPage = lazy(() => import('./pages/customers/SupportPage.jsx').then((module) => ({ default: module.StaffSupportPage })))
 const TablesSettings = lazy(() => import('./pages/settings/TablesSettings.jsx').then((module) => ({ default: module.TablesSettings })))
 const TeamLayout = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.TeamLayout })))
 const MembersPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.MembersPage })))
@@ -93,6 +98,9 @@ function ownerRoutes() {
         <Route path="accounts" element={<AccountsPage />} />
       </Route>
       <Route path="expenses" element={<ExpensesPage />} />
+      <Route path="loyalty" element={<LoyaltyPage />} />
+      <Route path="reviews" element={<ReviewsPage />} />
+      <Route path="support" element={<SupportPage />} />
       <Route path="team" element={<TeamLayout />}>
         <Route index element={<MembersPage />} />
         <Route path="shifts" element={<ShiftsPage />} />
@@ -102,6 +110,7 @@ function ownerRoutes() {
         <Route index element={<GeneralSettings />} />
         <Route path="operations" element={<OperationsSettings />} />
         <Route path="charges" element={<ChargesSettings />} />
+        <Route path="ordering" element={<OrderingSettings />} />
         <Route path="tables" element={<TablesSettings />} />
         <Route path="receipt" element={<ReceiptSettings />} />
       </Route>
@@ -147,6 +156,7 @@ function AppRoutes() {
             <Route path="cashier" element={<CashierPage />} />
             <Route path="history" element={<StaffHistoryPage />} />
             <Route path="menu" element={<StaffMenuPage />} />
+            <Route path="support" element={<StaffSupportPage />} />
           </Route>
         )}
         {OwnerPreview && (
@@ -161,6 +171,7 @@ function AppRoutes() {
             <Route path="cashier" element={<CashierPage />} />
             <Route path="history" element={<StaffHistoryPage />} />
             <Route path="menu" element={<StaffMenuPage />} />
+            <Route path="support" element={<StaffSupportPage />} />
           </Route>
           <Route element={<OwnerLayout />}>
             {ownerRoutes()}

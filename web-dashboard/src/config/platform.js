@@ -6,3 +6,5 @@
  */
 export const PLATFORM_NAME = import.meta.env.VITE_PLATFORM_NAME?.trim() || 'dailybrew'
 export const TENANT_CAFE_ID = import.meta.env.VITE_CAFE_ID?.trim() || null
+/** Alamat app customer versi web (isi QR meja). Tanpa garis miring di akhir. */
+export const CUSTOMER_APP_URL = import.meta.env.VITE_CUSTOMER_APP_URL?.trim().replace(/\/+$/, '') || null

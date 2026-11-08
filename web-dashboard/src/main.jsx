@@ -14,6 +14,7 @@ import './styles/staff.css'
 import './styles/inventory.css'
 import './styles/pos.css'
 import './styles/finance.css'
+import './styles/customers.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(

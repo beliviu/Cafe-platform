@@ -6,6 +6,7 @@
 import { createInventoryFixtures, inventoryRpc } from './mockInventory.js'
 import { createPosFixtures, posRpc } from './mockPos.js'
 import { createFinanceFixtures, financeRpc } from './mockFinance.js'
+import { createCustomerFixtures, customerRpc } from './mockCustomer.js'
 
 function seeded(seed) {
   let value = seed
@@ -136,6 +137,7 @@ export function createFixtures(now = new Date()) {
   const pos = createPosFixtures({ cafeId, orders, now })
   const setupMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('finance') === 'setup'
   const { goLive, ...finance } = createFinanceFixtures({ cafeId, now, setup: setupMode })
+  const customer = createCustomerFixtures({ cafeId, orders, products, now })
 
   return {
     cafe: {
@@ -158,9 +160,10 @@ export function createFixtures(now = new Date()) {
         rounding_unit: 500, order_types: ['dine_in', 'takeaway'], receipt_header: null,
         receipt_footer: 'Terima kasih! Wi-Fi: kopisenja', receipt_show_logo: true, receipt_show_address: true,
         receipt_paper_mm: 58, updated_at: '2026-11-08T00:00:00Z', ...inventory.settings,
-        staff_max_discount_pct: 10, print_kitchen_ticket: false, auto_print_receipt: false, accounting_go_live: goLive,
+        staff_max_discount_pct: 10, print_kitchen_ticket: false, auto_print_receipt: false, accounting_go_live: goLive, ...customer.settings,
       }],
       ...finance,
+      ...customer.tables,
       cashier_sessions: pos.cashier_sessions,
       cash_movements: pos.cash_movements,
       refunds: pos.refunds,
@@ -206,6 +209,7 @@ export function createFixtures(now = new Date()) {
       ],
     },
     names,
+    customerNames: customer.names,
     team: [
       { id: 'owner-1', full_name: 'Iqlal Iwan', role: 'owner', job_title: 'Pemilik', is_active: true, email: 'iqlal@kopisenja.id', last_sign_in_at: new Date().toISOString(), created_at: '2026-10-01T00:00:00Z' },
       { id: 'staff-1', full_name: 'Nadia Barista', role: 'staff', job_title: 'Barista', is_active: true, email: 'nadia@kopisenja.id', last_sign_in_at: new Date(Date.now() - 2 * 3600000).toISOString(), created_at: '2026-10-03T00:00:00Z' },
@@ -358,6 +362,11 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
       if (posResult) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
         return posResult
+      }
+      const customerResult = customerRpc(store, name, args, fixtures.customerNames)
+      if (customerResult) {
+        await new Promise((resolve) => window.setTimeout(resolve, 150))
+        return customerResult
       }
       const financeResult = financeRpc(store, name, args)
       if (financeResult) {

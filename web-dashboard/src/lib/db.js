@@ -29,7 +29,7 @@ function probeColumns(supabase, table, columns) {
 }
 
 /**
- * { operations, branding, phase3, inventory, pos } — true bila migrasi 02 / 03 / 04 / 05 / 06 sudah diterapkan. Di-cache per klien.
+ * { operations, branding, phase3, inventory, pos, finance, customer } — true bila migrasi 02 / 03 / 04 / 05 / 06 / 07 / 08 sudah diterapkan. Di-cache per klien.
  * Kolom yang belum ada membuat select gagal, jadi UI memilih kolom berdasarkan hasil ini.
  */
 export function detectDbFeatures(supabase) {
@@ -41,14 +41,18 @@ export function detectDbFeatures(supabase) {
       probeColumns(supabase, 'ingredients', 'id'),
       probeColumns(supabase, 'orders', 'pricing_version, source'),
       probeColumns(supabase, 'accounts', 'id'),
-    ]).then(([operations, branding, phase3, inventory, pos, finance]) => ({ operations, branding, phase3, inventory, pos, finance }))
+      probeColumns(supabase, 'vouchers', 'id'),
+    ]).then(([operations, branding, phase3, inventory, pos, finance, customer]) => ({ operations, branding, phase3, inventory, pos, finance, customer }))
     featureCache.set(supabase, probe)
   }
   return featureCache.get(supabase)
 }
 
+const CUSTOMER_ORDER_COLUMNS = ', scheduled_for, estimated_ready_at, cancelled_by, voucher_code, voucher_discount, points_redeemed, points_discount'
+
 export function orderColumns(features) {
   return BASE_ORDER_COLUMNS + (features?.operations ? OPERATION_ORDER_COLUMNS : '') + (features?.pos ? POS_ORDER_COLUMNS : '')
+    + (features?.customer ? CUSTOMER_ORDER_COLUMNS : '')
 }
 
 export function cafeColumns(features) {
@@ -59,6 +63,7 @@ export function cafeColumns(features) {
 }
 
 export const PHASE3_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/04-owner-dashboard.sql dijalankan.'
+export const CUSTOMER_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/08-pelanggan-qr.sql dijalankan.'
 export const FINANCE_REQUIRED = 'Modul keuangan aktif setelah file supabase/usulan/07-akuntansi.sql dijalankan.'
 export const POS_REQUIRED = 'Kasir aktif setelah file supabase/usulan/06-pesanan-v2-pos.sql dijalankan.'
 export const INVENTORY_REQUIRED = 'Modul inventori aktif setelah file supabase/usulan/05-inventori-supplier.sql dijalankan.'

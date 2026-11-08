@@ -7,6 +7,7 @@ const TABS = [
   { to: '.', label: 'Umum', end: true },
   { to: 'operations', label: 'Operasional' },
   { to: 'charges', label: 'Pajak & biaya' },
+  { to: 'ordering', label: 'Pesanan app' },
   { to: 'tables', label: 'Meja' },
   { to: 'receipt', label: 'Struk' },
 ]
@@ -19,7 +20,7 @@ export function SettingsLayout() {
 
   return (
     <div className="page">
-      <PageHeader eyebrow="Pengaturan" title="Pengaturan kafe" description="Identitas brand, operasional, biaya, meja, dan struk." />
+      <PageHeader eyebrow="Pengaturan" title="Pengaturan kafe" description="Identitas brand, operasional, biaya, pesanan app, meja, dan struk." />
       <nav className="settings-tabs" aria-label="Bagian pengaturan">
         {TABS.map((tab) => (
           <NavLink key={tab.label} to={tab.to} end={tab.end} className={({ isActive }) => `settings-tab${isActive ? ' is-active' : ''}`}>

@@ -14,11 +14,20 @@ Brief V2 mengurutkan keuangan lebih dulu, tetapi HPP, profit produk, rekonsilias
 | 0b | Fondasi: file 04 + `staff-admin`, skema live (diagnostik), perubahan belum commit | 8 | ✅ |
 | 1 | Inventori & supplier: bahan, batch kedaluwarsa, resep (+varian), HPP & profit produk, supplier & katalog harga, PO → terima → bayar (utang), opname, mutasi + ekspor, perkiraan & draf PO otomatis, pemotongan stok saat pesanan selesai | 2, 1C | ✅ file 05 dijalankan |
 | 2 | Pesanan v2 & POS: `place_order` (idempoten, pajak, diskon berizin, varian), cadangan stok + tolak checkout bila bahan kurang + HABIS di app, sesi kasir & rekonsiliasi, serah terima, hold, split payment, refund berpersetujuan, struk & tiket dapur | 3, 1D, 1F, 2C | ✅ file 06 dijalankan |
-| **3** | **Akuntansi & keuangan**: bagan akun, jurnal double-entry otomatis (pesanan, pembayaran, refund, stok, PO & bayar supplier, kas kasir, selisih kas, beban), jurnal manual & pembalik, tutup periode, saldo awal (go-live), beban + foto nota, laporan laba rugi / neraca / arus kas / perubahan ekuitas / neraca saldo / buku besar, ekspor Excel/CSV/PDF | 1A, 1B, 1E, 1G | ✅ kode selesai · menunggu file 07 |
-| 4 | Customer app & QR meja | 4, 7 | — |
+| 3 | Akuntansi & keuangan: bagan akun, jurnal double-entry otomatis (pesanan, pembayaran, refund, stok, PO & bayar supplier, kas kasir, selisih kas, beban), jurnal manual & pembalik, tutup periode, saldo awal (go-live), beban + foto nota, laporan laba rugi / neraca / arus kas / perubahan ekuitas / neraca saldo / buku besar, ekspor Excel/CSV/PDF | 1A, 1B, 1E, 1G | ✅ kode selesai · menunggu file 07 |
+| **4** | **Customer app & QR meja**: keranjang tersimpan, varian & catatan, lupa password, status buka/tutup + jeda + estimasi, pesanan terjadwal, QR meja (token rahasia, tolak lintas kafe, keterisian, cetak), voucher, poin & tingkat member, pesan ulang (harga & stok terkini), batal sendiri + detail pembatalan, riwayat pembayaran, ulasan & rating, wishlist, bantuan (tiket), notifikasi + push | 4, 7 | ✅ kode selesai · menunggu file 08 |
 | 5 | Payment gateway | 5 | — |
 | 6 | BI, forecast penjualan, AI advisor | 6 | — |
 | 7 | Izin per staff, langganan, tes isolasi, performa | 8, 9 | — |
+
+**Langkah 4 — catatan keputusan:**
+- Checkout app lewat `customer_place_order` (membungkus `place_order` file 06): cek jam buka/jeda/jadwal/QR, lalu voucher & poin dihitung ulang di server sebagai diskon (pajak & service dihitung dari harga setelah diskon). Diskon voucher/poin otomatis tercatat sebagai *Diskon penjualan* di akuntansi (file 07).
+- Jam buka memakai `cafes.opening_hours` (WIB). Belum diatur = selalu buka. Pesanan terjadwal: 15 menit–7 hari ke depan, harus di jam buka; tidak berlaku untuk QR meja.
+- QR berisi `<VITE_CUSTOMER_APP_URL>/meja/<token>`. Token bisa diganti owner (QR lama langsung mati). App customer satu kafe per build menolak QR kafe lain; server juga menolak.
+- Poin: didapat saat pesanan **selesai** (total setelah diskon × pengali tingkat), dikurangi sebanding saat refund disetujui, poin yang ditukar kembali bila pesanan batal. Tingkat naik berdasarkan total belanja.
+- Customer hanya bisa membatalkan selama status *Menunggu* dan belum dibayar; setelah itu lewat kafe (tiket bantuan).
+- Push lewat Expo Push API dari Edge Function `push-send` (Database Webhook). Tanpa itu, notifikasi tetap ada di kotak masuk app. Web tidak memakai push.
+- Belum: pesan dari QR tanpa akun (perlu login customer), reservasi meja, hadiah tukar poin berupa produk gratis (saat ini poin = potongan harga), verifikasi pembayaran otomatis (langkah 5).
 
 **Langkah 3 — catatan keputusan:**
 - Pembukuan dimulai dari **tanggal go-live** yang dipilih owner + saldo awal (kas, bank, QRIS, persediaan, piutang, peralatan, utang, pajak, pinjaman, modal). Selisihnya masuk *Ekuitas saldo awal* sehingga neraca seimbang. Transaksi sebelum go-live **tidak** dijurnal (tidak ada angka karangan); sesudahnya otomatis, termasuk yang terlewat (backfill idempoten).

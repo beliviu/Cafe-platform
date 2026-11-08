@@ -1,0 +1,56 @@
+/* Pelanggan: QR meja, loyalti, ulasan, bantuan; jadwal di tiket staff. */
+
+/* QR meja */
+.qr-preview { display: grid; justify-items: center; gap: 12px; }
+.qr-preview svg { width: min(240px, 100%); height: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+.qr-url { max-width: 100%; padding: 6px 10px; overflow-wrap: anywhere; color: var(--text-secondary); background: var(--surface-sunken); border-radius: var(--radius-sm); font-size: var(--text-xs); }
+.qr-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+/* Tingkat member */
+.loy-tiers { display: grid; gap: 8px; }
+.loy-tier { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, .8fr) 36px; gap: 8px; align-items: center; }
+.loy-tiers > .ui-btn { justify-self: start; }
+
+/* Ulasan */
+.rv-list { margin: 0; padding: 0; list-style: none; }
+.rv-list li { display: grid; gap: 6px; padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); }
+.rv-list li:last-child { border-bottom: 0; }
+.rv-list li.is-hidden { background: var(--surface-canvas); }
+.rv-list li.is-hidden .rv-comment { color: var(--text-muted); }
+.rv-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rv-time { margin-left: auto; font-size: var(--text-xs); }
+.rv-stars { display: inline-flex; gap: 1px; color: var(--border-strong); }
+.rv-stars .is-on { color: var(--status-amber-dot); fill: var(--status-amber-dot); }
+.rv-comment { margin: 0; color: var(--text-primary); font-size: var(--text-sm); line-height: 1.55; }
+.rv-reply { margin: 0; padding: 8px 12px; color: var(--text-secondary); background: var(--surface-sunken); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.rv-actions { display: flex; gap: 4px; margin-left: -8px; }
+
+/* Bantuan */
+.sp-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 1.6fr); gap: 18px; align-items: start; }
+.sp-list ul { margin: 0; padding: 0; list-style: none; }
+.sp-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 60px; padding: 10px 16px; border: 0; border-bottom: 1px solid var(--border-subtle); color: inherit; background: none; text-align: left; cursor: pointer; font: inherit; }
+.sp-item:hover { background: var(--surface-hover); }
+.sp-item.is-active { background: var(--brand-50); box-shadow: inset 3px 0 0 var(--brand-600); }
+.sp-item:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+.sp-thread { display: grid; gap: 14px; }
+.sp-thread-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sp-messages { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.sp-messages li { max-width: 85%; padding: 10px 14px; background: var(--surface-canvas); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); }
+.sp-messages li.is-cafe { justify-self: end; background: var(--brand-50); border-color: var(--brand-100); }
+.sp-messages p { margin: 4px 0 0; color: var(--text-primary); font-size: var(--text-sm); line-height: 1.55; white-space: pre-wrap; }
+.sp-author { color: var(--text-muted); font-size: var(--text-xs); font-weight: 600; }
+.sp-compose { display: grid; gap: 10px; justify-items: end; }
+.sp-compose .ui-field { width: 100%; }
+
+/* Tiket staff: jam ambil pesanan terjadwal */
+.ticket-scheduled { display: inline-flex; align-items: center; gap: 4px; width: fit-content; padding: 2px 8px; color: var(--status-blue-fg); background: var(--status-blue-bg); border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 700; }
+
+@media (max-width: 1100px) {
+  .sp-layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 767px) {
+  .loy-tier { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+  .loy-tier > :first-child { grid-column: 1 / -1; }
+  .sp-messages li { max-width: 100%; }
+}
