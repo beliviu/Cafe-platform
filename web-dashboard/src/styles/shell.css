@@ -59,6 +59,40 @@
 
 .shell-spacer { flex: 1; }
 
+/* Area menu: satu-satunya bagian sidebar yang di-scroll (logo & akun tetap terlihat) */
+.shell-sidebar-scroll {
+  position: relative; flex: 1 1 auto; min-height: 0; margin: 0 -14px; padding: 2px 14px 10px;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: var(--nav-border) transparent;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top, 0px), #000 calc(100% - var(--fade-bottom, 0px)), transparent 100%);
+}
+.shell-sidebar-scroll.has-above { --fade-top: 18px; }
+.shell-sidebar-scroll.has-below { --fade-bottom: 28px; }
+.shell-sidebar-scroll::-webkit-scrollbar { width: 6px; }
+.shell-sidebar-scroll::-webkit-scrollbar-thumb { background: var(--nav-border); border-radius: 3px; }
+.shell-sidebar-scroll:hover::-webkit-scrollbar-thumb { background: var(--nav-text-muted); }
+.shell-sidebar .shell-link.is-active::before { left: -14px; }
+.shell-sidebar .shell-account { flex-shrink: 0; margin-top: 4px; }
+.shell-sidebar-top { flex-shrink: 0; }
+
+/* Label melayang di sidebar ciut */
+.shell-flyout {
+  position: fixed; z-index: 60; transform: translateY(-50%); padding: 6px 10px;
+  color: var(--text-on-primary); background: var(--espresso); border-radius: var(--radius-sm);
+  font-size: var(--text-sm); font-weight: 600; white-space: nowrap; pointer-events: none;
+  box-shadow: 0 6px 18px rgb(56 39 30 / 22%);
+}
+
+/* Layar laptop pendek: menu sedikit lebih rapat */
+@media (max-height: 820px) and (min-width: 768px) {
+  .shell-sidebar { padding-top: 14px; }
+  .shell-sidebar-top { margin-bottom: 8px; }
+  .shell-nav { gap: 10px; }
+  .shell-sidebar .shell-link { min-height: 40px; }
+  .shell-nav-label { margin-bottom: 4px; }
+}
+
 .shell-account { display: flex; align-items: center; gap: 10px; padding: 12px 2px 0 6px; border-top: 1px solid var(--border-subtle); }
 .shell-account.is-collapsed { flex-direction: column; padding: 12px 0 0; }
 .shell-avatar {

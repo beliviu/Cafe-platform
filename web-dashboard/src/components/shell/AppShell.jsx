@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Coffee, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { Drawer, IconButton } from '../ui/index.js'
@@ -37,7 +37,7 @@ function BrandLockup({ brand, compact = false, homeTo = '/' }) {
   )
 }
 
-function NavGroups({ groups, collapsed = false, onNavigate }) {
+function NavGroups({ groups, collapsed = false, onNavigate, onHint }) {
   return (
     <nav className="shell-nav" aria-label="Navigasi utama">
       {groups.map((group) => (
@@ -52,7 +52,10 @@ function NavGroups({ groups, collapsed = false, onNavigate }) {
                   onClick={onNavigate}
                   className={({ isActive }) => `shell-link${isActive ? ' is-active' : ''}`}
                   aria-label={collapsed ? label : undefined}
-                  data-tooltip={collapsed ? label : undefined}
+                  onMouseEnter={collapsed && onHint ? (event) => onHint(event.currentTarget, label) : undefined}
+                  onMouseLeave={collapsed && onHint ? () => onHint(null) : undefined}
+                  onFocus={collapsed && onHint ? (event) => onHint(event.currentTarget, label) : undefined}
+                  onBlur={collapsed && onHint ? () => onHint(null) : undefined}
                 >
                   <Icon size={19} aria-hidden="true" />
                   {!collapsed && <span className="shell-link-text">{label}</span>}
@@ -104,6 +107,40 @@ export function AppShell({ brand, navigation, account, banner, homeTo = '/', chi
     }
   }, [collapsed])
 
+  // Area menu bisa di-scroll; bayangan atas/bawah menandakan masih ada menu di luar layar
+  const scrollRef = useRef(null)
+  const [edges, setEdges] = useState({ top: false, bottom: false })
+  const [hint, setHint] = useState(null)
+  const measure = useCallback(() => {
+    const node = scrollRef.current
+    if (!node) return
+    setEdges({ top: node.scrollTop > 2, bottom: node.scrollTop + node.clientHeight < node.scrollHeight - 2 })
+  }, [])
+
+  useEffect(() => {
+    const node = scrollRef.current
+    if (!node) return undefined
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [collapsed, measure, navigation.length])
+
+  // Menu aktif selalu terlihat (mis. Pengaturan di paling bawah)
+  useEffect(() => {
+    const active = scrollRef.current?.querySelector('.shell-link.is-active')
+    active?.scrollIntoView({ block: 'nearest' })
+    measure()
+  }, [location.pathname, collapsed, measure])
+
+  // Label melayang untuk sidebar ciut (tooltip CSS terpotong oleh area scroll)
+  const showHint = useCallback((node, label) => {
+    if (!node) return setHint(null)
+    const rect = node.getBoundingClientRect()
+    setHint({ label, top: rect.top + rect.height / 2, left: rect.right + 10 })
+    return undefined
+  }, [])
+
   const currentLabel = navigation
     .flatMap((group) => group.items)
     .find((item) => (item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)))?.label
@@ -122,10 +159,16 @@ export function AppShell({ brand, navigation, account, banner, homeTo = '/', chi
             aria-expanded={!collapsed}
           />
         </div>
-        <NavGroups groups={navigation} collapsed={collapsed} />
-        <div className="shell-spacer" />
+        <div
+          ref={scrollRef}
+          className={`shell-sidebar-scroll${edges.top ? ' has-above' : ''}${edges.bottom ? ' has-below' : ''}`}
+          onScroll={() => { measure(); setHint(null) }}
+        >
+          <NavGroups groups={navigation} collapsed={collapsed} onHint={showHint} />
+        </div>
         <Account {...account} collapsed={collapsed} />
       </aside>
+      {collapsed && hint && <span className="shell-flyout" role="tooltip" style={{ top: hint.top, left: hint.left }}>{hint.label}</span>}
 
       <header className="shell-topbar">
         <IconButton icon={Menu} label="Buka menu" onClick={() => setMobileOpen(true)} tooltip={false} />
