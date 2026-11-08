@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Ban, CircleDollarSign, MessageSquareText, UserRound } from 'lucide-react'
+import { Ban, CircleDollarSign, MessageSquareText, Printer, UserRound } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import { Badge, Button, Drawer, ErrorState, OrderStatusBadge, PaymentBadge, SkeletonText } from '../ui/index.js'
 import { customerLabel, friendlyError } from '../../lib/db.js'
@@ -78,7 +78,7 @@ function Timeline({ order, events, teamNames }) {
  * Detail pesanan: item + catatan, pembayaran, linimasa status, dan aksi (lunas / batalkan).
  * onChanged(updatedOrder) dipanggil setelah aksi berhasil.
  */
-export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged }) {
+export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, actions, onPrint }) {
   const { supabase } = useAuth()
   const [state, setState] = useState({ loading: true, error: '', items: [], payments: [], events: [], teamNames: new Map() })
   const [attempt, setAttempt] = useState(0)
@@ -126,10 +126,15 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged })
             <PaymentBadge status={order.payment_status} method={order.payment_method} showMethod={order.payment_status === 'paid'} />
           </div>
         )}
-        footer={(canPay || canCancel) ? (
+        footer={(canPay || canCancel || actions || onPrint) ? (
           <>
+            {onPrint && (
+              <Button variant="ghost" icon={Printer} className="order-drawer-print" disabled={state.loading}
+                onClick={() => onPrint({ ...order, items: state.items })}>Cetak label</Button>
+            )}
             {canCancel && <Button variant="danger-soft" icon={Ban} onClick={() => setDialog('cancel')}>Batalkan</Button>}
-            {canPay && <Button icon={CircleDollarSign} onClick={() => setDialog('pay')}>Tandai lunas</Button>}
+            {canPay && <Button variant={actions ? 'secondary' : 'primary'} icon={CircleDollarSign} onClick={() => setDialog('pay')}>Tandai lunas</Button>}
+            {actions}
           </>
         ) : null}
       >

@@ -315,3 +315,4 @@
   .dash-stats .ui-stat-label { white-space: normal; line-height: 1.3; }
 }
 .pcard-image .product-thumb-lg.is-empty { display: grid; place-items: center; }
+.order-drawer-print { margin-right: auto; }

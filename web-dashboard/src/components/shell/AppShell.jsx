@@ -17,9 +17,9 @@ function readCollapsed() {
   return window.innerWidth <= 1180
 }
 
-function BrandLockup({ compact = false }) {
+function BrandLockup({ compact = false, homeTo = '/' }) {
   return (
-    <Link className="shell-brand" to="/" aria-label="dailybrew, ke dashboard">
+    <Link className="shell-brand" to={homeTo} aria-label="dailybrew, ke halaman utama">
       <span className="shell-brand-mark"><Coffee size={19} strokeWidth={2.2} aria-hidden="true" /></span>
       {!compact && <span className="shell-brand-name">daily<span>brew</span></span>}
     </Link>
@@ -80,7 +80,7 @@ function Account({ title, subtitle, imageUrl, onSignOut, collapsed }) {
  * - ≥ 768px: sidebar yang bisa diciutkan jadi ikon (disimpan di browser).
  * - < 768px: bar atas + menu dalam drawer.
  */
-export function AppShell({ navigation, account, banner, children }) {
+export function AppShell({ navigation, account, banner, homeTo = '/', children }) {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
@@ -101,7 +101,7 @@ export function AppShell({ navigation, account, banner, children }) {
     <div className={`shell${collapsed ? ' is-collapsed' : ''}`}>
       <aside className="shell-sidebar" aria-label="Sidebar">
         <div className="shell-sidebar-top">
-          <BrandLockup compact={collapsed} />
+          <BrandLockup compact={collapsed} homeTo={homeTo} />
           <IconButton
             icon={collapsed ? PanelLeftOpen : PanelLeftClose}
             label={collapsed ? 'Lebarkan sidebar' : 'Ciutkan sidebar'}
@@ -118,7 +118,7 @@ export function AppShell({ navigation, account, banner, children }) {
 
       <header className="shell-topbar">
         <IconButton icon={Menu} label="Buka menu" onClick={() => setMobileOpen(true)} tooltip={false} />
-        <BrandLockup />
+        <BrandLockup homeTo={homeTo} />
         <span className="shell-topbar-page">{currentLabel}</span>
       </header>
 

@@ -34,3 +34,25 @@ export async function cancelOrder(supabase, orderId, reason) {
   if (error) throw new Error(friendlyError(error))
   return data
 }
+
+/**
+ * Majukan pesanan sampai status `target`, satu langkah per update (urutan dijaga trigger database).
+ * Mis. "Konfirmasi" di papan staff: pending → confirmed → preparing.
+ * Hanya menulis kolom orders.order_status. Mengembalikan status terakhir yang berhasil.
+ */
+export async function advanceOrderTo(supabase, order, target) {
+  let current = order
+  for (let guard = 0; guard < 4 && current.order_status !== target; guard += 1) {
+    if (!NEXT_ORDER_STATUS[current.order_status]) break
+    const data = await advanceOrderStatus(supabase, current)
+    current = { ...current, order_status: data.order_status }
+  }
+  return current
+}
+
+/** Toggle "Produk habis" untuk staff — RPC staff_set_product_availability (hanya kolom is_available). */
+export async function setProductAvailability(supabase, productId, isAvailable) {
+  const { data, error } = await supabase.rpc('staff_set_product_availability', { p_product_id: productId, p_is_available: isAvailable })
+  if (error) throw new Error(friendlyError(error))
+  return data
+}

@@ -9,6 +9,7 @@ import './styles/ui.css'
 import './styles/shell.css'
 import './styles/owner.css'
 import './styles/charts.css'
+import './styles/staff.css'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(

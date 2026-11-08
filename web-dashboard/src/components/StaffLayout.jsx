@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Coffee, ClipboardList, History, LogOut } from 'lucide-react'
-import { Link, NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom'
+import { Navigate, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { LoadingScreen } from './LoadingScreen.jsx'
+import { AccessState } from './shell/AccessState.jsx'
+import { AppShell } from './shell/AppShell.jsx'
+import { staffNavigation } from '../config/staffNavigation.js'
 import { cafeColumns, detectDbFeatures } from '../lib/db.js'
-
-const STAFF_NAVIGATION = [
-  { to: '/staff', label: 'Pesanan', icon: ClipboardList, end: true },
-  { to: '/staff/history', label: 'Riwayat', icon: History },
-]
 
 export function StaffLayout() {
   const { session, supabase } = useAuth()
@@ -18,6 +15,7 @@ export function StaffLayout() {
   const [loading, setLoading] = useState(true)
   const [attempt, setAttempt] = useState(0)
   const [signOutError, setSignOutError] = useState('')
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
     if (!supabase || !session?.user?.id) return undefined
@@ -79,69 +77,23 @@ export function StaffLayout() {
 
   if (loading) return <LoadingScreen label="Memeriksa akses staff..." />
   if (loadError) {
-    return (
-      <main className="access-state">
-        <div className="access-card">
-          <span className="brand-mark brand-mark-large"><Coffee size={24} /></span>
-          <h1>Dashboard staff belum tersedia</h1>
-          <p>{loadError}</p>
-          <button className="button button-primary" type="button" onClick={() => setAttempt((value) => value + 1)}>
-            Coba lagi
-          </button>
-        </div>
-      </main>
-    )
+    return <AccessState title="Halaman staff belum tersedia" message={loadError} onRetry={() => setAttempt((value) => value + 1)} />
   }
   if (!staffData) return <Navigate to="/" replace />
 
-  const initials = staffData.cafe.name.split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toUpperCase()
-
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <Link className="brand-lockup" to="/staff" aria-label="Dailybrew, pesanan staff">
-          <span className="brand-mark"><Coffee size={20} strokeWidth={2.2} /></span>
-          <span className="brand-name">daily<span>brew</span></span>
-        </Link>
-        <div className="sidebar-section-label">OPERASIONAL</div>
-        <nav className="sidebar-nav" aria-label="Navigasi staff">
-          {STAFF_NAVIGATION.map(({ to, label, icon: Icon, end }) => (
-            <NavLink className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`} to={to} end={end} key={to}>
-              <Icon size={18} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <div className="sidebar-spacer" />
-        <div className="sidebar-cafe">
-          <span className="cafe-avatar cafe-avatar-fallback">{initials}</span>
-          <span className="cafe-identity">
-            <strong>{staffData.cafe.name}</strong>
-            <span>Staff workspace</span>
-          </span>
-          <button type="button" className="icon-button signout-button" onClick={handleSignOut} aria-label="Keluar" title="Keluar">
-            <LogOut size={17} />
-          </button>
+    <AppShell
+      homeTo="/staff"
+      navigation={staffNavigation(pendingCount)}
+      account={{ title: staffData.profile.full_name || staffData.cafe.name, subtitle: `Staff · ${staffData.cafe.name}`, onSignOut: handleSignOut }}
+      banner={signOutError && (
+        <div className="shell-banner" role="alert">
+          <span>{signOutError}</span>
+          <button type="button" onClick={() => setSignOutError('')}>Tutup</button>
         </div>
-      </aside>
-
-      <main className="main-panel">
-        {signOutError && <div className="inline-alert" role="alert">{signOutError}</div>}
-        <div className="mobile-brand">
-          <span className="brand-mark"><Coffee size={19} /></span>
-          <span className="brand-name">daily<span>brew</span></span>
-          <button type="button" className="icon-button" onClick={handleSignOut} aria-label="Keluar"><LogOut size={17} /></button>
-        </div>
-        <nav className="mobile-nav" aria-label="Navigasi staff">
-          {STAFF_NAVIGATION.map(({ to, label, icon: Icon, end }) => (
-            <NavLink className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`} to={to} end={end} key={to}>
-              <Icon size={16} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <Outlet context={staffData} />
-      </main>
-    </div>
+      )}
+    >
+      <Outlet context={{ ...staffData, setPendingCount }} />
+    </AppShell>
   )
 }

@@ -1,28 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Coffee } from 'lucide-react'
 import { Navigate, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { OWNER_NAVIGATION } from '../config/ownerNavigation.js'
 import { LoadingScreen } from './LoadingScreen.jsx'
+import { AccessState } from './shell/AccessState.jsx'
 import { AppShell } from './shell/AppShell.jsx'
 import { cafeColumns, detectDbFeatures } from '../lib/db.js'
-
-function OwnerAccessState({ title, message, onRetry }) {
-  return (
-    <main className="access-state">
-      <div className="access-card">
-        <span className="brand-mark brand-mark-large"><Coffee size={24} /></span>
-        <h1>{title}</h1>
-        <p>{message}</p>
-        {onRetry && (
-          <button className="button button-primary" type="button" onClick={onRetry}>
-            Coba lagi
-          </button>
-        )}
-      </div>
-    </main>
-  )
-}
 
 export function OwnerLayout() {
   const { session, supabase } = useAuth()
@@ -111,7 +94,7 @@ export function OwnerLayout() {
   if (profileRole === 'staff') return <Navigate to="/staff" replace />
   if (loadError) {
     return (
-      <OwnerAccessState
+      <AccessState
         title="Data cafe belum tersedia"
         message={loadError}
         onRetry={() => setLoadingAttempt((attempt) => attempt + 1)}
@@ -120,7 +103,7 @@ export function OwnerLayout() {
   }
   if (!ownerData) {
     return (
-      <OwnerAccessState
+      <AccessState
         title="Akses owner diperlukan"
         message="Akun ini belum terhubung sebagai owner ke sebuah cafe. Hubungi administrator untuk menyiapkan akses."
       />

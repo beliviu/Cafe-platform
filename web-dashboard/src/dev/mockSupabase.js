@@ -210,6 +210,42 @@ export function createMockSupabase(fixtures) {
   const store = fixtures.tables
   store.cafes = [fixtures.cafe]
   store.profiles = [fixtures.profile]
+  const listeners = new Set()
+  const statusListeners = new Set()
+  let extra = 0
+  // Kendali QA dari konsol / skrip: tambah pesanan baru, putus/sambung realtime.
+  const controls = {
+    addOrder(name = 'Customer Baru') {
+      extra += 1
+      const id = `order-new-${extra}`
+      const product = store.products[extra % store.products.length]
+      const createdAt = new Date().toISOString()
+      const queue = Math.max(0, ...store.orders.filter((order) => order.created_at.slice(0, 10) === createdAt.slice(0, 10)).map((order) => order.queue_number || 0)) + 1
+      const order = { id, cafe_id: fixtures.cafe.id, order_number: String(95449854819600000 + extra), customer_id: 'cust-new', total_amount: product.price * 2,
+        order_status: 'pending', payment_status: 'unpaid', payment_method: null, notes: extra % 2 ? 'Es dipisah ya kak' : null, created_at: createdAt,
+        queue_number: queue, paid_at: null, cancel_reason: null, cancelled_at: null }
+      store.orders.push(order)
+      store.order_items.push({ id: `${id}-item`, order_id: id, cafe_id: fixtures.cafe.id, product_id: product.id, product_name: product.name, price: product.price, quantity: 2, subtotal: product.price * 2, notes: 'Gula sedikit', created_at: createdAt })
+      fixtures.names.set(id, name)
+      listeners.forEach((callback) => callback({ eventType: 'INSERT', new: order }))
+      return order
+    },
+    setRealtime(status) { statusListeners.forEach((callback) => callback(status)) },
+    isLive: () => listeners.size > 0,
+  }
+  if (typeof window !== 'undefined') {
+    window.__dailybrewMock = controls
+    // Untuk skrip QA (dunia terisolasi): document.dispatchEvent(new CustomEvent('dailybrew-mock', { detail: '{"action":"addOrder","args":["Nama"]}' }))
+    // StrictMode bisa membuat klien dua kali — teruskan ke semua instance.
+    window.__dailybrewMockAll = [...(window.__dailybrewMockAll || []), controls]
+    if (!window.__dailybrewMockListener) {
+      window.__dailybrewMockListener = (event) => {
+        const { action, args = [] } = JSON.parse(event.detail)
+        window.__dailybrewMockAll.filter((instance) => instance.isLive()).forEach((instance) => instance[action]?.(...args))
+      }
+      document.addEventListener('dailybrew-mock', window.__dailybrewMockListener)
+    }
+  }
   return {
     from: (table) => new Query(store, table),
     rpc: async (name, args) => {
@@ -227,6 +263,11 @@ export function createMockSupabase(fixtures) {
         Object.assign(order, { order_status: 'cancelled', cancel_reason: args.p_reason, cancelled_at: new Date().toISOString() })
         return { data: order, error: null }
       }
+      if (name === 'staff_set_product_availability') {
+        const product = store.products.find((row) => row.id === args.p_product_id)
+        product.is_available = args.p_is_available
+        return { data: product, error: null }
+      }
       return { data: null, error: { message: `RPC ${name} tidak ada di mock` } }
     },
     storage: {
@@ -237,7 +278,24 @@ export function createMockSupabase(fixtures) {
       }),
     },
     auth: { signOut: async () => ({ error: null }) },
-    channel: () => ({ on() { return this }, subscribe() { return this } }),
-    removeChannel: () => {},
+    channel: () => {
+      const own = { listeners: [], statuses: [] }
+      return {
+        on(_event, _filter, callback) { own.listeners.push(callback); listeners.add(callback); return this },
+        subscribe(callback) {
+          if (callback) {
+            own.statuses.push(callback)
+            statusListeners.add(callback)
+            window.setTimeout(() => callback('SUBSCRIBED'), 300)
+          }
+          this.own = own
+          return this
+        },
+      }
+    },
+    removeChannel: (channel) => {
+      channel?.own?.listeners.forEach((callback) => listeners.delete(callback))
+      channel?.own?.statuses.forEach((callback) => statusListeners.delete(callback))
+    },
   }
 }

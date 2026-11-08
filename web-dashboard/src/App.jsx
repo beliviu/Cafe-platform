@@ -15,6 +15,10 @@ const OwnerPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/OwnerPreview.jsx').then((module) => ({ default: module.OwnerPreview })))
   : null
 
+const StaffPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/StaffPreview.jsx').then((module) => ({ default: module.StaffPreview })))
+  : null
+
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage.jsx').then((module) => ({ default: module.DashboardPage })),
 )
@@ -36,8 +40,14 @@ const SettingsPage = lazy(() =>
 const StaffLayout = lazy(() =>
   import('./components/StaffLayout.jsx').then((module) => ({ default: module.StaffLayout })),
 )
-const StaffOrdersPage = lazy(() =>
-  import('./pages/StaffOrdersPage.jsx').then((module) => ({ default: module.StaffOrdersPage })),
+const StaffBoardPage = lazy(() =>
+  import('./pages/StaffBoardPage.jsx').then((module) => ({ default: module.StaffBoardPage })),
+)
+const StaffHistoryPage = lazy(() =>
+  import('./pages/StaffHistoryPage.jsx').then((module) => ({ default: module.StaffHistoryPage })),
+)
+const StaffMenuPage = lazy(() =>
+  import('./pages/StaffMenuPage.jsx').then((module) => ({ default: module.StaffMenuPage })),
 )
 
 function RequireAuth() {
@@ -56,6 +66,13 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         {DesignSystemPage && <Route path="/design" element={<DesignSystemPage />} />}
+        {StaffPreview && (
+          <Route path="/preview/staff" element={<StaffPreview />}>
+            <Route index element={<StaffBoardPage />} />
+            <Route path="history" element={<StaffHistoryPage />} />
+            <Route path="menu" element={<StaffMenuPage />} />
+          </Route>
+        )}
         {OwnerPreview && (
           <Route path="/preview/owner" element={<OwnerPreview />}>
             <Route index element={<DashboardPage />} />
@@ -67,8 +84,9 @@ function AppRoutes() {
         )}
         <Route element={<RequireAuth />}>
           <Route path="staff" element={<StaffLayout />}>
-            <Route index element={<StaffOrdersPage />} />
-            <Route path="history" element={<StaffOrdersPage historyOnly />} />
+            <Route index element={<StaffBoardPage />} />
+            <Route path="history" element={<StaffHistoryPage />} />
+            <Route path="menu" element={<StaffMenuPage />} />
           </Route>
           <Route element={<OwnerLayout />}>
             <Route index element={<DashboardPage />} />
