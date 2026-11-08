@@ -266,6 +266,9 @@ check('tutup: selisih −600', num(closed.difference) === -600 && closed.status 
 await fails('sesi tertutup tidak bisa kas keluar', "select cashier_cash_move($1, 'out', 1000, 'coba lagi')", [session], /ditutup/)
 await as(U.owner)
 check('owner melihat semua sesi', (await q('select id from cashier_sessions')).length === 1)
+await as(U.staff2)
+const handover = await one('select handover_note, counted_cash from cashier_sessions')
+check('penerima serah terima melihat catatan & kas', handover?.handover_note === 'Pesanan meja 7 belum diantar' && num(handover.counted_cash) === 129000, J(handover))
 
 // ---------- Pesanan ditahan ----------
 await as(U.staff)

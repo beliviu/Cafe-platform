@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react'
-import { Ban, CircleDollarSign, MessageSquareText, Printer, UserRound } from 'lucide-react'
+import { useOutletContext } from 'react-router-dom'
+import { Ban, CircleDollarSign, MessageSquareText, Printer, ReceiptText, RotateCcw, UserRound } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import { Badge, Button, Drawer, ErrorState, OrderStatusBadge, PaymentBadge, SkeletonText } from '../ui/index.js'
+import { brandOf } from '../../lib/branding.js'
 import { customerLabel, friendlyError } from '../../lib/db.js'
 import { formatDateTime, formatOrderReference, formatQueueNumber, formatRupiah } from '../../lib/format.js'
-import { ACTIVE_ORDER_STATUSES, ORDER_FLOW, orderStatusMeta, paymentMethodLabel, paymentStatusMeta } from '../../lib/status.js'
+import { printReceipt } from '../../lib/printReceipt.js'
+import {
+  ACTIVE_ORDER_STATUSES, ORDER_FLOW, ORDER_SOURCE, ORDER_TYPE_LABEL, orderStatusMeta, paymentMethodLabel, paymentStatusMeta,
+} from '../../lib/status.js'
 import { CancelOrderDialog } from './CancelOrderDialog.jsx'
 import { MarkPaidDialog } from './MarkPaidDialog.jsx'
+import { RefundDialog } from './RefundDialog.jsx'
+
+const REFUND_STATUS = { requested: { label: 'Menunggu owner', tone: 'amber' }, approved: { label: 'Disetujui', tone: 'green' }, rejected: { label: 'Ditolak', tone: 'neutral' } }
+const methodList = (note) => String(note || '').split('+').filter(Boolean).map(paymentMethodLabel).join(' + ')
 
 const teamCache = new Map()
 
@@ -21,12 +30,15 @@ function fetchTeamNames(supabase, cafeId) {
 }
 
 function eventLabel(event) {
-  if (event.event_type === 'payment') return `Ditandai lunas · ${paymentMethodLabel(event.note)}`
+  if (event.event_type === 'payment' && event.to_status === 'partial') return `Dibayar sebagian · ${methodList(event.note)}`
+  if (event.event_type === 'payment') return `Lunas · ${methodList(event.note)}`
+  if (event.event_type === 'refund') return `Refund disetujui${event.note ? ` · ${event.note}` : ''}`
   if (!event.from_status) return 'Pesanan dibuat'
   return orderStatusMeta(event.to_status).label
 }
 
 function eventTone(event) {
+  if (event.event_type === 'refund') return 'neutral'
   if (event.event_type === 'payment') return 'green'
   if (!event.from_status) return 'amber'
   return orderStatusMeta(event.to_status).tone
@@ -80,20 +92,25 @@ function Timeline({ order, events, teamNames }) {
  */
 export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, actions, onPrint }) {
   const { supabase } = useAuth()
-  const [state, setState] = useState({ loading: true, error: '', items: [], payments: [], events: [], teamNames: new Map() })
+  const outlet = useOutletContext()
+  const isOwner = outlet?.profile?.role === 'owner'
+  const [state, setState] = useState({ loading: true, error: '', items: [], payments: [], events: [], refunds: [], teamNames: new Map() })
   const [attempt, setAttempt] = useState(0)
   const [dialog, setDialog] = useState(null)
 
   useEffect(() => {
     let active = true
     async function load() {
-      const [itemsResult, paymentsResult, eventsResult, teamNames] = await Promise.all([
+      const [itemsResult, paymentsResult, eventsResult, teamNames, refundsResult] = await Promise.all([
         supabase.from('order_items').select('id, product_name, price, quantity, subtotal, notes').eq('order_id', order.id).order('created_at', { ascending: true }),
-        supabase.from('payments').select('id, method, payment_method, status, payment_status, amount, paid_at, created_at').eq('order_id', order.id).order('created_at', { ascending: true }),
+        supabase.from('payments').select(`id, method, payment_method, status, payment_status, amount, paid_at, created_at${features?.pos ? ', reference, tendered_amount, change_amount, refund_id, recorded_by' : ''}`).eq('order_id', order.id).order('created_at', { ascending: true }),
         features?.operations
           ? supabase.from('order_status_events').select('id, event_type, from_status, to_status, note, changed_by, created_at').eq('order_id', order.id).order('created_at', { ascending: true }).order('id', { ascending: true })
           : Promise.resolve({ data: [], error: null }),
         features?.operations ? fetchTeamNames(supabase, cafe.id) : Promise.resolve(new Map()),
+        features?.pos
+          ? supabase.from('refunds').select('id, amount, method, reason, status, restock, requested_by, requested_at, decided_by, decision_note').eq('order_id', order.id).order('requested_at', { ascending: true })
+          : Promise.resolve({ data: [], error: null }),
       ])
       if (!active) return
       const error = itemsResult.error || paymentsResult.error
@@ -103,14 +120,24 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, a
         items: itemsResult.data || [],
         payments: paymentsResult.data || [],
         events: eventsResult.error ? [] : eventsResult.data || [],
+        refunds: refundsResult.error ? [] : refundsResult.data || [],
         teamNames,
       })
     }
     load()
     return () => { active = false }
-  }, [attempt, cafe.id, features?.operations, order.id, order.order_status, order.payment_status, supabase])
+  }, [attempt, cafe.id, features?.operations, features?.pos, order.id, order.order_status, order.payment_status, order.refunded_amount, supabase])
 
-  const canPay = features?.operations && order.payment_status !== 'paid' && order.order_status !== 'cancelled'
+  const canPay = features?.operations && order.payment_status !== 'paid' && order.payment_status !== 'refunded' && order.order_status !== 'cancelled'
+  const refundable = Number(order.paid_amount || 0) - Number(order.refunded_amount || 0)
+  const pendingRefund = state.refunds.some((refund) => refund.status === 'requested')
+  const canRefund = features?.pos && refundable > 0 && !pendingRefund
+  const v2 = Number(order.pricing_version) >= 2
+
+  async function handlePrintReceipt() {
+    const { data: settings } = await supabase.from('cafe_settings').select('*').eq('cafe_id', cafe.id).maybeSingle()
+    printReceipt({ order, items: state.items, payments: state.payments, cafe, settings: settings || {}, brand: brandOf(cafe) })
+  }
   const canCancel = features?.operations && ACTIVE_ORDER_STATUSES.includes(order.order_status)
   const itemTotal = state.items.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0)
 
@@ -126,12 +153,16 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, a
             <PaymentBadge status={order.payment_status} method={order.payment_method} showMethod={order.payment_status === 'paid'} />
           </div>
         )}
-        footer={(canPay || canCancel || actions || onPrint) ? (
+        footer={(canPay || canCancel || canRefund || actions || onPrint || features?.pos) ? (
           <>
             {onPrint && (
               <Button variant="ghost" icon={Printer} className="order-drawer-print" disabled={state.loading}
-                onClick={() => onPrint({ ...order, items: state.items })}>Cetak label</Button>
+                onClick={() => onPrint({ ...order, items: state.items })}>Label</Button>
             )}
+            {features?.pos && (
+              <Button variant="ghost" icon={ReceiptText} className={onPrint ? '' : 'order-drawer-print'} disabled={state.loading} onClick={handlePrintReceipt}>Struk</Button>
+            )}
+            {canRefund && <Button variant="ghost" icon={RotateCcw} onClick={() => setDialog('refund')}>{isOwner ? 'Refund' : 'Ajukan refund'}</Button>}
             {canCancel && <Button variant="danger-soft" icon={Ban} onClick={() => setDialog('cancel')}>Batalkan</Button>}
             {canPay && <Button variant={actions ? 'secondary' : 'primary'} icon={CircleDollarSign} onClick={() => setDialog('pay')}>Tandai lunas</Button>}
             {actions}
@@ -146,6 +177,9 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, a
           <div className="order-detail-v2">
             <dl className="order-facts">
               <div><dt>Customer</dt><dd><UserRound size={14} aria-hidden="true" /> {customerLabel(order)}</dd></div>
+              {order.source && (
+                <div><dt>Sumber</dt><dd>{ORDER_SOURCE[order.source] || order.source}{order.order_type ? ` · ${ORDER_TYPE_LABEL[order.order_type]}` : ''}{order.table_label ? ` · Meja ${order.table_label}` : ''}</dd></div>
+              )}
               <div><dt>Referensi</dt><dd className="tabular">{formatOrderReference(order)}</dd></div>
               <div><dt>Pembayaran</dt><dd>{paymentStatusMeta(order.payment_status).label} · {paymentMethodLabel(order.payment_method)}</dd></div>
               <div><dt>Lunas pada</dt><dd>{order.paid_at ? formatDateTime(order.paid_at) : '—'}</dd></div>
@@ -172,11 +206,23 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, a
                   ))}
                 </ul>
               ) : <p className="settings-note">Tidak ada item tercatat.</p>}
+              {v2 && (
+                <dl className="order-breakdown">
+                  <div><dt>Subtotal</dt><dd className="tabular">{formatRupiah(order.subtotal_amount)}</dd></div>
+                  {Number(order.discount_amount) > 0 && <div><dt>Diskon{order.discount_reason ? ` · ${order.discount_reason}` : ''}</dt><dd className="tabular">−{formatRupiah(order.discount_amount)}</dd></div>}
+                  {Number(order.service_charge_amount) > 0 && <div><dt>Service</dt><dd className="tabular">{formatRupiah(order.service_charge_amount)}</dd></div>}
+                  {Number(order.tax_amount) > 0 && <div><dt>Pajak{order.tax_inclusive ? ' (termasuk harga)' : ''}</dt><dd className="tabular">{formatRupiah(order.tax_amount)}</dd></div>}
+                  {Number(order.rounding_amount) !== 0 && <div><dt>Pembulatan</dt><dd className="tabular">{formatRupiah(order.rounding_amount)}</dd></div>}
+                </dl>
+              )}
               <div className="order-total-v2">
                 <span>Total</span>
                 <strong className="tabular">{formatRupiah(order.total_amount)}</strong>
               </div>
-              {state.items.length > 0 && Math.round(itemTotal) !== Math.round(Number(order.total_amount) || 0) && (
+              {v2 && Number(order.refunded_amount) > 0 && (
+                <p className="settings-note">Sudah direfund {formatRupiah(order.refunded_amount)} dari {formatRupiah(order.paid_amount)} yang dibayar.</p>
+              )}
+              {!v2 && state.items.length > 0 && Math.round(itemTotal) !== Math.round(Number(order.total_amount) || 0) && (
                 <p className="settings-note">Total item ({formatRupiah(itemTotal)}) berbeda dari total pesanan — data lama atau ada penyesuaian.</p>
               )}
             </section>
@@ -199,17 +245,42 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, a
                 <ul className="order-payments">
                   {state.payments.map((payment) => {
                     const status = payment.payment_status || payment.status
+                    const extra = [
+                      payment.reference && payment.reference !== 'refund' ? `Ref ${payment.reference}` : '',
+                      Number(payment.tendered_amount) ? `diterima ${formatRupiah(payment.tendered_amount)}` : '',
+                      Number(payment.change_amount) ? `kembali ${formatRupiah(payment.change_amount)}` : '',
+                    ].filter(Boolean).join(' · ')
                     return (
                       <li key={payment.id}>
                         <span>
-                          <strong>{paymentMethodLabel(payment.payment_method || payment.method)}</strong>
-                          <small>{formatDateTime(payment.paid_at || payment.created_at)}</small>
+                          <strong>{payment.refund_id ? 'Refund · ' : ''}{paymentMethodLabel(payment.payment_method || payment.method)}</strong>
+                          <small>{formatDateTime(payment.paid_at || payment.created_at)}{extra ? ` · ${extra}` : ''}</small>
                         </span>
                         <Badge tone={paymentStatusMeta(status).tone} size="sm">{paymentStatusMeta(status).label}</Badge>
                         <span className="tabular">{formatRupiah(payment.amount)}</span>
                       </li>
                     )
                   })}
+                </ul>
+              </section>
+            )}
+            {state.refunds.length > 0 && (
+              <section className="order-section">
+                <h3>Refund</h3>
+                <ul className="order-payments">
+                  {state.refunds.map((refund) => (
+                    <li key={refund.id}>
+                      <span>
+                        <strong>{refund.reason}</strong>
+                        <small>
+                          {paymentMethodLabel(refund.method)} · diajukan {state.teamNames.get(refund.requested_by) || ''} {formatDateTime(refund.requested_at)}
+                          {refund.restock ? ' · bahan dikembalikan' : ''}{refund.decision_note ? ` · ${refund.decision_note}` : ''}
+                        </small>
+                      </span>
+                      <Badge tone={REFUND_STATUS[refund.status].tone} size="sm">{REFUND_STATUS[refund.status].label}</Badge>
+                      <span className="tabular">{formatRupiah(refund.amount)}</span>
+                    </li>
+                  ))}
                 </ul>
               </section>
             )}
@@ -227,6 +298,17 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, a
           onClose={() => setDialog(null)}
           onPaid={(updated) => { setDialog(null); onChanged?.(updated, 'paid') }}
         />
+      )}
+      {dialog === 'refund' && (
+        <RefundDialog order={order} items={state.items} isOwner={isOwner} onClose={() => setDialog(null)}
+          onDone={(refund) => {
+            setDialog(null)
+            setAttempt((value) => value + 1)
+            if (refund.status === 'approved') {
+              const refunded = Number(order.refunded_amount || 0) + Number(refund.amount)
+              onChanged?.({ ...order, refunded_amount: refunded, payment_status: refunded >= Number(order.paid_amount) - 0.005 ? 'refunded' : order.payment_status }, 'refunded')
+            }
+          }} />
       )}
       {dialog === 'cancel' && (
         <CancelOrderDialog

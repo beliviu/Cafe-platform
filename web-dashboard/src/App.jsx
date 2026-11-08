@@ -65,6 +65,7 @@ function ownerRoutes() {
       <Route path="products" element={<ProductsPage />} />
       <Route path="categories" element={<CategoriesPage />} />
       <Route path="orders" element={<OrdersPage />} />
+      <Route path="cashier" element={<CashierReportPage />} />
       <Route path="inventory" element={<InventoryLayout />}>
         <Route index element={<IngredientsPage />} />
         <Route path="movements" element={<MovementsPage />} />
@@ -101,6 +102,9 @@ const StaffBoardPage = lazy(() =>
 const StaffHistoryPage = lazy(() =>
   import('./pages/StaffHistoryPage.jsx').then((module) => ({ default: module.StaffHistoryPage })),
 )
+const PosPage = lazy(() => import('./pages/staff/PosPage.jsx').then((module) => ({ default: module.PosPage })))
+const CashierPage = lazy(() => import('./pages/staff/CashierPage.jsx').then((module) => ({ default: module.CashierPage })))
+const CashierReportPage = lazy(() => import('./pages/CashierReportPage.jsx').then((module) => ({ default: module.CashierReportPage })))
 const StaffMenuPage = lazy(() =>
   import('./pages/StaffMenuPage.jsx').then((module) => ({ default: module.StaffMenuPage })),
 )
@@ -124,6 +128,8 @@ function AppRoutes() {
         {StaffPreview && (
           <Route path="/preview/staff" element={<StaffPreview />}>
             <Route index element={<StaffBoardPage />} />
+            <Route path="pos" element={<PosPage />} />
+            <Route path="cashier" element={<CashierPage />} />
             <Route path="history" element={<StaffHistoryPage />} />
             <Route path="menu" element={<StaffMenuPage />} />
           </Route>
@@ -136,6 +142,8 @@ function AppRoutes() {
         <Route element={<RequireAuth />}>
           <Route path="staff" element={<StaffLayout />}>
             <Route index element={<StaffBoardPage />} />
+            <Route path="pos" element={<PosPage />} />
+            <Route path="cashier" element={<CashierPage />} />
             <Route path="history" element={<StaffHistoryPage />} />
             <Route path="menu" element={<StaffMenuPage />} />
           </Route>

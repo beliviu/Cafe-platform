@@ -497,6 +497,9 @@ const ENTITY_LABELS = {
   purchase_orders: 'purchase order',
   supplier_payments: 'pembayaran supplier',
   recipe: 'resep',
+  cashier_sessions: 'sesi kasir',
+  cash_movements: 'kas masuk/keluar',
+  refunds: 'refund',
 }
 const ACTION_LABELS = { insert: 'Menambah', update: 'Mengubah', delete: 'Menghapus' }
 const FIELD_LABELS = {

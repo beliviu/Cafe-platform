@@ -4,6 +4,7 @@
  * Tidak pernah ikut ke build produksi (dimuat lewat import.meta.env.DEV).
  */
 import { createInventoryFixtures, inventoryRpc } from './mockInventory.js'
+import { createPosFixtures, posRpc } from './mockPos.js'
 
 function seeded(seed) {
   let value = seed
@@ -131,6 +132,7 @@ export function createFixtures(now = new Date()) {
   }
 
   const inventory = createInventoryFixtures({ cafeId, orders, items, now })
+  const pos = createPosFixtures({ cafeId, orders, now })
 
   return {
     cafe: {
@@ -153,7 +155,14 @@ export function createFixtures(now = new Date()) {
         rounding_unit: 500, order_types: ['dine_in', 'takeaway'], receipt_header: null,
         receipt_footer: 'Terima kasih! Wi-Fi: kopisenja', receipt_show_logo: true, receipt_show_address: true,
         receipt_paper_mm: 58, updated_at: '2026-11-08T00:00:00Z', ...inventory.settings,
+        staff_max_discount_pct: 10, print_kitchen_ticket: false, auto_print_receipt: false,
       }],
+      cashier_sessions: pos.cashier_sessions,
+      cash_movements: pos.cash_movements,
+      refunds: pos.refunds,
+      pos_held_orders: pos.pos_held_orders,
+      order_item_options: pos.order_item_options,
+      stock_reservations: pos.stock_reservations,
       suppliers: inventory.suppliers,
       ingredients: inventory.ingredients,
       ingredient_batches: inventory.ingredient_batches,
@@ -272,7 +281,7 @@ class Query {
   }
 }
 
-export function createMockSupabase(fixtures) {
+export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
   const uploads = new Map()
   const store = fixtures.tables
   store.cafes = [fixtures.cafe]
@@ -327,7 +336,7 @@ export function createMockSupabase(fixtures) {
       }
       if (name === 'staff_mark_order_paid') {
         const order = store.orders.find((row) => row.id === args.p_order_id)
-        Object.assign(order, { payment_status: 'paid', payment_method: args.p_method, paid_at: new Date().toISOString() })
+        Object.assign(order, { payment_status: 'paid', payment_method: args.p_method, paid_at: new Date().toISOString(), paid_amount: order.total_amount })
         return { data: order, error: null }
       }
       if (name === 'staff_cancel_order') {
@@ -339,6 +348,11 @@ export function createMockSupabase(fixtures) {
         const product = store.products.find((row) => row.id === args.p_product_id)
         product.is_available = args.p_is_available
         return { data: product, error: null }
+      }
+      const posResult = posRpc(store, name, args, userId)
+      if (posResult) {
+        await new Promise((resolve) => window.setTimeout(resolve, 150))
+        return posResult
       }
       const inventoryResult = inventoryRpc(store, name, args)
       if (inventoryResult) {

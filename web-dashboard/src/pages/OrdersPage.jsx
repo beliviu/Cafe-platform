@@ -37,6 +37,7 @@ export function OrdersPage() {
   const [rangeValue, setRangeValue] = useState({ preset: '30d', custom: null })
   const [statusFilter, setStatusFilter] = useState(() => (ORDER_STATUS[searchParams.get('status')] ? searchParams.get('status') : 'all'))
   const [paymentFilter, setPaymentFilter] = useState(() => (['paid', 'unpaid'].includes(searchParams.get('payment')) ? searchParams.get('payment') : 'all'))
+  const [sourceFilter, setSourceFilter] = useState('all')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
   const [orders, setOrders] = useState([])
@@ -60,6 +61,7 @@ export function OrdersPage() {
       if (statusFilter !== 'all') request = request.eq('order_status', statusFilter)
       if (paymentFilter === 'paid') request = request.eq('payment_status', 'paid')
       if (paymentFilter === 'unpaid') request = request.neq('payment_status', 'paid')
+      if (features?.pos && sourceFilter !== 'all') request = request.eq('source', sourceFilter)
       return request.order('created_at', { ascending: false }).order('id', { ascending: false })
     })
     if (current !== requestId.current) return
@@ -73,7 +75,7 @@ export function OrdersPage() {
     setOrders(data.map((order) => ({ ...order, customer_name: names.get(order.id) || '' })))
     setItemsByOrder(new Map())
     setLoading(false)
-  }, [cafe.id, features, paymentFilter, range, statusFilter, supabase])
+  }, [cafe.id, features, paymentFilter, range, sourceFilter, statusFilter, supabase])
 
   useEffect(() => {
     const timer = window.setTimeout(loadOrders, 0)
@@ -155,7 +157,7 @@ export function OrdersPage() {
   }
 
   const selected = orders.find((order) => order.id === selectedId)
-  const filtersActive = query || statusFilter !== 'all' || paymentFilter !== 'all'
+  const filtersActive = query || statusFilter !== 'all' || paymentFilter !== 'all' || sourceFilter !== 'all'
 
   return (
     <div className="page">
@@ -182,6 +184,10 @@ export function OrdersPage() {
         <DateRangePicker value={rangeValue} onChange={resetPage(setRangeValue)} allowAll />
         <Select hideLabel label="Status pesanan" value={statusFilter} onChange={(event) => resetPage(setStatusFilter)(event.target.value)} options={STATUS_OPTIONS} />
         <Select hideLabel label="Status pembayaran" value={paymentFilter} onChange={(event) => resetPage(setPaymentFilter)(event.target.value)} options={PAYMENT_OPTIONS} />
+        {features?.pos && (
+          <Select hideLabel label="Sumber pesanan" value={sourceFilter} onChange={(event) => resetPage(setSourceFilter)(event.target.value)}
+            options={[{ value: 'all', label: 'Semua sumber' }, { value: 'app', label: 'Aplikasi' }, { value: 'pos', label: 'Kasir' }]} />
+        )}
       </section>
 
       {loadError ? (
@@ -195,7 +201,7 @@ export function OrdersPage() {
             title={filtersActive ? 'Tidak ada transaksi yang cocok' : 'Belum ada transaksi pada rentang ini'}
             description={filtersActive ? 'Coba kata kunci lain atau ubah filter.' : 'Pilih rentang tanggal lain, atau tunggu pesanan dari customer.'}
             action={filtersActive && (
-              <Button variant="secondary" onClick={() => { setQuery(''); setStatusFilter('all'); setPaymentFilter('all'); setPage(1) }}>Hapus filter</Button>
+              <Button variant="secondary" onClick={() => { setQuery(''); setStatusFilter('all'); setPaymentFilter('all'); setSourceFilter('all'); setPage(1) }}>Hapus filter</Button>
             )}
           />
         </Card>
@@ -224,7 +230,7 @@ export function OrdersPage() {
                         <strong className="cell-queue tabular">{formatQueueNumber(order)}</strong>
                         <small className="cell-sub tabular">{formatOrderReference(order)}</small>
                       </td>
-                      <td>{customerLabel(order)}</td>
+                      <td>{customerLabel(order)}{order.source === 'pos' && <small className="cell-sub">Kasir{order.table_label ? ` · Meja ${order.table_label}` : ''}</small>}</td>
                       <td className="tabular">{formatDateShort(order.created_at)}<small className="cell-sub">{formatTime(order.created_at)} WIB</small></td>
                       <td className="col-items cell-muted">{items ? summarizeItems(items) : <span className="cell-loading">Memuat…</span>}</td>
                       <td><OrderStatusBadge status={order.order_status} size="sm" /></td>

@@ -155,7 +155,9 @@ function percentError(value) {
 }
 
 function ChargesForm({ settings, onSaved }) {
-  const { form, setForm, dirty, saving, save, reset } = useSettingsForm(settings, CHARGE_KEYS, onSaved)
+  // Batas diskon staff ada setelah file 06; sebelum itu tidak ikut disimpan
+  const hasDiscount = 'staff_max_discount_pct' in settings
+  const { form, setForm, dirty, saving, save, reset } = useSettingsForm(settings, hasDiscount ? [...CHARGE_KEYS, 'staff_max_discount_pct'] : CHARGE_KEYS, onSaved)
   const [sample, setSample] = useState(100000)
   const [errors, setErrors] = useState({})
   const set = (key) => (value) => {
@@ -170,6 +172,7 @@ function ChargesForm({ settings, onSaved }) {
       tax_rate: form.tax_enabled ? percentError(form.tax_rate) : '',
       service_charge_rate: form.service_charge_enabled ? percentError(form.service_charge_rate) : '',
       tax_name: form.tax_enabled && !String(form.tax_name).trim() ? 'Nama pajak wajib diisi.' : '',
+      staff_max_discount_pct: hasDiscount ? percentError(form.staff_max_discount_pct) : '',
     }
     setErrors(nextErrors)
     if (Object.values(nextErrors).some(Boolean)) return
@@ -178,6 +181,7 @@ function ChargesForm({ settings, onSaved }) {
       tax_name: String(form.tax_name).trim(),
       tax_rate: Number(form.tax_rate),
       service_charge_rate: Number(form.service_charge_rate),
+      ...(hasDiscount ? { staff_max_discount_pct: Number(form.staff_max_discount_pct) } : {}),
     }, 'Pajak & biaya disimpan')
   }
 
@@ -220,6 +224,16 @@ function ChargesForm({ settings, onSaved }) {
           </div>
         </Card>
 
+        {hasDiscount && (
+          <Card className="settings-card">
+            <CardHeader title="Diskon di kasir" description="Owner bebas memberi diskon. Staff hanya sampai batas ini, dan wajib menulis alasan." />
+            <div className="settings-fields">
+              <TextField label="Batas diskon staff" value={form.staff_max_discount_pct} onChange={(event) => set('staff_max_discount_pct')(event.target.value)}
+                inputMode="decimal" suffix="%" error={errors.staff_max_discount_pct} hint="0 = staff tidak bisa memberi diskon" />
+            </div>
+          </Card>
+        )}
+
         <Card className="settings-card">
           <CardHeader title="Pembulatan total" description="Total akhir dibulatkan ke kelipatan terdekat." />
           <SegmentedControl label="Pembulatan" value={Number(form.rounding_unit)} onChange={set('rounding_unit')} options={ROUNDING_OPTIONS} />
@@ -245,7 +259,7 @@ function ChargesForm({ settings, onSaved }) {
           <div className="charges-total"><dt>Total dibayar</dt><dd className="tabular">{formatRupiah(preview.total)}</dd></div>
         </dl>
         <p className="charges-note">
-          Berlaku untuk pesanan baru setelah POS dan checkout versi baru aktif (fase 5). Pesanan yang sudah ada tidak berubah.
+          Berlaku untuk pesanan baru dari kasir dan aplikasi. Pesanan yang sudah ada tidak berubah.
           Total final selalu dihitung ulang oleh database.
         </p>
       </aside>
@@ -268,7 +282,8 @@ const RECEIPT_KEYS = ['receipt_header', 'receipt_footer', 'receipt_show_logo', '
 function ReceiptForm({ settings, onSaved }) {
   const { cafe } = useOutletContext()
   const brand = brandOf(cafe)
-  const { form, setForm, dirty, saving, save, reset } = useSettingsForm(settings, RECEIPT_KEYS, onSaved)
+  const hasPrint = 'print_kitchen_ticket' in settings
+  const { form, setForm, dirty, saving, save, reset } = useSettingsForm(settings, hasPrint ? [...RECEIPT_KEYS, 'print_kitchen_ticket', 'auto_print_receipt'] : RECEIPT_KEYS, onSaved)
   const set = (key) => (value) => setForm((current) => ({ ...current, [key]: value }))
   const example = computeCharges(54000, settings)
 
@@ -284,7 +299,7 @@ function ReceiptForm({ settings, onSaved }) {
   return (
     <form className="charges-layout" onSubmit={handleSubmit} noValidate>
       <Card className="settings-card">
-        <CardHeader title="Isi struk" description="Dicetak dari POS kasir (fase 5) dan label pesanan staff." />
+        <CardHeader title="Isi struk" description="Dicetak dari kasir dan detail pesanan." />
         <div className="settings-fields">
           <TextField className="settings-span" label="Teks atas" multiline rows={2} maxLength={200} value={form.receipt_header || ''}
             onChange={(event) => set('receipt_header')(event.target.value)} placeholder="Mis. NPWP, jam buka, atau salam" />
@@ -303,6 +318,18 @@ function ReceiptForm({ settings, onSaved }) {
             <SegmentedControl label="Lebar kertas" value={Number(form.receipt_paper_mm)} onChange={set('receipt_paper_mm')}
               options={[{ value: 58, label: '58 mm' }, { value: 80, label: '80 mm' }]} />
           </div>
+          {hasPrint && (
+            <>
+              <label className="settings-check">
+                <input type="checkbox" checked={form.print_kitchen_ticket} onChange={(event) => set('print_kitchen_ticket')(event.target.checked)} />
+                <span>Cetak tiket dapur otomatis saat pesanan kasir dibuat</span>
+              </label>
+              <label className="settings-check">
+                <input type="checkbox" checked={form.auto_print_receipt} onChange={(event) => set('auto_print_receipt')(event.target.checked)} />
+                <span>Cetak struk otomatis setelah pembayaran</span>
+              </label>
+            </>
+          )}
         </div>
         <SectionFooter dirty={dirty} saving={saving} onReset={reset}>
           <Button type="submit" loading={saving} disabled={!dirty}>Simpan struk</Button>

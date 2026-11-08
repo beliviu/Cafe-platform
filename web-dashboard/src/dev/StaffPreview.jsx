@@ -15,7 +15,7 @@ const PREFIX = '/preview/staff'
 
 export function StaffPreview() {
   const [fixtures] = useState(() => createFixtures())
-  const [supabase] = useState(() => createMockSupabase(fixtures))
+  const [supabase] = useState(() => createMockSupabase(fixtures, { userId: 'staff-1' }))
   const [pendingCount, setPendingCount] = useState(0)
   const auth = useMemo(() => ({ authError: null, loading: false, session: { user: { id: 'staff-1' } }, supabase }), [supabase])
   const navigation = staffNavigation(pendingCount).map((group) => ({
@@ -32,7 +32,7 @@ export function StaffPreview() {
           context={{
             cafe: fixtures.cafe,
             profile: { id: 'staff-1', full_name: 'Nadia Barista', role: 'staff', cafe_id: fixtures.cafe.id },
-            features: { operations: true, branding: true, phase3: true },
+            features: { operations: true, branding: true, phase3: true, inventory: true, pos: true },
             setPendingCount,
           }}
         />

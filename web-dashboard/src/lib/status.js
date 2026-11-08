@@ -39,7 +39,11 @@ export const PAYMENT_METHOD = {
   simulated: 'Simulasi',
   simulated_demo: 'Simulasi',
   legacy: 'Lainnya',
+  split: 'Split',
 }
+
+export const ORDER_SOURCE = { app: 'Aplikasi', pos: 'Kasir' }
+export const ORDER_TYPE_LABEL = { dine_in: 'Makan di tempat', takeaway: 'Bawa pulang' }
 
 export const ORDER_STATUS_LABELS = Object.fromEntries(Object.entries(ORDER_STATUS).map(([key, meta]) => [key, meta.label]))
 export const PAYMENT_STATUS_LABELS = Object.fromEntries(Object.entries(PAYMENT_STATUS).map(([key, meta]) => [key, meta.label]))

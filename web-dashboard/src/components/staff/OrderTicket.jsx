@@ -43,10 +43,10 @@ export const OrderTicket = forwardRef(function OrderTicket({
         <div className="ticket-id">
           <button type="button" className="ticket-queue tabular" onClick={() => onOpen(order)} aria-label={`Detail pesanan ${queue}`}>{queue}</button>
           <span className="ticket-customer">{customerLabel(order)}</span>
-          {(order.order_type || order.table_number) && (
+          {(order.order_type || order.table_label || order.source === 'pos') && (
             <span className="ticket-type">
-              {order.order_type === 'takeaway' ? 'Bawa pulang' : 'Makan di tempat'}
-              {order.table_number ? ` · Meja ${order.table_number}` : ''}
+              {[order.source === 'pos' ? 'Kasir' : null, order.order_type ? (order.order_type === 'takeaway' ? 'Bawa pulang' : 'Makan di tempat') : null,
+                order.table_label ? `Meja ${order.table_label}` : null].filter(Boolean).join(' · ')}
             </span>
           )}
         </div>

@@ -8,6 +8,7 @@
 
 const BASE_ORDER_COLUMNS = 'id, cafe_id, order_number, customer_id, total_amount, order_status, payment_status, payment_method, notes, created_at'
 const OPERATION_ORDER_COLUMNS = ', queue_number, paid_at, cancel_reason, cancelled_at'
+const POS_ORDER_COLUMNS = ', source, order_type, table_label, guest_name, subtotal_amount, discount_amount, discount_reason, service_charge_amount, tax_amount, tax_inclusive, rounding_amount, paid_amount, refunded_amount, pricing_version, cashier_session_id'
 const BASE_CAFE_COLUMNS = 'id, name, address, phone'
 const OPERATION_CAFE_COLUMNS = ', description, opening_hours, accepted_payment_methods'
 export const BRANDING_CAFE_COLUMNS = 'app_name, logo_url, tagline, brand_color'
@@ -28,7 +29,7 @@ function probeColumns(supabase, table, columns) {
 }
 
 /**
- * { operations, branding, phase3, inventory } — true bila migrasi 02 / 03 / 04 / 05 sudah diterapkan. Di-cache per klien.
+ * { operations, branding, phase3, inventory, pos } — true bila migrasi 02 / 03 / 04 / 05 / 06 sudah diterapkan. Di-cache per klien.
  * Kolom yang belum ada membuat select gagal, jadi UI memilih kolom berdasarkan hasil ini.
  */
 export function detectDbFeatures(supabase) {
@@ -38,14 +39,15 @@ export function detectDbFeatures(supabase) {
       probeColumns(supabase, 'cafes', BRANDING_CAFE_COLUMNS),
       probeColumns(supabase, 'cafe_settings', 'cafe_id'),
       probeColumns(supabase, 'ingredients', 'id'),
-    ]).then(([operations, branding, phase3, inventory]) => ({ operations, branding, phase3, inventory }))
+      probeColumns(supabase, 'orders', 'pricing_version, source'),
+    ]).then(([operations, branding, phase3, inventory, pos]) => ({ operations, branding, phase3, inventory, pos }))
     featureCache.set(supabase, probe)
   }
   return featureCache.get(supabase)
 }
 
 export function orderColumns(features) {
-  return BASE_ORDER_COLUMNS + (features?.operations ? OPERATION_ORDER_COLUMNS : '')
+  return BASE_ORDER_COLUMNS + (features?.operations ? OPERATION_ORDER_COLUMNS : '') + (features?.pos ? POS_ORDER_COLUMNS : '')
 }
 
 export function cafeColumns(features) {
@@ -56,6 +58,7 @@ export function cafeColumns(features) {
 }
 
 export const PHASE3_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/04-owner-dashboard.sql dijalankan.'
+export const POS_REQUIRED = 'Kasir aktif setelah file supabase/usulan/06-pesanan-v2-pos.sql dijalankan.'
 export const INVENTORY_REQUIRED = 'Modul inventori aktif setelah file supabase/usulan/05-inventori-supplier.sql dijalankan.'
 
 /** Metode bayar yang bisa dipilih staff saat menandai lunas. */
@@ -111,6 +114,8 @@ export async function fetchOrderItems(supabase, orderIds) {
 
 export function customerLabel(order) {
   if (order?.customer_name) return order.customer_name
+  if (order?.guest_name) return order.guest_name
+  if (order?.source === 'pos') return 'Pembeli langsung'
   if (!order?.customer_id) return 'Tanpa akun'
   return `Pelanggan ${String(order.customer_id).slice(0, 4).toUpperCase()}`
 }

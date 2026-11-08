@@ -11,14 +11,22 @@ Brief V2 mengurutkan keuangan lebih dulu, tetapi HPP, profit produk, rekonsilias
 
 | Langkah | Isi | Bagian brief V2 | Status |
 |---|---|---|---|
-| 0b | Fondasi: file 04 + `staff-admin`, skema live, perubahan belum commit, QRIS demo | 8, 5 | 04 ✅ · `staff-admin` ⚠️ belum terhubung · commit ✅ |
-| **1** | **Inventori & supplier**: bahan, batch kedaluwarsa, resep (+varian), HPP & profit produk, supplier & katalog harga, PO → terima → bayar (utang), opname, mutasi + ekspor, perkiraan & draf PO otomatis, pemotongan stok saat pesanan selesai | 2, 1C | ✅ kode selesai · menunggu file 05 |
-| 2 | Pesanan v2 & POS: `place_order` (idempoten, pajak, diskon, varian), reservasi stok + tolak checkout bila bahan kurang + HABIS di app, sesi kasir & rekonsiliasi, serah terima, hold, split payment, refund | 3, 1D, 1F, 2C | — |
+| 0b | Fondasi: file 04 + `staff-admin`, skema live (diagnostik), perubahan belum commit | 8 | ✅ |
+| 1 | Inventori & supplier: bahan, batch kedaluwarsa, resep (+varian), HPP & profit produk, supplier & katalog harga, PO → terima → bayar (utang), opname, mutasi + ekspor, perkiraan & draf PO otomatis, pemotongan stok saat pesanan selesai | 2, 1C | ✅ file 05 dijalankan |
+| **2** | **Pesanan v2 & POS**: `place_order` (idempoten, pajak, diskon berizin, varian), cadangan stok + tolak checkout bila bahan kurang + HABIS di app, sesi kasir & rekonsiliasi, serah terima, hold, split payment, refund berpersetujuan, struk & tiket dapur | 3, 1D, 1F, 2C | ✅ kode selesai · menunggu file 06 |
 | 3 | Akuntansi & keuangan: jurnal otomatis, beban, laporan, saldo awal, PDF | 1A, 1B, 1E, 1G | — |
 | 4 | Customer app & QR meja | 4, 7 | — |
 | 5 | Payment gateway | 5 | — |
 | 6 | BI, forecast penjualan, AI advisor | 6 | — |
 | 7 | Izin per staff, langganan, tes isolasi, performa | 8, 9 | — |
+
+**Langkah 2 — catatan keputusan:**
+- `create_order` dipertahankan sebagai pembungkus `place_order` sehingga app lama tetap jalan dan otomatis ikut cek stok/pajak.
+- Pesanan kasir langsung berstatus *Sedang dibuat*. Stok dicadangkan saat pesanan dibuat, dipotong saat selesai, dilepas saat batal atau saat pelacakan dimatikan.
+- Tunai wajib sesi kasir terbuka di Kasir; tombol *Tandai lunas* di papan tetap bisa tanpa sesi (alur lama) dan otomatis menempel ke sesi bila ada.
+- QRIS/transfer di kasir = konfirmasi manual kasir (ditandai `verification = manual`); verifikasi otomatis menunggu payment gateway (langkah 5).
+- Refund dicatat sebagai baris pembayaran `refunded`; dashboard omzet belum mengurangi refund sebagian — akan dibenahi bersama laporan akuntansi (langkah 3).
+- Owner memakai web owner; Kasir & Sesi kasir ada di web staff (akun owner belum bisa membuka web staff).
 
 **Langkah 1 — catatan keputusan:**
 - Biaya bahan memakai **rata-rata tertimbang bergerak**; batch hanya untuk kedaluwarsa (FEFO saat stok keluar).

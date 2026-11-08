@@ -20,6 +20,7 @@ export function MarkPaidDialog({ order, cafe, onClose, onPaid, confirmLabel }) {
   const [method, setMethod] = useState(methods.includes(order.payment_method) ? order.payment_method : methods[0])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const due = Math.max(Number(order.total_amount) - Number(order.paid_amount || 0), 0)
 
   async function handleConfirm() {
     setSaving(true)
@@ -43,13 +44,13 @@ export function MarkPaidDialog({ order, cafe, onClose, onPaid, confirmLabel }) {
       footer={(
         <>
           <Button variant="ghost" onClick={onClose} disabled={saving}>Batal</Button>
-          <Button onClick={handleConfirm} loading={saving}>{confirmLabel || `Lunas ${formatRupiah(order.total_amount)}`}</Button>
+          <Button onClick={handleConfirm} loading={saving}>{confirmLabel || `Lunas ${formatRupiah(due)}`}</Button>
         </>
       )}
     >
       <div className="paid-total">
-        <span>Total dibayar</span>
-        <strong className="tabular">{formatRupiah(order.total_amount)}</strong>
+        <span>{Number(order.paid_amount) > 0 ? `Sisa tagihan (dari ${formatRupiah(order.total_amount)})` : 'Total dibayar'}</span>
+        <strong className="tabular">{formatRupiah(due)}</strong>
       </div>
       <fieldset className="ui-choice-group">
         <legend className="ui-field-label">Metode pembayaran</legend>

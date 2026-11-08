@@ -13,9 +13,35 @@
 | 1b. Fitur operasional — [`supabase/usulan/02-fitur-operasional.sql`](supabase/usulan/02-fitur-operasional.sql) | ✅ sudah dijalankan (8 Nov) |
 | 3. Branding kafe (nama tampilan, logo, tagline, warna) — [`supabase/usulan/03-branding-kafe.sql`](supabase/usulan/03-branding-kafe.sql) | ✅ sudah dijalankan (8 Nov) |
 | 4. Fase 3 owner (gradasi brand, pajak & biaya, meja, varian produk, tim, shift, log aktivitas) — [`supabase/usulan/04-owner-dashboard.sql`](supabase/usulan/04-owner-dashboard.sql) | ✅ sudah dijalankan (halaman Tim aktif) |
-| 4b. **Edge Function `staff-admin`** (tambah/nonaktifkan staff, reset password) — [`supabase/functions/staff-admin/index.ts`](supabase/functions/staff-admin/index.ts) | ⚠️ **belum terhubung** — web menampilkan "belum di-deploy". Lihat checklist di bawah |
-| 5. **Inventori, resep & supplier** (stok bahan, mutasi, opname, PO, utang supplier, HPP, perkiraan) — [`supabase/usulan/05-inventori-supplier.sql`](supabase/usulan/05-inventori-supplier.sql) | 🟢 **siap dijalankan** · diuji 86 skenario di Postgres lokal |
+| 4b. Edge Function `staff-admin` (tambah/nonaktifkan staff, reset password) — [`supabase/functions/staff-admin/index.ts`](supabase/functions/staff-admin/index.ts) | ✅ terhubung (8 Nov) |
+| 5. Inventori, resep & supplier — [`supabase/usulan/05-inventori-supplier.sql`](supabase/usulan/05-inventori-supplier.sql) | ✅ sudah dijalankan (dari diagnostik 8 Nov) |
+| 6. **Pesanan v2 & kasir (POS)** (place_order, varian, diskon, pajak, cadangan stok, HABIS di app, sesi kasir, split payment, hold, refund) — [`supabase/usulan/06-pesanan-v2-pos.sql`](supabase/usulan/06-pesanan-v2-pos.sql) | 🟢 **siap dijalankan** · diuji 89 skenario di skema tiruan identik live |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 06 — pesanan v2 & kasir (POS)
+
+Dirancang dari hasil `diagnostik-fase2.sql` (skema live persis). **Dampak ke data yang sudah ada:**
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| `orders` | 19 kolom baru (sumber, jenis & meja, rincian subtotal/diskon/service/pajak/pembulatan, tamu walk-in, kunci anti-dobel, dibayar/direfund, sesi kasir, versi harga) | Nilai bawaan saja. **Satu pengisian:** `paid_amount = total_amount` untuk pesanan yang sudah lunas. Total, status, nomor pesanan lama tidak berubah. |
+| `payments` | Kolom baru: referensi, pencatat, sesi kasir, verifikasi, uang diterima, kembalian, refund | Pembayaran simulasi lama ditandai `verification = 'demo'`. Nominal tidak berubah. |
+| Trigger `trg_update_order_total` | Pesanan **baru** (versi 2) tidak ditimpa sehingga pajak/diskon aman | Pesanan lama tetap dihitung seperti sekarang (diuji). |
+| `create_order` (dipakai app) | Kini memanggil `place_order` | App lama tetap jalan tanpa build ulang. Nomor pesanan memakai UUID bawaan — **memperbaiki bentrok** `order_number` antar kafe. Varian wajib terisi pilihan bawaan. Bila pajak/service aktif, pesanan app ikut kena. |
+| `staff_mark_order_paid` | Melunasi **sisa** tagihan, mencatat pencatat & sesi kasir | Papan staff tetap sama. |
+| `ingredients` | Kolom `reserved` (stok dipesan) | 0. Cadangan hanya dibuat bila pelacakan stok aktif. |
+| 6 tabel baru | sesi kasir, kas masuk/keluar, varian per item pesanan, cadangan stok, pesanan ditahan, refund | Kosong. |
+
+**Keamanan:** pesanan kasir hanya oleh staff/owner aktif kafe itu; diskon staff dibatasi pengaturan (bawaan 0%); tunai wajib sesi kasir terbuka; refund staff menunggu owner; sesi kasir hanya terlihat oleh pembukanya, penerima serah terima, dan owner; jumlah porsi stok tidak terlihat oleh customer.
+
+**Cara menjalankan:**
+1. SQL Editor → tempel **seluruh isi** `supabase/usulan/06-pesanan-v2-pos.sql` → **Run**.
+2. Verifikasi harus **21 baris**: 7 `table`, 13 `function`, 1 `trigger` (`inv_on_order_cancelled`).
+3. Error merah = tidak ada yang berubah. Aman dijalankan ulang.
+
+**Setelah dijalankan:** staff membuka **Sesi kasir** → **Kasir**. Owner mengatur batas diskon staff di Pengaturan → Pajak & biaya, dan cetak otomatis di Pengaturan → Struk. Refund disetujui di **Kasir & refund**.
+
+**Uji ulang lokal:** `cd supabase/tests && npm install && npm test` (05 + 06).
 
 ### File 05 — inventori, resep & supplier
 

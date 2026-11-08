@@ -1413,9 +1413,13 @@ alter table public.cash_movements enable row level security;
 revoke all on public.cashier_sessions, public.cash_movements from anon, authenticated;
 grant select on public.cashier_sessions, public.cash_movements to authenticated;
 drop policy if exists "Own or owner view cashier sessions" on public.cashier_sessions;
+-- Pembuka sesi, penerima serah terima, dan owner
 create policy "Own or owner view cashier sessions" on public.cashier_sessions
   for select to authenticated
-  using ((opened_by = (select auth.uid()) and public.is_cafe_member(cafe_id)) or public.is_cafe_member(cafe_id, array['owner']));
+  using (
+    ((opened_by = (select auth.uid()) or handover_to = (select auth.uid())) and public.is_cafe_member(cafe_id))
+    or public.is_cafe_member(cafe_id, array['owner'])
+  );
 drop policy if exists "Own or owner view cash movements" on public.cash_movements;
 create policy "Own or owner view cash movements" on public.cash_movements
   for select to authenticated
