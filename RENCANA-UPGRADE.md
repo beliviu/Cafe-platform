@@ -15,10 +15,18 @@ Brief V2 mengurutkan keuangan lebih dulu, tetapi HPP, profit produk, rekonsilias
 | 1 | Inventori & supplier: bahan, batch kedaluwarsa, resep (+varian), HPP & profit produk, supplier & katalog harga, PO → terima → bayar (utang), opname, mutasi + ekspor, perkiraan & draf PO otomatis, pemotongan stok saat pesanan selesai | 2, 1C | ✅ file 05 dijalankan |
 | 2 | Pesanan v2 & POS: `place_order` (idempoten, pajak, diskon berizin, varian), cadangan stok + tolak checkout bila bahan kurang + HABIS di app, sesi kasir & rekonsiliasi, serah terima, hold, split payment, refund berpersetujuan, struk & tiket dapur | 3, 1D, 1F, 2C | ✅ file 06 dijalankan |
 | 3 | Akuntansi & keuangan: bagan akun, jurnal double-entry otomatis (pesanan, pembayaran, refund, stok, PO & bayar supplier, kas kasir, selisih kas, beban), jurnal manual & pembalik, tutup periode, saldo awal (go-live), beban + foto nota, laporan laba rugi / neraca / arus kas / perubahan ekuitas / neraca saldo / buku besar, ekspor Excel/CSV/PDF | 1A, 1B, 1E, 1G | ✅ kode selesai · menunggu file 07 |
-| **4** | **Customer app & QR meja**: keranjang tersimpan, varian & catatan, lupa password, status buka/tutup + jeda + estimasi, pesanan terjadwal, QR meja (token rahasia, tolak lintas kafe, keterisian, cetak), voucher, poin & tingkat member, pesan ulang (harga & stok terkini), batal sendiri + detail pembatalan, riwayat pembayaran, ulasan & rating, wishlist, bantuan (tiket), notifikasi + push | 4, 7 | ✅ kode selesai · menunggu file 08 |
-| 5 | Payment gateway | 5 | — |
+| 4 | Customer app & QR meja: keranjang tersimpan, varian & catatan, lupa password, status buka/tutup + jeda + estimasi, pesanan terjadwal, QR meja (token rahasia, tolak lintas kafe, keterisian, cetak), voucher, poin & tingkat member, pesan ulang (harga & stok terkini), batal sendiri + detail pembatalan, riwayat pembayaran, ulasan & rating, wishlist, bantuan (tiket), notifikasi + push | 4, 7 | ✅ kode selesai · menunggu file 08 |
+| **5** | **Payment gateway (Midtrans)**: QRIS dinamis dari app & kasir, masa berlaku QR, status bayar terpisah dari status pesanan, webhook terverifikasi (tanda tangan + cek ulang API), idempoten, rekonsiliasi (cek status semua tagihan menunggu), refund lewat gateway, riwayat & ringkasan pembayaran online | 5 | ✅ kode selesai · menunggu file 09 + Edge Function `payments` + akun Midtrans |
 | 6 | BI, forecast penjualan, AI advisor | 6 | — |
 | 7 | Izin per staff, langganan, tes isolasi, performa | 8, 9 | — |
+
+**Langkah 5 — catatan keputusan:**
+- Provider: **Midtrans Core API, QRIS** (acquirer GoPay). Semua panggilan lewat satu Edge Function `payments`; logika data di fungsi SQL `pay_*` (service_role saja), sehingga provider lain (mis. Xendit) bisa ditambah tanpa mengubah alur app.
+- Satu akun Midtrans per instalasi (Secrets Edge Function). Kunci per kafe (multi-merchant) butuh penyimpanan rahasia terenkripsi — masuk langkah 7 (langganan/SaaS).
+- Webhook tidak dipercaya mentah: tanda tangan diverifikasi lalu status diambil dari API Midtrans. Bila API gagal → respons 500 agar Midtrans mengirim ulang.
+- Pembayaran gateway tercatat di `payments` (`verification = gateway`), sehingga jurnal (07), poin (08), dan laporan memakai jalur yang sama.
+- Kasir: "QRIS otomatis" (dinamis) ditambahkan di samping "QRIS manual" (statis, konfirmasi kasir). QRIS demo di app hanya muncul bila gateway mati.
+- Belum: biaya MDR & pencairan ke bank dijurnal otomatis (butuh laporan settlement Midtrans), metode lain (VA bank, kartu), pembayaran sebagian lewat QRIS di app (app selalu menagih sisa penuh).
 
 **Langkah 4 — catatan keputusan:**
 - Checkout app lewat `customer_place_order` (membungkus `place_order` file 06): cek jam buka/jeda/jadwal/QR, lalu voucher & poin dihitung ulang di server sebagai diskon (pajak & service dihitung dari harga setelah diskon). Diskon voucher/poin otomatis tercatat sebagai *Diskon penjualan* di akuntansi (file 07).

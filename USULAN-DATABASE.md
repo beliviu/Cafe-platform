@@ -19,7 +19,41 @@
 | 7. **Akuntansi & keuangan** (bagan akun, jurnal otomatis, beban, laporan, saldo awal, tutup periode) — [`supabase/usulan/07-akuntansi.sql`](supabase/usulan/07-akuntansi.sql) | 🟢 **siap dijalankan** · diuji 83 skenario (+ 05 & 06 diuji ulang) |
 | 8. **Aplikasi customer & QR meja** (status buka/tutup, jeda, terjadwal, estimasi, QR meja, voucher, poin & member, pesan ulang, ulasan, wishlist, bantuan, notifikasi & push) — [`supabase/usulan/08-pelanggan-qr.sql`](supabase/usulan/08-pelanggan-qr.sql) | 🟢 **siap dijalankan** · diuji 93 skenario (dengan & tanpa 07) |
 | 8b. Edge Function `push-send` (kirim notifikasi push) — [`supabase/functions/push-send/index.ts`](supabase/functions/push-send/index.ts) | 📝 opsional — kotak masuk notifikasi di app tetap jalan tanpa ini |
+| 9. **Payment gateway — QRIS dinamis Midtrans** (tagihan QRIS, webhook terverifikasi, rekonsiliasi, refund lewat gateway) — [`supabase/usulan/09-payment-gateway.sql`](supabase/usulan/09-payment-gateway.sql) | 🟢 **siap dijalankan** · diuji 51 skenario end-to-end |
+| 9b. Edge Function `payments` — [`supabase/functions/payments/index.ts`](supabase/functions/payments/index.ts) | 📝 wajib untuk QRIS online (butuh akun Midtrans) |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 09 — payment gateway (QRIS dinamis Midtrans)
+
+Jalankan **setelah file 06** (07/08 tidak wajib). **Dampak ke data yang sudah ada:**
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| `cafe_settings` | 3 kolom: gateway aktif, provider (`midtrans`), masa berlaku QR | Gateway **NONAKTIF** sampai owner menyalakan di Pengaturan → Pembayaran. |
+| 3 tabel baru | `payment_intents` (tagihan QRIS per percobaan bayar), `payment_events` (log notifikasi, anti-dobel), `payment_refunds` (refund lewat gateway) | Kosong. |
+| Fungsi `pay_*` | Hanya bisa dipanggil server (`service_role` = Edge Function), tidak bisa dari aplikasi | — |
+| Realtime | `payment_intents` ditambahkan ke publikasi | Layar bayar berubah otomatis saat lunas. |
+
+Pesanan & pembayaran lama tidak diubah. Tunai, QRIS manual kasir, dan transfer tetap berjalan seperti sekarang; QRIS demo di app tetap demo (tidak pernah melunasi).
+
+**Keamanan:**
+- **Lunas hanya dari gateway.** Webhook diverifikasi dengan tanda tangan SHA512 (`order_id + status_code + gross_amount + ServerKey`), lalu status **diambil ulang dari API Midtrans**. Webhook palsu, atau tanda tangan valid tapi status asli masih pending, tidak melunasi pesanan (diuji).
+- **Nominal dari server:** tagihan = total pesanan − yang sudah dibayar, dihitung database.
+- **Anti-dobel:** notifikasi ganda/terlambat diproses sekali; status setelah lunas diabaikan; satu tagihan aktif per pesanan.
+- **Bayar ganda** (QRIS masuk padahal pesanan sudah lunas/dibatalkan): tidak dicatat dobel, ditandai **Perlu ditinjau** di halaman Pembayaran online.
+- **Kunci Midtrans** hanya di Secrets Edge Function, tidak pernah di database atau aplikasi.
+
+**Cara menjalankan:**
+1. SQL Editor → tempel **seluruh isi** `supabase/usulan/09-payment-gateway.sql` → **Run**. Verifikasi harus **10 baris** (3 `table`, 7 `function`).
+2. Edge Functions → Deploy a new function → Via Editor → nama **`payments`** → tempel `supabase/functions/payments/index.ts` → Deploy. **Verify JWT: OFF** (fungsi memeriksa token sendiri; webhook Midtrans datang tanpa token).
+3. Edge Functions → Secrets: `MIDTRANS_SERVER_KEY` (Server Key dari Midtrans Dashboard → Settings → Access Keys) dan `MIDTRANS_ENV` = `sandbox` (uji) atau `production`.
+4. Midtrans Dashboard → Settings → Payment → **Notification URL**: `https://<project>.supabase.co/functions/v1/payments?webhook=midtrans` (URL lengkap bisa disalin dari web owner → Pengaturan → Pembayaran).
+5. Web owner → **Pengaturan → Pembayaran** → nyalakan, tekan **Tes koneksi**.
+6. Uji sandbox: pesan dari app → **QRIS · bayar sekarang** → bayar dengan simulator QRIS Midtrans sandbox → pesanan berubah lunas sendiri, muncul di **Pembayaran online** & jurnal (bila 07 aktif).
+
+**Catatan:** refund QRIS harus diaktifkan Midtrans untuk akunmu (hubungi support Midtrans bila refund ditolak); batas waktu refund mengikuti acquirer (GoPay QRIS ±45 hari). Biaya MDR gateway belum dijurnal otomatis — catat lewat jurnal manual saat dana cair ke bank.
+
+**Uji ulang lokal:** `cd supabase/tests && npm test` (05–09).
 
 ### File 08 — aplikasi customer & QR meja
 

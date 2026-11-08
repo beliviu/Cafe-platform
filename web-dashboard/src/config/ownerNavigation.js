@@ -1,4 +1,4 @@
-import { Boxes, Building2, ChefHat, ClipboardList, Gift, Landmark, Layers3, LayoutDashboard, LifeBuoy, Package2, ReceiptText, Settings2, ShoppingCart, Star, Users, Wallet } from 'lucide-react'
+import { Boxes, ScanLine, Building2, ChefHat, ClipboardList, Gift, Landmark, Layers3, LayoutDashboard, LifeBuoy, Package2, ReceiptText, Settings2, ShoppingCart, Star, Users, Wallet } from 'lucide-react'
 
 /** Menu owner. Hanya modul yang sudah berfungsi yang tampil. */
 export const OWNER_NAVIGATION = [
@@ -11,6 +11,7 @@ export const OWNER_NAVIGATION = [
     items: [
       { to: '/orders', label: 'Transaksi', icon: ClipboardList },
       { to: '/cashier', label: 'Kasir & refund', icon: Wallet },
+      { to: '/payments', label: 'Pembayaran online', icon: ScanLine },
     ],
   },
   {

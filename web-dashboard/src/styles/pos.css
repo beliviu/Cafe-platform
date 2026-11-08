@@ -131,3 +131,13 @@
   .pos-cart-bar:disabled { display: none; }
   .pos-pay-row.is-split { grid-template-columns: 1fr 1fr auto; }
 }
+
+/* QRIS otomatis (gateway) di kasir */
+.pos-gateway { display: grid; gap: 14px; justify-items: center; }
+.pos-gateway-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+.pos-gateway-head strong { font-size: var(--text-2xl); }
+.pos-gateway-qr { display: grid; place-items: center; width: min(300px, 100%); aspect-ratio: 1; padding: 12px; background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); }
+.pos-gateway-qr svg, .pos-gateway-qr img { width: 100%; height: 100%; }
+.pos-gateway-done { color: var(--status-green-fg); }
+.pos-gateway-hint { margin: 0; font-size: var(--text-sm); text-align: center; }
+.pos-gateway-actions { display: flex; justify-content: space-between; gap: 10px; width: 100%; }

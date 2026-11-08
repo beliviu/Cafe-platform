@@ -8,6 +8,7 @@ const TABS = [
   { to: 'operations', label: 'Operasional' },
   { to: 'charges', label: 'Pajak & biaya' },
   { to: 'ordering', label: 'Pesanan app' },
+  { to: 'payments', label: 'Pembayaran' },
   { to: 'tables', label: 'Meja' },
   { to: 'receipt', label: 'Struk' },
 ]

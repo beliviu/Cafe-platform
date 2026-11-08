@@ -7,6 +7,7 @@ import { createInventoryFixtures, inventoryRpc } from './mockInventory.js'
 import { createPosFixtures, posRpc } from './mockPos.js'
 import { createFinanceFixtures, financeRpc } from './mockFinance.js'
 import { createCustomerFixtures, customerRpc } from './mockCustomer.js'
+import { createPaymentFixtures, paymentInvoke, paymentRpc, payLatestIntent } from './mockPayments.js'
 
 function seeded(seed) {
   let value = seed
@@ -138,6 +139,7 @@ export function createFixtures(now = new Date()) {
   const setupMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('finance') === 'setup'
   const { goLive, ...finance } = createFinanceFixtures({ cafeId, now, setup: setupMode })
   const customer = createCustomerFixtures({ cafeId, orders, products, now })
+  const payment = createPaymentFixtures({ cafeId, orders, now })
 
   return {
     cafe: {
@@ -160,10 +162,11 @@ export function createFixtures(now = new Date()) {
         rounding_unit: 500, order_types: ['dine_in', 'takeaway'], receipt_header: null,
         receipt_footer: 'Terima kasih! Wi-Fi: kopisenja', receipt_show_logo: true, receipt_show_address: true,
         receipt_paper_mm: 58, updated_at: '2026-11-08T00:00:00Z', ...inventory.settings,
-        staff_max_discount_pct: 10, print_kitchen_ticket: false, auto_print_receipt: false, accounting_go_live: goLive, ...customer.settings,
+        staff_max_discount_pct: 10, print_kitchen_ticket: false, auto_print_receipt: false, accounting_go_live: goLive, ...customer.settings, ...payment.settings,
       }],
       ...finance,
       ...customer.tables,
+      ...payment.tables,
       cashier_sessions: pos.cashier_sessions,
       cash_movements: pos.cash_movements,
       refunds: pos.refunds,
@@ -246,6 +249,7 @@ class Query {
   lt(column, value) { this.filters.push((row) => row[column] < value); return this }
   in(column, values) { this.filters.push((row) => values.includes(row[column])); return this }
   is(column, value) { this.filters.push((row) => (row[column] ?? null) === value); return this }
+  not(column, operator, value) { this.filters.push((row) => (operator === 'is' ? (row[column] ?? null) !== value : row[column] !== value)); return this }
   or() { return this }
   order(column, { ascending = true } = {}) { this.sorts.push([column, ascending]); return this }
   limit(count) { this.window = [0, count - 1]; return this }
@@ -316,6 +320,8 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
       return order
     },
     setRealtime(status) { statusListeners.forEach((callback) => callback(status)) },
+    // Simulasi webhook gateway: tagihan QRIS menunggu terbaru jadi lunas
+    payIntent() { return payLatestIntent(store) },
     isLive: () => listeners.size > 0,
   }
   if (typeof window !== 'undefined') {
@@ -326,7 +332,7 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
     if (!window.__dailybrewMockListener) {
       window.__dailybrewMockListener = (event) => {
         const { action, args = [] } = JSON.parse(event.detail)
-        window.__dailybrewMockAll.filter((instance) => instance.isLive()).forEach((instance) => instance[action]?.(...args))
+        window.__dailybrewMockAll.filter((instance) => action === 'payIntent' || instance.isLive()).forEach((instance) => instance[action]?.(...args))
       }
       document.addEventListener('dailybrew-mock', window.__dailybrewMockListener)
     }
@@ -363,6 +369,8 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
         return posResult
       }
+      const paymentResult = paymentRpc(store, name)
+      if (paymentResult) return paymentResult
       const customerResult = customerRpc(store, name, args, fixtures.customerNames)
       if (customerResult) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
@@ -394,6 +402,7 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
     functions: {
       invoke: async (_name, { body }) => {
         await new Promise((resolve) => window.setTimeout(resolve, 300))
+        if (_name === 'payments') return paymentInvoke(store, body, userId)
         if (body.action === 'create') {
           fixtures.team.push({ id: `staff-${fixtures.team.length + 1}`, full_name: body.full_name, role: 'staff', job_title: body.job_title || null, is_active: true, email: body.email, last_sign_in_at: null, created_at: new Date().toISOString() })
         }

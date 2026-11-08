@@ -46,6 +46,8 @@ const LoyaltyPage = lazy(() => import('./pages/customers/LoyaltyPage.jsx').then(
 const ReviewsPage = lazy(() => import('./pages/customers/ReviewsPage.jsx').then((module) => ({ default: module.ReviewsPage })))
 const SupportPage = lazy(() => import('./pages/customers/SupportPage.jsx').then((module) => ({ default: module.SupportPage })))
 const StaffSupportPage = lazy(() => import('./pages/customers/SupportPage.jsx').then((module) => ({ default: module.StaffSupportPage })))
+const PaymentSettings = lazy(() => import('./pages/settings/PaymentSettings.jsx').then((module) => ({ default: module.PaymentSettings })))
+const OnlinePaymentsPage = lazy(() => import('./pages/payments/OnlinePaymentsPage.jsx').then((module) => ({ default: module.OnlinePaymentsPage })))
 const TablesSettings = lazy(() => import('./pages/settings/TablesSettings.jsx').then((module) => ({ default: module.TablesSettings })))
 const TeamLayout = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.TeamLayout })))
 const MembersPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.MembersPage })))
@@ -78,6 +80,7 @@ function ownerRoutes() {
       <Route path="categories" element={<CategoriesPage />} />
       <Route path="orders" element={<OrdersPage />} />
       <Route path="cashier" element={<CashierReportPage />} />
+      <Route path="payments" element={<OnlinePaymentsPage />} />
       <Route path="inventory" element={<InventoryLayout />}>
         <Route index element={<IngredientsPage />} />
         <Route path="movements" element={<MovementsPage />} />
@@ -111,6 +114,7 @@ function ownerRoutes() {
         <Route path="operations" element={<OperationsSettings />} />
         <Route path="charges" element={<ChargesSettings />} />
         <Route path="ordering" element={<OrderingSettings />} />
+        <Route path="payments" element={<PaymentSettings />} />
         <Route path="tables" element={<TablesSettings />} />
         <Route path="receipt" element={<ReceiptSettings />} />
       </Route>

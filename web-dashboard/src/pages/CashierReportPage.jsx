@@ -13,6 +13,7 @@ import { friendlyError, POS_REQUIRED } from '../lib/db.js'
 import { formatDateTime, formatNumber, formatQueueNumber, formatRupiah, jakartaDateKey } from '../lib/format.js'
 import { useLoader } from '../lib/inventory.js'
 import { rpc } from '../lib/pos.js'
+import { callPayments } from '../lib/payments.js'
 import { paymentMethodLabel } from '../lib/status.js'
 import { fetchTeam } from '../lib/team.js'
 
@@ -46,7 +47,14 @@ function CashierReport({ cafe }) {
     const orders = orderIds.length
       ? (await supabase.from('orders').select('id, queue_number, order_number, created_at, total_amount, paid_amount, refunded_amount').in('id', orderIds)).data || []
       : []
-    return { sessions: sessions.data || [], refunds: refunds.data || [], team, orders: new Map(orders.map((order) => [order.id, order])) }
+    // Pesanan yang dibayar lewat QRIS online (file 09) bisa dikembalikan otomatis lewat gateway
+    const paidOnline = orderIds.length
+      ? await supabase.from('payment_intents').select('order_id').eq('status', 'paid').not('payment_id', 'is', null).in('order_id', orderIds)
+      : { data: [] }
+    return {
+      sessions: sessions.data || [], refunds: refunds.data || [], team, orders: new Map(orders.map((order) => [order.id, order])),
+      gatewayOrders: new Set(paidOnline.error ? [] : (paidOnline.data || []).map((row) => row.order_id)),
+    }
   }, [cafe.id, supabase])
   const { data, error, reload, loading } = useLoader(load)
 
@@ -60,6 +68,16 @@ function CashierReport({ cafe }) {
   const shortage = closed.filter((session) => Number(session.difference) <= -1)
   const thisMonth = jakartaDateKey().slice(0, 7)
   const refundedMonth = data.refunds.filter((refund) => refund.status === 'approved' && String(refund.requested_at).startsWith(thisMonth))
+
+  async function refundViaGateway(refund) {
+    try {
+      await callPayments(supabase, { action: 'refund', refund_id: refund.id })
+      toast({ tone: 'success', title: `Refund ${formatRupiah(refund.amount)} dikirim lewat QRIS`, description: 'Dana kembali ke rekening/e-wallet pelanggan sesuai bank penerbit.' })
+    } catch (caught) {
+      toast({ tone: 'error', title: 'Refund gateway gagal', description: caught.message })
+    }
+    reload()
+  }
 
   async function decide(refund, approve, note) {
     await rpc(supabase, 'refund_decide', { p_refund_id: refund.id, p_approve: approve, p_note: note || null })
@@ -134,7 +152,9 @@ function CashierReport({ cafe }) {
                           {refund.status === 'requested' && (
                             <span className="pos-held-actions">
                               <Button size="sm" variant="ghost" icon={X} onClick={() => setDecision({ refund, approve: false })}>Tolak</Button>
-                              <Button size="sm" icon={Check} onClick={() => setDecision({ refund, approve: true })}>Setujui</Button>
+                              {data.gatewayOrders.has(refund.order_id)
+                                ? <Button size="sm" icon={Check} onClick={() => refundViaGateway(refund)}>Setujui & kembalikan via QRIS</Button>
+                                : <Button size="sm" icon={Check} onClick={() => setDecision({ refund, approve: true })}>Setujui</Button>}
                             </span>
                           )}
                         </td>

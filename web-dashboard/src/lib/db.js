@@ -29,7 +29,7 @@ function probeColumns(supabase, table, columns) {
 }
 
 /**
- * { operations, branding, phase3, inventory, pos, finance, customer } — true bila migrasi 02 / 03 / 04 / 05 / 06 / 07 / 08 sudah diterapkan. Di-cache per klien.
+ * { operations, branding, phase3, inventory, pos, finance, customer, payments } — true bila migrasi 02 / 03 / 04 / 05 / 06 / 07 / 08 / 09 sudah diterapkan. Di-cache per klien.
  * Kolom yang belum ada membuat select gagal, jadi UI memilih kolom berdasarkan hasil ini.
  */
 export function detectDbFeatures(supabase) {
@@ -42,7 +42,8 @@ export function detectDbFeatures(supabase) {
       probeColumns(supabase, 'orders', 'pricing_version, source'),
       probeColumns(supabase, 'accounts', 'id'),
       probeColumns(supabase, 'vouchers', 'id'),
-    ]).then(([operations, branding, phase3, inventory, pos, finance, customer]) => ({ operations, branding, phase3, inventory, pos, finance, customer }))
+      probeColumns(supabase, 'payment_intents', 'id'),
+    ]).then(([operations, branding, phase3, inventory, pos, finance, customer, payments]) => ({ operations, branding, phase3, inventory, pos, finance, customer, payments }))
     featureCache.set(supabase, probe)
   }
   return featureCache.get(supabase)

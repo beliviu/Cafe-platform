@@ -2,11 +2,12 @@
  * Ajukan refund (staff → menunggu owner) atau refund langsung (owner). RPC refund_request (file 06).
  * Bahan bisa dikembalikan ke stok bila pesanan sudah selesai (bahan sudah terpotong).
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/useAuth.js'
 import { Button, Dialog, RupiahInput, Select, Switch, TextField, useToast } from '../ui/index.js'
 import { formatRupiah } from '../../lib/format.js'
 import { REFUND_REASONS, rpc } from '../../lib/pos.js'
+import { callPayments } from '../../lib/payments.js'
 import { paymentMethodLabel } from '../../lib/status.js'
 
 const METHODS = ['cash', 'qris', 'bank_transfer', 'ewallet']
@@ -23,12 +24,37 @@ export function RefundDialog({ order, items, isOwner, onClose, onDone }) {
   const [quantities, setQuantities] = useState(() => Object.fromEntries(items.map((item) => [item.id, item.quantity])))
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [gatewayPaid, setGatewayPaid] = useState(false)
+
+  // Dibayar lewat QRIS online (file 09) → owner bisa mengembalikan otomatis lewat gateway
+  useEffect(() => {
+    if (!isOwner) return
+    supabase.from('payment_intents').select('id').eq('order_id', order.id).eq('status', 'paid').not('payment_id', 'is', null).limit(1)
+      .then(({ data, error: queryError }) => {
+        if (!queryError && data?.length) {
+          setGatewayPaid(true)
+          setMethod('gateway')
+        }
+      })
+  }, [isOwner, order.id, supabase])
 
   async function submit(event) {
     event.preventDefault()
     if (!(Number(amount) > 0) || Number(amount) > refundable) return setError(`Nominal 1 – ${formatRupiah(refundable)}`)
     if (reason.trim().length < 3) return setError('Tulis alasan refund')
     setBusy(true)
+    const restockItems = canRestock && restock ? items.filter((item) => Number(quantities[item.id]) > 0).map((item) => ({ order_item_id: item.id, quantity: Number(quantities[item.id]) })) : []
+    if (method === 'gateway') {
+      try {
+        const result = await callPayments(supabase, { action: 'refund', order_id: order.id, amount: Number(amount), reason: reason.trim(), restock: restockItems.length > 0, items: restockItems })
+        toast({ tone: 'success', title: `Refund ${formatRupiah(amount)} dikirim lewat QRIS`, description: 'Dana kembali ke rekening/e-wallet pelanggan sesuai bank penerbit.' })
+        onDone({ id: result.refund_id, status: 'approved' })
+      } catch (caught) {
+        setError(caught.message)
+        setBusy(false)
+      }
+      return undefined
+    }
     try {
       const refund = await rpc(supabase, 'refund_request', {
         p_order_id: order.id, p_amount: Number(amount), p_method: method, p_reason: reason.trim(), p_restock: canRestock && restock,
@@ -54,7 +80,9 @@ export function RefundDialog({ order, items, isOwner, onClose, onDone }) {
       <form id="refund-form" className="inv-form" onSubmit={submit} noValidate>
         <div className="inv-form-row">
           <RupiahInput label="Nominal" value={amount} onChange={(value) => { setAmount(value); setError('') }} />
-          <Select label="Dikembalikan lewat" value={method} onChange={(event) => setMethod(event.target.value)} options={METHODS.map((value) => ({ value, label: paymentMethodLabel(value) }))} />
+          <Select label="Dikembalikan lewat" value={method} onChange={(event) => setMethod(event.target.value)}
+            options={[...(gatewayPaid ? [{ value: 'gateway', label: 'QRIS otomatis (ke pelanggan)' }] : []), ...METHODS.map((value) => ({ value, label: paymentMethodLabel(value) }))]}
+            hint={method === 'gateway' ? 'Dana dikirim balik lewat gateway, tanpa transfer manual' : undefined} />
         </div>
         <div className="refund-reasons">
           {REFUND_REASONS.map((value) => (
