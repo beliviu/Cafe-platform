@@ -154,3 +154,16 @@ export function computeDashboard({ orders = [], items = [], products = [], range
     recent,
   }
 }
+
+/** Rentang jam yang ditampilkan: minimal 07–21, diperluas bila ada pesanan di luar itu. */
+export function visibleHours(matrix) {
+  let first = 7
+  let last = 21
+  matrix.forEach((row) => row.forEach((count, hour) => {
+    if (count > 0) {
+      first = Math.min(first, hour)
+      last = Math.max(last, hour)
+    }
+  }))
+  return Array.from({ length: last - first + 1 }, (_, index) => first + index)
+}

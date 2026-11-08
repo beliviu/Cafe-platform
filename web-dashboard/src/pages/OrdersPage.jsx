@@ -1,217 +1,278 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
-import { CreditCard, Eye, ReceiptText, ShoppingBag } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useOutletContext, useSearchParams } from 'react-router-dom'
+import { ChevronRight, Download, FileSpreadsheet, FileText, ReceiptText } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
-import { Modal, PageEmpty, PageError, PageLoading } from '../components/PageState.jsx'
-import { PageHeader } from '../components/PageHeader.jsx'
-import { customerLabel, fetchCustomerNames, friendlyError, orderColumns } from '../lib/db.js'
-import { formatDateTime, formatOrderReference, formatQueueNumber, formatRupiah } from '../lib/format.js'
-import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, paymentMethodLabel } from '../lib/status.js'
+import { OrderDetailDrawer } from '../components/orders/OrderDetailDrawer.jsx'
+import {
+  Button, Card, DateRangePicker, EmptyState, ErrorState, IconButton, Menu, OrderStatusBadge, PageHeader, Pagination,
+  PaymentBadge, SearchInput, Select, SkeletonRows, useToast,
+} from '../components/ui/index.js'
+import { isCancelled, isPaid } from '../lib/analytics.js'
+import { resolveRange } from '../lib/dateRange.js'
+import { customerLabel, fetchAllRows, fetchCustomerNames, fetchOrderItems, friendlyError, orderColumns } from '../lib/db.js'
+import { buildExportRows, exportCsv, exportXlsx } from '../lib/exportOrders.js'
+import {
+  formatDateShort, formatNumber, formatOrderReference, formatQueueNumber, formatRupiah, formatTime, summarizeItems,
+} from '../lib/format.js'
+import { ORDER_STATUS, paymentMethodLabel } from '../lib/status.js'
 
-const ORDER_STATUSES = [['all', 'Semua status'], ...Object.entries(ORDER_STATUS_LABELS)]
+const PAGE_SIZE = 25
+const STATUS_OPTIONS = [{ value: 'all', label: 'Semua status' }, ...Object.entries(ORDER_STATUS).map(([value, meta]) => ({ value, label: meta.label }))]
+const PAYMENT_OPTIONS = [
+  { value: 'all', label: 'Semua pembayaran' },
+  { value: 'paid', label: 'Lunas' },
+  { value: 'unpaid', label: 'Belum lunas' },
+]
 
-function formatDate(value) {
-  return formatDateTime(value)
-}
-
-function OrderDetails({ order, cafeId, supabase }) {
-  const [items, setItems] = useState([])
-  const [payments, setPayments] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
-
-  useEffect(() => {
-    let active = true
-    async function loadDetails() {
-      const [itemsResult, paymentsResult] = await Promise.all([
-        supabase.from('order_items')
-          .select('id, product_name, price, quantity, subtotal')
-          .eq('cafe_id', cafeId)
-          .eq('order_id', order.id)
-          .order('created_at', { ascending: true }),
-        supabase.from('payments')
-          .select('id, payment_method, amount, payment_status, created_at')
-          .eq('order_id', order.id)
-          .order('created_at', { ascending: false }),
-      ])
-      if (!active) return
-      if (itemsResult.error || paymentsResult.error) {
-        const error = itemsResult.error || paymentsResult.error
-        setErrorMessage(`Detail transaksi gagal dimuat: ${error.message}`)
-      } else {
-        setItems(itemsResult.data || [])
-        setPayments(paymentsResult.data || [])
-      }
-      setLoading(false)
-    }
-    loadDetails()
-    return () => { active = false }
-  }, [cafeId, order.id, supabase])
-
-  return (
-    <div className="order-detail">
-      <div className="order-detail-summary">
-        <span className="order-detail-icon"><ReceiptText size={19} /></span>
-        <div><span>Nomor antrean</span><strong className="tabular">{formatQueueNumber(order)}</strong><small>{formatOrderReference(order)}</small></div>
-        <div><span>Customer</span><strong>{customerLabel(order)}</strong></div>
-        <div><span>Waktu pesanan</span><strong>{formatDate(order.created_at)}</strong></div>
-      </div>
-      <div className="order-detail-status">
-        <span className={`status-pill status-${order.order_status}`}>{ORDER_STATUS_LABELS[order.order_status] || order.order_status}</span>
-        <span className={`status-pill payment-status-pill payment-${order.payment_status}`}>
-          {PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}
-        </span>
-      </div>
-
-      {loading ? <PageLoading label="Memuat detail transaksi..." /> : errorMessage ? (
-        <div className="form-alert" role="alert">{errorMessage}</div>
-      ) : (
-        <>
-          <section className="detail-section">
-            <h3>Item pesanan</h3>
-            {items.length ? items.map((item) => (
-              <div className="order-item-row" key={item.id}>
-                <div><strong>{item.product_name}</strong><span>{item.quantity} × {formatRupiah(item.price)}</span></div>
-                <strong>{formatRupiah(item.subtotal)}</strong>
-              </div>
-            )) : <p className="detail-muted">Tidak ada item untuk transaksi ini.</p>}
-            <div className="order-total-row"><span>Total pesanan</span><strong>{formatRupiah(order.total_amount)}</strong></div>
-          </section>
-
-          <section className="detail-section">
-            <h3><CreditCard size={15} /> Pembayaran</h3>
-            {payments.length ? payments.map((payment) => (
-              <div className="payment-row" key={payment.id}>
-                <div><strong>{paymentMethodLabel(payment.payment_method)}</strong><span>{PAYMENT_STATUS_LABELS[payment.payment_status] || payment.payment_status} · {formatDate(payment.created_at)}</span></div>
-                <strong>{formatRupiah(payment.amount)}</strong>
-              </div>
-            )) : (
-              <div className="payment-row">
-                <div><strong>{paymentMethodLabel(order.payment_method)}</strong><span>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</span></div>
-                <strong>{formatRupiah(order.total_amount)}</strong>
-              </div>
-            )}
-          </section>
-
-          {order.notes && (
-            <section className="detail-section">
-              <h3>Catatan pelanggan</h3>
-              <p className="order-note">{order.notes}</p>
-            </section>
-          )}
-        </>
-      )}
-    </div>
-  )
+function searchText(order) {
+  return [formatQueueNumber(order), order.customer_name, order.order_number, order.id]
+    .filter(Boolean).join(' ').toLocaleLowerCase('id')
 }
 
 export function OrdersPage() {
   const { cafe, features } = useOutletContext()
   const { supabase } = useAuth()
+  const { toast } = useToast()
+  const [searchParams] = useSearchParams()
+  const [rangeValue, setRangeValue] = useState({ preset: '30d', custom: null })
+  const [statusFilter, setStatusFilter] = useState(() => (ORDER_STATUS[searchParams.get('status')] ? searchParams.get('status') : 'all'))
+  const [paymentFilter, setPaymentFilter] = useState(() => (['paid', 'unpaid'].includes(searchParams.get('payment')) ? searchParams.get('payment') : 'all'))
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
   const [orders, setOrders] = useState([])
+  const [itemsByOrder, setItemsByOrder] = useState(new Map())
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [attempt, setAttempt] = useState(0)
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [selectedId, setSelectedId] = useState(null)
+  const [exporting, setExporting] = useState(false)
+  const requestId = useRef(0)
+
+  const range = useMemo(() => (rangeValue.preset === 'all' ? null : resolveRange(rangeValue.preset, rangeValue.custom)), [rangeValue])
 
   const loadOrders = useCallback(async () => {
+    const current = ++requestId.current
     setLoading(true)
     setLoadError('')
-    let request = supabase.from('orders')
-      .select(orderColumns(features))
-      .eq('cafe_id', cafe.id)
-      .order('created_at', { ascending: false })
-      .limit(200)
-    if (statusFilter !== 'all') request = request.eq('order_status', statusFilter)
-
-    const { data, error } = await request
+    const { data, error } = await fetchAllRows(() => {
+      let request = supabase.from('orders').select(orderColumns(features)).eq('cafe_id', cafe.id)
+      if (range) request = request.gte('created_at', range.start.toISOString()).lt('created_at', range.endExclusive.toISOString())
+      if (statusFilter !== 'all') request = request.eq('order_status', statusFilter)
+      if (paymentFilter === 'paid') request = request.eq('payment_status', 'paid')
+      if (paymentFilter === 'unpaid') request = request.neq('payment_status', 'paid')
+      return request.order('created_at', { ascending: false }).order('id', { ascending: false })
+    })
+    if (current !== requestId.current) return
     if (error) {
       setLoadError(friendlyError(error))
-    } else {
-      const { names } = await fetchCustomerNames(supabase, (data || []).map((order) => order.id))
-      setOrders((data || []).map((order) => ({ ...order, customer_name: names.get(order.id) || '' })))
+      setLoading(false)
+      return
     }
+    const { names } = await fetchCustomerNames(supabase, data.map((order) => order.id))
+    if (current !== requestId.current) return
+    setOrders(data.map((order) => ({ ...order, customer_name: names.get(order.id) || '' })))
+    setItemsByOrder(new Map())
     setLoading(false)
-  }, [cafe.id, features, statusFilter, supabase])
+  }, [cafe.id, features, paymentFilter, range, statusFilter, supabase])
 
   useEffect(() => {
     const timer = window.setTimeout(loadOrders, 0)
-    return () => window.clearTimeout(timer)
+    return () => {
+      window.clearTimeout(timer)
+      requestId.current += 1
+    }
   }, [attempt, loadOrders])
 
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase('id').replace(/^#/, '')
+    return needle ? orders.filter((order) => searchText(order).includes(needle)) : orders
+  }, [orders, query])
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, pageCount)
+  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const pageIdsKey = pageRows.map((order) => order.id).join(',')
+
+  // Item ringkas hanya untuk baris di halaman ini.
+  useEffect(() => {
+    const missing = pageIdsKey.split(',').filter((id) => id && !itemsByOrder.has(id))
+    if (!missing.length) return undefined
+    let active = true
+    fetchOrderItems(supabase, missing).then(({ byOrder }) => {
+      if (!active) return
+      setItemsByOrder((current) => {
+        const next = new Map(current)
+        missing.forEach((id) => next.set(id, byOrder.get(id) || []))
+        return next
+      })
+    })
+    return () => { active = false }
+  }, [itemsByOrder, pageIdsKey, supabase])
+
+  const totals = useMemo(() => {
+    const active = filtered.filter((order) => !isCancelled(order))
+    return {
+      count: filtered.length,
+      value: active.reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0),
+      paid: filtered.filter(isPaid).reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0),
+      paidCount: filtered.filter(isPaid).length,
+    }
+  }, [filtered])
+
+  function resetPage(setter) {
+    return (value) => {
+      setter(value)
+      setPage(1)
+    }
+  }
+
+  async function handleExport(format) {
+    if (!filtered.length) return
+    setExporting(true)
+    try {
+      const missing = filtered.map((order) => order.id).filter((id) => !itemsByOrder.has(id))
+      const { byOrder, error } = await fetchOrderItems(supabase, missing)
+      if (error) throw new Error(friendlyError(error))
+      const allItems = new Map([...itemsByOrder, ...byOrder])
+      const rows = buildExportRows(filtered, allItems)
+      const stamp = range ? `${range.startKey}_${range.endKey}` : 'semua'
+      const fileName = `transaksi-${cafe.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${stamp}`
+      if (format === 'xlsx') await exportXlsx(rows, fileName)
+      else exportCsv(rows, fileName)
+      toast({ title: `${formatNumber(rows.length)} transaksi diekspor`, description: format === 'xlsx' ? 'File Excel (.xlsx) diunduh.' : 'File CSV diunduh.' })
+    } catch (caught) {
+      toast({ tone: 'error', title: 'Ekspor gagal', description: caught.message })
+    }
+    setExporting(false)
+  }
+
+  function handleChanged(updated, kind) {
+    setOrders((current) => current.map((order) => (order.id === updated.id ? { ...order, ...updated, customer_name: order.customer_name } : order)))
+    toast({
+      title: kind === 'paid' ? `${formatQueueNumber(updated)} lunas` : `${formatQueueNumber(updated)} dibatalkan`,
+      description: kind === 'paid' ? `${formatRupiah(updated.total_amount)} · ${paymentMethodLabel(updated.payment_method)}` : updated.cancel_reason,
+    })
+  }
+
+  const selected = orders.find((order) => order.id === selectedId)
+  const filtersActive = query || statusFilter !== 'all' || paymentFilter !== 'all'
+
   return (
-    <div className="dashboard-content entity-page">
+    <div className="page">
       <PageHeader
-        eyebrow="AKTIVITAS"
+        eyebrow="Operasional"
         title="Transaksi"
-        description="Pantau pesanan cafe dan lihat ringkasan pembayarannya."
+        description="Cari, saring, dan ekspor pesanan. Klik baris untuk detail dan linimasa."
+        actions={(
+          <Menu
+            label="Pilihan ekspor"
+            trigger={({ props }) => (
+              <Button variant="secondary" icon={Download} loading={exporting} disabled={!filtered.length || loading} {...props}>Ekspor</Button>
+            )}
+            items={[
+              { label: 'Excel (.xlsx)', icon: FileSpreadsheet, hint: `${formatNumber(filtered.length)} baris`, onSelect: () => handleExport('xlsx') },
+              { label: 'CSV', icon: FileText, hint: `${formatNumber(filtered.length)} baris`, onSelect: () => handleExport('csv') },
+            ]}
+          />
+        )}
       />
 
-      <section className="entity-toolbar orders-toolbar">
-        <label className="status-filter-label">
-          Status pesanan
-          <select aria-label="Filter status pesanan" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            {ORDER_STATUSES.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
-          </select>
-        </label>
-        <span className="entity-count">{orders.length} transaksi ditampilkan · maksimal 200</span>
+      <section className="toolbar" aria-label="Filter transaksi">
+        <SearchInput value={query} onChange={resetPage(setQuery)} placeholder="Cari nomor antrean atau nama customer…" label="Cari transaksi" className="toolbar-search" />
+        <DateRangePicker value={rangeValue} onChange={resetPage(setRangeValue)} allowAll />
+        <Select hideLabel label="Status pesanan" value={statusFilter} onChange={(event) => resetPage(setStatusFilter)(event.target.value)} options={STATUS_OPTIONS} />
+        <Select hideLabel label="Status pembayaran" value={paymentFilter} onChange={(event) => resetPage(setPaymentFilter)(event.target.value)} options={PAYMENT_OPTIONS} />
       </section>
 
-      {loading ? (
-        <PageLoading label="Memuat transaksi cafe..." />
-      ) : loadError ? (
-        <PageError message={loadError} onRetry={() => setAttempt((value) => value + 1)} />
-      ) : !orders.length ? (
-        <PageEmpty
-          title={statusFilter === 'all' ? 'Belum ada transaksi' : 'Tidak ada pesanan dengan status ini'}
-          description={statusFilter === 'all' ? 'Pesanan pelanggan akan muncul di halaman ini.' : 'Pilih status lain untuk melihat transaksi yang cocok.'}
-          action={statusFilter !== 'all' && <button className="button button-secondary" type="button" onClick={() => setStatusFilter('all')}>Tampilkan semua</button>}
-        />
+      {loadError ? (
+        <Card><ErrorState message={loadError} onRetry={() => setAttempt((value) => value + 1)} /></Card>
+      ) : loading && !orders.length ? (
+        <Card padding="none"><SkeletonRows rows={8} label="Memuat transaksi" /></Card>
+      ) : !filtered.length ? (
+        <Card>
+          <EmptyState
+            icon={ReceiptText}
+            title={filtersActive ? 'Tidak ada transaksi yang cocok' : 'Belum ada transaksi pada rentang ini'}
+            description={filtersActive ? 'Coba kata kunci lain atau ubah filter.' : 'Pilih rentang tanggal lain, atau tunggu pesanan dari customer.'}
+            action={filtersActive && (
+              <Button variant="secondary" onClick={() => { setQuery(''); setStatusFilter('all'); setPaymentFilter('all'); setPage(1) }}>Hapus filter</Button>
+            )}
+          />
+        </Card>
       ) : (
-        <section className="panel orders-panel">
-          <div className="transaction-table-head order-table-head">
-            <span>ORDER</span>
-            <span>WAKTU · CUSTOMER</span>
-            <span>STATUS</span>
-            <span>PEMBAYARAN</span>
-            <span className="amount-heading">TOTAL</span>
-            <span />
+        <Card padding="none" className={`table-card${loading ? ' is-refreshing' : ''}`}>
+          <div className="table-scroll">
+            <table className="data-table orders-table">
+              <thead>
+                <tr>
+                  <th scope="col">No. antrean</th>
+                  <th scope="col">Customer</th>
+                  <th scope="col">Waktu</th>
+                  <th scope="col" className="col-items">Item</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Pembayaran</th>
+                  <th scope="col" className="num-col">Total</th>
+                  <th scope="col"><span className="sr-only">Aksi</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((order) => {
+                  const items = itemsByOrder.get(order.id)
+                  return (
+                    <tr key={order.id} className={`is-clickable${isCancelled(order) ? ' is-muted' : ''}`} onClick={() => setSelectedId(order.id)}>
+                      <td>
+                        <strong className="cell-queue tabular">{formatQueueNumber(order)}</strong>
+                        <small className="cell-sub tabular">{formatOrderReference(order)}</small>
+                      </td>
+                      <td>{customerLabel(order)}</td>
+                      <td className="tabular">{formatDateShort(order.created_at)}<small className="cell-sub">{formatTime(order.created_at)} WIB</small></td>
+                      <td className="col-items cell-muted">{items ? summarizeItems(items) : <span className="cell-loading">Memuat…</span>}</td>
+                      <td><OrderStatusBadge status={order.order_status} size="sm" /></td>
+                      <td>
+                        <PaymentBadge status={order.payment_status} size="sm" />
+                        {order.payment_method && <small className="cell-sub">{paymentMethodLabel(order.payment_method)}</small>}
+                      </td>
+                      <td className="num-col tabular"><strong>{formatRupiah(order.total_amount)}</strong></td>
+                      <td className="actions-col">
+                        <IconButton
+                          icon={ChevronRight}
+                          size="sm"
+                          label={`Detail ${formatQueueNumber(order)}`}
+                          tooltip={false}
+                          onClick={(event) => { event.stopPropagation(); setSelectedId(order.id) }}
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={6}>
+                    <span className="tfoot-label">{formatNumber(totals.count)} transaksi terfilter</span>
+                    <span className="tfoot-sub">Lunas {formatNumber(totals.paidCount)} · nilai tanpa yang dibatalkan {formatRupiah(totals.value)}</span>
+                  </td>
+                  <td className="num-col tabular" colSpan={2}>
+                    <span className="tfoot-sub">Pendapatan lunas</span>
+                    <strong className="tfoot-total">{formatRupiah(totals.paid)}</strong>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
-          {orders.map((order) => (
-            <article className="transaction-row order-list-row" key={order.id}>
-              <span className="transaction-order">
-                <span className="order-icon"><ShoppingBag size={15} /></span>
-                <strong className="tabular">{formatQueueNumber(order)}</strong>
-              </span>
-              <span className="transaction-date">
-                {formatDate(order.created_at)}
-                <small>{customerLabel(order)}</small>
-              </span>
-              <span><span className={`status-pill status-${order.order_status}`}>{ORDER_STATUS_LABELS[order.order_status] || order.order_status}</span></span>
-              <span className="payment-cell">
-                <span className={`payment-dot payment-${order.payment_status}`} />
-                <span>{PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}</span>
-                <small>{paymentMethodLabel(order.payment_method)}</small>
-              </span>
-              <strong className="transaction-amount">{formatRupiah(order.total_amount)}</strong>
-              <button type="button" className="icon-button order-view-button" aria-label={`Lihat transaksi ${formatQueueNumber(order)}`} onClick={() => setSelectedOrder(order)}>
-                <Eye size={16} />
-              </button>
-            </article>
-          ))}
-        </section>
+          <Pagination page={safePage} pageSize={PAGE_SIZE} total={filtered.length} onChange={setPage} itemLabel="transaksi" />
+        </Card>
       )}
 
-      {selectedOrder && (
-        <Modal
-          title="Detail transaksi"
-          description={`${cafe.name} · Pesanan pelanggan`}
-          onClose={() => setSelectedOrder(null)}
-          wide
-        >
-          <OrderDetails order={selectedOrder} cafeId={cafe.id} supabase={supabase} />
-        </Modal>
+      {selected && (
+        <OrderDetailDrawer
+          key={selected.id}
+          order={selected}
+          cafe={cafe}
+          features={features}
+          onClose={() => setSelectedId(null)}
+          onChanged={handleChanged}
+        />
       )}
     </div>
   )

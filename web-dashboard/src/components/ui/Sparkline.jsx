@@ -1,7 +1,8 @@
 import { useId } from 'react'
 
 /** Garis tren kecil tanpa sumbu. `values` = array angka. */
-export function Sparkline({ values = [], width = 96, height = 28, tone = 'sage', label }) {
+/** fluid: melebar mengikuti wadah (garis tetap tipis berkat non-scaling-stroke). */
+export function Sparkline({ values = [], width = 96, height = 28, tone = 'sage', label, fluid = false }) {
   const gradientId = useId()
   const clean = values.map((value) => Number(value) || 0)
   if (clean.length < 2) return null
@@ -16,8 +17,9 @@ export function Sparkline({ values = [], width = 96, height = 28, tone = 'sage',
   return (
     <svg
       className={`ui-sparkline ui-sparkline-${tone}`}
-      width={width}
+      width={fluid ? '100%' : width}
       height={height}
+      preserveAspectRatio={fluid ? 'none' : undefined}
       viewBox={`0 0 ${width} ${height}`}
       role={label ? 'img' : undefined}
       aria-label={label}
@@ -30,7 +32,7 @@ export function Sparkline({ values = [], width = 96, height = 28, tone = 'sage',
         </linearGradient>
       </defs>
       <path d={area} fill={`url(#${gradientId})`} />
-      <path d={line} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={line} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }

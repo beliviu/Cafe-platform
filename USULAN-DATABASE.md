@@ -179,3 +179,6 @@ order by 1, 2;
 | J | Kolom `orders.order_type` (`dine_in`/`takeaway`), `orders.table_number`. | Pilihan dine-in + nomor meja di checkout; tampil di kartu staff |
 | K | Fungsi **baru** `create_order_v2(...)` (fungsi lama tetap ada): menerima catatan per item (`order_items.notes`), `order_type`, `table_number`, metode `cash/qris/bank_transfer/ewallet`. | Kustomisasi tanpa biaya (gula, es) sebagai catatan item; metode bayar lebih lengkap |
 | L | *(Ditunda)* Varian berbayar (ukuran S/M/L) butuh tabel opsi produk + harga tambahan di `create_order_v2`. | Opsi varian dengan harga berbeda |
+| M | *(Ditunda, bukan SQL)* Undang/nonaktifkan akun staff dari halaman Pengaturan butuh **Edge Function** dengan service-role (membuat user di Auth + `profiles.role = 'staff'`, `cafe_id`). Tidak bisa dari browser dengan aman. | Tombol "Undang staff" di Pengaturan → Tim kafe. Saat ini Pengaturan hanya menampilkan daftar tim + catatan bahwa akun dibuat administrator. |
+
+**Varian produk (Fase 3):** form produk owner belum punya pilihan varian karena skema belum mendukung. Kustomisasi gratis (gula, es) cukup lewat catatan item (`order_items.notes`, sudah ada) di fase 5; varian berbayar menunggu usulan L.

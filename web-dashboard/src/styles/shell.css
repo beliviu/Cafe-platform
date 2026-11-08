@@ -1,0 +1,85 @@
+/* Kerangka aplikasi web: sidebar yang bisa diciutkan + bar atas di layar kecil */
+
+.shell {
+  --shell-sidebar: 248px;
+  min-height: 100vh;
+  background: var(--surface-canvas);
+}
+.shell.is-collapsed { --shell-sidebar: 76px; }
+
+.shell-sidebar {
+  position: fixed; inset: 0 auto 0 0; z-index: 20;
+  display: flex; flex-direction: column; gap: 6px;
+  width: var(--shell-sidebar); padding: 18px 14px 14px;
+  background: var(--surface-card); border-right: 1px solid var(--border-subtle);
+  transition: width .2s var(--ease);
+}
+.shell-sidebar-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; margin-bottom: 14px; padding-left: 6px; }
+.shell.is-collapsed .shell-sidebar-top { flex-direction: column; gap: 10px; padding-left: 0; }
+
+.shell-brand { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: inherit; text-decoration: none; border-radius: var(--radius-md); }
+.shell-brand-mark { display: inline-grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; color: var(--text-on-primary); background: var(--sage-600); border-radius: 11px; }
+.shell-brand-name { color: var(--text-primary); font: 700 21px/1 var(--font-serif); letter-spacing: -.03em; }
+.shell-brand-name span { color: var(--sage-600); font-weight: 400; }
+
+.shell-nav { display: grid; gap: 14px; }
+.shell-nav ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.shell-nav-label { display: block; margin: 0 0 6px 12px; color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.shell-nav-divider { display: block; height: 1px; margin: 0 10px 8px; background: var(--border-subtle); }
+.shell-nav-group:first-child .shell-nav-divider { display: none; }
+
+.shell-link {
+  position: relative; display: flex; align-items: center; gap: 12px; min-height: var(--tap-target); padding: 0 12px;
+  color: var(--text-secondary); border-radius: var(--radius-md); font-size: var(--text-base); font-weight: 600; text-decoration: none;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.shell-link:hover { color: var(--text-primary); background: var(--surface-hover); }
+.shell-link.is-active { color: var(--sage-800); background: var(--sage-100); }
+.shell-link.is-active::before { position: absolute; left: -14px; top: 10px; bottom: 10px; width: 3px; background: var(--sage-600); border-radius: 0 3px 3px 0; content: ""; }
+.shell-link-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shell-link-badge { min-width: 22px; padding: 2px 7px; color: var(--text-on-primary); background: var(--sage-600); border-radius: var(--radius-full); font-size: 11.5px; font-weight: 700; text-align: center; }
+.shell.is-collapsed .shell-link { justify-content: center; padding: 0; }
+.shell.is-collapsed .shell-link-badge { position: absolute; top: 2px; right: 4px; min-width: 18px; padding: 1px 5px; font-size: 10.5px; }
+
+.shell-spacer { flex: 1; }
+
+.shell-account { display: flex; align-items: center; gap: 10px; padding: 12px 2px 0 6px; border-top: 1px solid var(--border-subtle); }
+.shell-account.is-collapsed { flex-direction: column; padding: 12px 0 0; }
+.shell-avatar {
+  display: inline-grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; object-fit: cover;
+  color: var(--sage-800); background: var(--sage-100); border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 700;
+}
+.shell-account-text { display: grid; flex: 1; min-width: 0; gap: 1px; }
+.shell-account-text strong { overflow: hidden; color: var(--text-primary); font-size: var(--text-sm); text-overflow: ellipsis; white-space: nowrap; }
+.shell-account-text span { color: var(--text-muted); font-size: var(--text-xs); }
+
+/* Tooltip ke kanan untuk sidebar ciut */
+.shell.is-collapsed .shell-link[data-tooltip]::after,
+.tooltip-right[data-tooltip]::after { left: calc(100% + 10px); bottom: auto; top: 50%; transform: translate(-3px, -50%); }
+.shell.is-collapsed .shell-link[data-tooltip]:hover::after,
+.shell.is-collapsed .shell-link[data-tooltip]:focus-visible::after,
+.tooltip-right[data-tooltip]:hover::after,
+.tooltip-right[data-tooltip]:focus-visible::after { transform: translate(0, -50%); }
+
+.shell-main { min-height: 100vh; margin-left: var(--shell-sidebar); padding: 32px clamp(20px, 3.2vw, 44px) 56px; transition: margin-left .2s var(--ease); }
+.shell-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 1240px; margin: 0 auto 16px; padding: 10px 14px; color: var(--status-red-fg); background: var(--status-red-bg); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.shell-banner button { min-height: 36px; padding: 0 10px; color: inherit; background: none; border: 0; font-weight: 700; }
+
+.shell-topbar { display: none; }
+.shell-mobile-drawer .ui-dialog-body { display: grid; gap: 20px; }
+
+@media (max-width: 767px) {
+  .shell-sidebar { display: none; }
+  .shell-main { margin-left: 0; padding: 20px 16px 48px; }
+  .shell-topbar {
+    position: sticky; top: 0; z-index: 15; display: flex; align-items: center; gap: 8px; min-height: 60px; padding: 8px 12px;
+    background: color-mix(in srgb, var(--surface-card) 92%, transparent); border-bottom: 1px solid var(--border-subtle); backdrop-filter: blur(8px);
+  }
+  .shell-topbar .shell-brand-mark { width: 32px; height: 32px; }
+  .shell-topbar .shell-brand-name { font-size: 19px; }
+  .shell-topbar-page { margin-left: auto; padding-right: 6px; color: var(--text-secondary); font-size: var(--text-sm); font-weight: 600; }
+}
+@media (prefers-reduced-motion: reduce) { .shell-sidebar, .shell-main { transition: none; } }
+
+/* Kontainer halaman */
+.page { width: 100%; max-width: 1240px; margin: 0 auto; }

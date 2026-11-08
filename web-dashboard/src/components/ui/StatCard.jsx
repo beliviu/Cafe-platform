@@ -38,7 +38,6 @@ export function StatCard({
       <div className="ui-stat-top">
         {Icon && <span className="ui-stat-icon"><Icon size={compact ? 15 : 17} aria-hidden="true" /></span>}
         <span className="ui-stat-label">{label}</span>
-        {trend && !compact && !loading && <Sparkline values={trend} tone={tone} width={72} height={26} />}
       </div>
       {loading ? (
         <Skeleton width="60%" height={compact ? 22 : 30} />
@@ -58,6 +57,9 @@ export function StatCard({
           )}
           <span className="ui-stat-caption">{hasDelta ? deltaLabel : caption}</span>
         </div>
+      )}
+      {trend && !compact && !loading && (
+        <div className="ui-stat-trend"><Sparkline values={trend} tone={tone} width={200} height={30} fluid /></div>
       )}
     </Component>
   )

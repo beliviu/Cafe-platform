@@ -11,6 +11,10 @@ const DesignSystemPage = import.meta.env.DEV
   ? lazy(() => import('./pages/DesignSystemPage.jsx').then((module) => ({ default: module.DesignSystemPage })))
   : null
 
+const OwnerPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/OwnerPreview.jsx').then((module) => ({ default: module.OwnerPreview })))
+  : null
+
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage.jsx').then((module) => ({ default: module.DashboardPage })),
 )
@@ -25,6 +29,9 @@ const CategoriesPage = lazy(() =>
 )
 const OrdersPage = lazy(() =>
   import('./pages/OrdersPage.jsx').then((module) => ({ default: module.OrdersPage })),
+)
+const SettingsPage = lazy(() =>
+  import('./pages/SettingsPage.jsx').then((module) => ({ default: module.SettingsPage })),
 )
 const StaffLayout = lazy(() =>
   import('./components/StaffLayout.jsx').then((module) => ({ default: module.StaffLayout })),
@@ -49,6 +56,15 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         {DesignSystemPage && <Route path="/design" element={<DesignSystemPage />} />}
+        {OwnerPreview && (
+          <Route path="/preview/owner" element={<OwnerPreview />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="products" element={<ProductsPage />} />
+            <Route path="categories" element={<CategoriesPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+        )}
         <Route element={<RequireAuth />}>
           <Route path="staff" element={<StaffLayout />}>
             <Route index element={<StaffOrdersPage />} />
@@ -59,6 +75,7 @@ function AppRoutes() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

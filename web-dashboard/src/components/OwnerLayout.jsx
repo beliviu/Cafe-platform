@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Coffee, LogOut } from 'lucide-react'
-import { Link, Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Coffee } from 'lucide-react'
+import { Navigate, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { OWNER_NAVIGATION } from '../config/ownerNavigation.js'
 import { LoadingScreen } from './LoadingScreen.jsx'
+import { AppShell } from './shell/AppShell.jsx'
 import { cafeColumns, detectDbFeatures } from '../lib/db.js'
 
 function OwnerAccessState({ title, message, onRetry }) {
@@ -46,7 +47,7 @@ export function OwnerLayout() {
 
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, role, cafe_id')
+        .select('id, full_name, phone, role, cafe_id')
         .eq('id', session.user.id)
         .maybeSingle()
 
@@ -88,6 +89,14 @@ export function OwnerLayout() {
     }
   }, [loadingAttempt, session?.user?.id, supabase])
 
+  function updateCafe(patch) {
+    setOwnerData((current) => (current ? { ...current, cafe: { ...current.cafe, ...patch } } : current))
+  }
+
+  function updateProfile(patch) {
+    setOwnerData((current) => (current ? { ...current, profile: { ...current.profile, ...patch } } : current))
+  }
+
   async function handleSignOut() {
     setSignOutError('')
     const { error } = await supabase.auth.signOut()
@@ -118,90 +127,18 @@ export function OwnerLayout() {
     )
   }
 
-  const initials = ownerData.cafe.name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <Link className="brand-lockup" to="/" aria-label="Dailybrew, dashboard">
-          <span className="brand-mark"><Coffee size={20} strokeWidth={2.2} /></span>
-          <span className="brand-name">daily<span>brew</span></span>
-        </Link>
-
-        <div className="sidebar-section-label">MENU UTAMA</div>
-        <nav className="sidebar-nav" aria-label="Navigasi utama">
-          {OWNER_NAVIGATION.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-              to={to}
-              end={end}
-              key={to}
-            >
-              <Icon size={18} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="sidebar-spacer" />
-        <div className="sidebar-cafe">
-          {ownerData.cafe.logo_url ? (
-            <img className="cafe-avatar" src={ownerData.cafe.logo_url} alt="" />
-          ) : (
-            <span className="cafe-avatar cafe-avatar-fallback">{initials}</span>
-          )}
-          <span className="cafe-identity">
-            <strong>{ownerData.cafe.name}</strong>
-            <span>Owner workspace</span>
-          </span>
-          <button
-            type="button"
-            className="icon-button signout-button"
-            onClick={handleSignOut}
-            aria-label="Keluar"
-            title="Keluar"
-          >
-            <LogOut size={17} />
-          </button>
+    <AppShell
+      navigation={OWNER_NAVIGATION}
+      account={{ title: ownerData.cafe.name, subtitle: 'Owner', imageUrl: ownerData.cafe.logo_url, onSignOut: handleSignOut }}
+      banner={signOutError && (
+        <div className="shell-banner" role="alert">
+          <span>{signOutError}</span>
+          <button type="button" onClick={() => setSignOutError('')}>Tutup</button>
         </div>
-      </aside>
-
-      <main className="main-panel">
-        {signOutError && (
-          <div className="inline-alert" role="alert">
-            <span>{signOutError}</span>
-            <button type="button" className="inline-alert-action" onClick={() => setSignOutError('')}>
-              Tutup
-            </button>
-          </div>
-        )}
-        <div className="mobile-brand">
-          <span className="brand-mark"><Coffee size={19} /></span>
-          <span className="brand-name">daily<span>brew</span></span>
-          <button type="button" className="icon-button" onClick={handleSignOut} aria-label="Keluar">
-            <LogOut size={17} />
-          </button>
-        </div>
-        <nav className="mobile-nav" aria-label="Navigasi utama">
-          {OWNER_NAVIGATION.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              className={({ isActive }) => `mobile-nav-link${isActive ? ' active' : ''}`}
-              to={to}
-              end={end}
-              key={to}
-            >
-              <Icon size={16} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <Outlet context={ownerData} />
-      </main>
-    </div>
+      )}
+    >
+      <Outlet context={{ ...ownerData, updateCafe, updateProfile }} />
+    </AppShell>
   )
 }

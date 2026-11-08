@@ -26,6 +26,13 @@ export function formatRupiahCompact(value) {
   return formatRupiah(amount)
 }
 
+/** Ambil angka bulat dari ketikan ("Rp 28.000" → 28000). Kosong → ''. */
+export function parseRupiah(text, max = 999_999_999) {
+  const digits = String(text ?? '').replace(/\D/g, '')
+  if (!digits) return ''
+  return Math.min(Number(digits), max)
+}
+
 export function formatNumber(value) {
   return numberFormatter.format(Number(value) || 0)
 }
