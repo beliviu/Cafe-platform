@@ -9,6 +9,24 @@
 
 /* ---------- Dashboard ---------- */
 .dash { display: grid; gap: 20px; }
+.dash-intro {
+  position: relative; isolation: isolate; overflow: hidden; margin-bottom: 24px; padding: 28px clamp(20px, 3vw, 36px);
+  color: var(--nav-text); background: var(--nav-bg); border-radius: 22px;
+}
+.dash-intro::before {
+  position: absolute; z-index: -1; right: -72px; bottom: -204px; width: 430px; height: 430px;
+  border: 1px solid rgb(242 233 220 / 18%); border-radius: 50%;
+  box-shadow: 0 0 0 26px rgb(242 233 220 / 4%), 0 0 0 68px rgb(242 233 220 / 3%); content: "";
+}
+.dash-intro::after {
+  position: absolute; z-index: -1; top: -72px; right: 24%; width: 154px; height: 154px;
+  background: var(--brand-fill); border: 1px solid rgb(242 233 220 / 12%); border-radius: 50%; opacity: .46; content: "";
+}
+.dash-intro .ui-page-header { position: relative; z-index: 1; margin: 0; }
+.dash-intro .ui-page-eyebrow { color: var(--accent-100); letter-spacing: .04em; }
+.dash-intro .ui-page-title { color: var(--surface-card); font-size: clamp(30px, 3vw, 40px); }
+.dash-intro .ui-page-description { max-width: 520px; color: var(--nav-text-muted); }
+.dash-intro .ui-page-actions { position: relative; z-index: 1; }
 /* Strip KPI menyatu; metrik utama (pertama) memakai isian brand sebagai satu-satunya sorotan */
 .dash-stats {
   display: grid; grid-template-columns: 1.25fr repeat(3, minmax(0, 1fr)); overflow: hidden;

@@ -341,12 +341,14 @@ export function DashboardPage() {
 
   return (
     <div className="page">
-      <PageHeader
-        eyebrow={`Ringkasan · ${cafe.name}`}
-        title={`${greetingForNow()}${ownerFirstName ? `, ${ownerFirstName}` : ''}`}
-        description={`Performa ${cafe.name} untuk ${range.label.replace('Hari ini, ', 'hari ini, ')} (WIB).`}
-        actions={<DateRangePicker value={rangeValue} onChange={setRangeValue} />}
-      />
+      <div className="dash-intro">
+        <PageHeader
+          eyebrow={`Ringkasan · ${cafe.name}`}
+          title={`${greetingForNow()}${ownerFirstName ? `, ${ownerFirstName}` : ''}`}
+          description={`Performa ${cafe.name} untuk ${range.label.replace('Hari ini, ', 'hari ini, ')} (WIB).`}
+          actions={<DateRangePicker value={rangeValue} onChange={setRangeValue} />}
+        />
+      </div>
 
       {errorMessage ? (
         <Card><ErrorState message={errorMessage} onRetry={() => setAttempt((value) => value + 1)} /></Card>

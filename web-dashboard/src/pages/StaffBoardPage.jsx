@@ -297,29 +297,31 @@ export function StaffBoardPage() {
 
   return (
     <div className="page page-wide">
-      <PageHeader
-        eyebrow={cafe.name}
-        title="Pesanan"
-        description="Pesanan aktif dari lama ke baru. Pesanan selesai pindah ke Riwayat."
-        actions={(
-          <>
-            <LiveIndicator state={realtime} onReload={() => setAttempt((value) => value + 1)} />
-            <IconButton
-              icon={prefs.sound ? Volume2 : VolumeX}
-              variant="secondary"
-              label={prefs.sound ? 'Matikan suara pesanan baru' : 'Nyalakan suara pesanan baru'}
-              aria-pressed={prefs.sound}
-              onClick={() => { unlockAlertSound(); updatePrefs({ ...prefs, sound: !prefs.sound }) }}
-            />
-            {permission === 'default' && <IconButton icon={Bell} variant="secondary" label="Izinkan notifikasi browser" onClick={requestPermission} />}
-            <IconButton icon={SlidersHorizontal} variant="secondary" label="Pengaturan papan" onClick={() => setDialog({ type: 'settings' })} />
-            <IconButton icon={Keyboard} variant="secondary" label="Tombol pintas (?)" onClick={() => setDialog({ type: 'shortcuts' })} className="hide-on-touch" />
-            <Button variant="secondary" icon={PackageX} onClick={() => setPanel('menu')}>
-              Menu habis{soldOutCount ? <span className="btn-count tabular"><span className="sr-only">: </span>{soldOutCount}</span> : null}
-            </Button>
-          </>
-        )}
-      />
+      <div className="staff-intro">
+        <PageHeader
+          eyebrow={cafe.name}
+          title="Pesanan"
+          description="Pesanan aktif dari lama ke baru. Pesanan selesai pindah ke Riwayat."
+          actions={(
+            <>
+              <LiveIndicator state={realtime} onReload={() => setAttempt((value) => value + 1)} />
+              <IconButton
+                icon={prefs.sound ? Volume2 : VolumeX}
+                variant="secondary"
+                label={prefs.sound ? 'Matikan suara pesanan baru' : 'Nyalakan suara pesanan baru'}
+                aria-pressed={prefs.sound}
+                onClick={() => { unlockAlertSound(); updatePrefs({ ...prefs, sound: !prefs.sound }) }}
+              />
+              {permission === 'default' && <IconButton icon={Bell} variant="secondary" label="Izinkan notifikasi browser" onClick={requestPermission} />}
+              <IconButton icon={SlidersHorizontal} variant="secondary" label="Pengaturan papan" onClick={() => setDialog({ type: 'settings' })} />
+              <IconButton icon={Keyboard} variant="secondary" label="Tombol pintas (?)" onClick={() => setDialog({ type: 'shortcuts' })} className="hide-on-touch" />
+              <Button variant="secondary" icon={PackageX} onClick={() => setPanel('menu')}>
+                Menu habis{soldOutCount ? <span className="btn-count tabular"><span className="sr-only">: </span>{soldOutCount}</span> : null}
+              </Button>
+            </>
+          )}
+        />
+      </div>
 
       <section className="board-strip" aria-label="Ringkasan hari ini">
         <span><Check size={15} aria-hidden="true" /> Selesai hari ini <strong className="tabular">{formatNumber(stats.completed)}</strong></span>
