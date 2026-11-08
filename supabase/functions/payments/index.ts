@@ -18,6 +18,9 @@
 // Deploy: Dashboard → Edge Functions → Deploy new function → Via Editor, nama "payments",
 //         tempel file ini, Deploy. Verify JWT: OFF (fungsi memeriksa token sendiri; webhook tanpa token).
 //         Secrets: MIDTRANS_SERVER_KEY, MIDTRANS_ENV = sandbox | production.
+//         Banyak kafe, akun Midtrans masing-masing (file 10): tambah secret
+//         MIDTRANS_SERVER_KEY_<ID KAFE TANPA TANDA ->, mis. MIDTRANS_SERVER_KEY_3F2A...; bila tidak ada,
+//         kunci umum MIDTRANS_SERVER_KEY yang dipakai.
 // =====================================================================
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1'
 
@@ -80,15 +83,29 @@ Deno.serve(async (req) => {
   const url = Deno.env.get('SUPABASE_URL')
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || firstKey('SUPABASE_PUBLISHABLE_KEYS')
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || firstKey('SUPABASE_SECRET_KEYS')
-  const serverKey = Deno.env.get('MIDTRANS_SERVER_KEY') ?? ''
-  if (!url || !anonKey || !serviceKey || !serverKey) return fail('Konfigurasi pembayaran server belum lengkap', 500)
+  const defaultKey = Deno.env.get('MIDTRANS_SERVER_KEY') ?? ''
+  if (!url || !anonKey || !serviceKey) return fail('Konfigurasi pembayaran server belum lengkap', 500)
   const base = Deno.env.get('MIDTRANS_ENV') === 'production' ? 'https://api.midtrans.com' : 'https://api.sandbox.midtrans.com'
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
 
-  async function midtrans(path: string, method: 'GET' | 'POST', body?: Json) {
+  /** Kunci Midtrans kafe ini (multi-merchant) atau kunci umum. */
+  function keyForCafe(cafeId: unknown) {
+    const own = typeof cafeId === 'string' ? Deno.env.get(`MIDTRANS_SERVER_KEY_${cafeId.replace(/-/g, '').toUpperCase()}`) : undefined
+    const key = own || defaultKey
+    if (!key) throw Object.assign(new Error('Kunci Midtrans untuk kafe ini belum diatur di server'), { hint: 'gateway_key_missing' })
+    return key
+  }
+
+  /** Kafe pemilik tagihan (file 10). Bila fungsi belum ada → null (pakai kunci umum). */
+  async function cafeOfIntent(providerOrderId: string) {
+    const { data, error } = await admin.rpc('pay_intent_cafe', { p_provider_order_id: providerOrderId })
+    return error ? null : data
+  }
+
+  async function midtrans(path: string, method: 'GET' | 'POST', key: string, body?: Json) {
     const response = await fetch(`${base}${path}`, {
       method,
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Basic ${btoa(`${serverKey}:`)}` },
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Basic ${btoa(`${key}:`)}` },
       body: body ? JSON.stringify(body) : undefined,
     })
     const data = await response.json().catch(() => ({})) as Json
@@ -102,8 +119,8 @@ Deno.serve(async (req) => {
   }
 
   /** Ambil status terbaru dari Midtrans lalu terapkan (sumber kebenaran untuk lunas). */
-  async function pollAndApply(providerOrderId: string, source: 'poll' | 'webhook', signatureValid = true) {
-    const { data } = await midtrans(`/v2/${encodeURIComponent(providerOrderId)}/status`, 'GET')
+  async function pollAndApply(providerOrderId: string, source: 'poll' | 'webhook', key: string, signatureValid = true) {
+    const { data } = await midtrans(`/v2/${encodeURIComponent(providerOrderId)}/status`, 'GET', key)
     if (data.status_code === '404' || !data.transaction_status) return { skipped: true }
     return rpc('pay_apply_status', {
       p_provider_order_id: providerOrderId,
@@ -126,7 +143,13 @@ Deno.serve(async (req) => {
       return fail('Format notifikasi tidak valid')
     }
     const orderId = String(note.order_id ?? '')
-    const expected = await sha512Hex(`${orderId}${note.status_code ?? ''}${note.gross_amount ?? ''}${serverKey}`)
+    let webhookKey: string
+    try {
+      webhookKey = keyForCafe(await cafeOfIntent(orderId))
+    } catch (error) {
+      return fail((error as Error).message, 500)
+    }
+    const expected = await sha512Hex(`${orderId}${note.status_code ?? ''}${note.gross_amount ?? ''}${webhookKey}`)
     if (!sameText(expected, String(note.signature_key ?? ''))) {
       await admin.rpc('pay_apply_status', {
         p_provider_order_id: orderId, p_transaction_id: note.transaction_id ?? null, p_status: note.transaction_status ?? null,
@@ -135,7 +158,7 @@ Deno.serve(async (req) => {
       return fail('Tanda tangan tidak valid', 401)
     }
     try {
-      await pollAndApply(orderId, 'webhook')
+      await pollAndApply(orderId, 'webhook', webhookKey)
       return new Response('OK', { status: 200 })
     } catch (error) {
       // 500 → Midtrans mengirim ulang nanti
@@ -159,12 +182,13 @@ Deno.serve(async (req) => {
   try {
     if (body.action === 'create') {
       const prep = await rpc('pay_prepare_intent', { p_actor: actor, p_order_id: body.order_id, p_source: body.source === 'pos' ? 'pos' : 'app' }) as Json
-      for (const stale of (prep.stale as string[]) ?? []) {
-        await midtrans(`/v2/${encodeURIComponent(stale)}/cancel`, 'POST').catch(() => null)
-      }
       const intent = prep.intent as Json
+      const key = keyForCafe(intent.cafe_id)
+      for (const stale of (prep.stale as string[]) ?? []) {
+        await midtrans(`/v2/${encodeURIComponent(stale)}/cancel`, 'POST', key).catch(() => null)
+      }
       if (prep.reuse) return json({ intent: publicIntent(intent), reused: true })
-      const { data } = await midtrans('/v2/charge', 'POST', {
+      const { data } = await midtrans('/v2/charge', 'POST', key, {
         payment_type: 'qris',
         transaction_details: { order_id: intent.provider_order_id, gross_amount: Math.round(Number(intent.amount)) },
         qris: { acquirer: 'gopay' },
@@ -192,7 +216,8 @@ Deno.serve(async (req) => {
       }) as Json[]
       let changed = 0
       for (const target of targets ?? []) {
-        const result = await pollAndApply(String(target.provider_order_id), 'poll') as Json
+        const id = String(target.provider_order_id)
+        const result = await pollAndApply(id, 'poll', keyForCafe(await cafeOfIntent(id))) as Json
         if (result?.changed) changed += 1
       }
       return json({ checked: targets?.length ?? 0, changed })
@@ -204,7 +229,7 @@ Deno.serve(async (req) => {
         p_reason: body.reason ?? null, p_restock: Boolean(body.restock), p_items: Array.isArray(body.items) ? body.items : [],
       }) as Json
       if (prep.already) return json({ status: 'succeeded', refund_id: prep.refund_id })
-      const { data } = await midtrans(`/v2/${encodeURIComponent(String(prep.provider_order_id))}/refund`, 'POST', {
+      const { data } = await midtrans(`/v2/${encodeURIComponent(String(prep.provider_order_id))}/refund`, 'POST', keyForCafe(await cafeOfIntent(String(prep.provider_order_id))), {
         refund_key: prep.refund_id, amount: Math.round(Number(prep.amount)), reason: String(prep.reason ?? '').slice(0, 255),
       })
       const ok = data.status_code === '200'
