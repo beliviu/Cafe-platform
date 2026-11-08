@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import {
-  AlertTriangle, ArrowRight, BarChart3, CircleCheck, CircleDollarSign, Clock3, Coffee, CreditCard, EyeOff,
-  Flame, PackageOpen, ReceiptText, ShoppingBag, Wallet,
+  AlertTriangle, ArrowRight, BarChart3, Boxes, CalendarClock, CircleCheck, CircleDollarSign, Clock3, Coffee, CreditCard, EyeOff,
+  Flame, PackageOpen, ReceiptText, ShoppingBag, TriangleAlert, Wallet,
 } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
 import { ColumnChart } from '../components/charts/ColumnChart.jsx'
@@ -18,7 +18,7 @@ import { previousRangeLabel, resolveRange } from '../lib/dateRange.js'
 import { customerLabel, fetchAllRows, fetchCustomerNames, friendlyError, orderColumns } from '../lib/db.js'
 import {
   formatDate, formatDateShort, formatNumber, formatQueueNumber, formatRupiah, formatRupiahCompact, formatTime,
-  greetingForNow, startOfJakartaDay,
+  addDaysToKey, greetingForNow, jakartaDateKey, startOfJakartaDay,
 } from '../lib/format.js'
 import { paymentMethodLabel } from '../lib/status.js'
 
@@ -82,8 +82,24 @@ function TrendCard({ data, range }) {
   )
 }
 
+/** Peringatan stok untuk kotak "Perlu perhatian" — gagal dimuat = diabaikan (dashboard tetap jalan). */
+async function loadInventoryAttention(supabase, cafeId) {
+  const soon = addDaysToKey(jakartaDateKey(), 3)
+  const [ingredientResult, batchResult, issueResult] = await Promise.all([
+    supabase.from('ingredients').select('id, name, on_hand, min_stock, is_active').eq('cafe_id', cafeId).eq('is_active', true),
+    supabase.from('ingredient_batches').select('id, expires_at, remaining').eq('cafe_id', cafeId).gt('remaining', 0).lte('expires_at', soon),
+    supabase.from('inventory_sync_issues').select('id, resolved_at').eq('cafe_id', cafeId).limit(50),
+  ])
+  if (ingredientResult.error || batchResult.error || issueResult.error) return null
+  return {
+    needBuy: (ingredientResult.data || []).filter((item) => Number(item.on_hand) <= Number(item.min_stock)),
+    expiring: (batchResult.data || []).length,
+    issues: (issueResult.data || []).filter((issue) => !issue.resolved_at).length,
+  }
+}
+
 function AttentionCard({ attention, features }) {
-  const { waitingTooLong, completedUnpaid, inactiveProducts } = attention
+  const { waitingTooLong, completedUnpaid, inactiveProducts, inventory } = attention
   const unpaidValue = completedUnpaid.reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0)
   const items = [
     waitingTooLong.length > 0 && {
@@ -109,6 +125,30 @@ function AttentionCard({ attention, features }) {
       title: `${formatNumber(inactiveProducts.length)} produk nonaktif`,
       detail: inactiveProducts.slice(0, 2).map((product) => product.name).join(', ') + (inactiveProducts.length > 2 ? ', …' : ''),
       to: '/products?status=unavailable',
+    },
+    inventory?.issues > 0 && {
+      key: 'stock-sync',
+      tone: 'red',
+      icon: TriangleAlert,
+      title: `${formatNumber(inventory.issues)} pesanan gagal memotong stok`,
+      detail: 'Pesanan tetap selesai · tinjau & sesuaikan stok',
+      to: '/inventory',
+    },
+    inventory?.needBuy.length > 0 && {
+      key: 'stock-low',
+      tone: 'amber',
+      icon: Boxes,
+      title: `${formatNumber(inventory.needBuy.length)} bahan perlu dibeli`,
+      detail: inventory.needBuy.slice(0, 2).map((item) => item.name).join(', ') + (inventory.needBuy.length > 2 ? ', …' : ''),
+      to: '/inventory?filter=attention',
+    },
+    inventory?.expiring > 0 && {
+      key: 'stock-expiry',
+      tone: 'amber',
+      icon: CalendarClock,
+      title: `${formatNumber(inventory.expiring)} batch bahan kedaluwarsa ≤ 3 hari`,
+      detail: 'Pakai dulu atau catat sebagai terbuang',
+      to: '/inventory?filter=expiring',
     },
   ].filter(Boolean)
 
@@ -319,7 +359,11 @@ export function DashboardPage() {
       products: productsResult.data || [],
       range,
     })
-    const { names } = await fetchCustomerNames(supabase, result.recent.map((order) => order.id))
+    const [{ names }, inventoryAttention] = await Promise.all([
+      fetchCustomerNames(supabase, result.recent.map((order) => order.id)),
+      features?.inventory ? loadInventoryAttention(supabase, cafe.id) : null,
+    ])
+    result.attention.inventory = inventoryAttention
     if (currentRequest !== requestId.current) return
     result.recent = result.recent.map((order) => ({ ...order, customer_name: names.get(order.id) || '' }))
 

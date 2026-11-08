@@ -5,6 +5,30 @@
 
 ---
 
+## 0. Roadmap V2 (audit V2 disetujui 8 Nov 2026)
+
+Brief V2 mengurutkan keuangan lebih dulu, tetapi HPP, profit produk, rekonsiliasi kas, dan refund bergantung pada resep dan POS. Urutan yang disetujui:
+
+| Langkah | Isi | Bagian brief V2 | Status |
+|---|---|---|---|
+| 0b | Fondasi: file 04 + `staff-admin`, skema live, perubahan belum commit, QRIS demo | 8, 5 | 04 ✅ · `staff-admin` ⚠️ belum terhubung · commit ✅ |
+| **1** | **Inventori & supplier**: bahan, batch kedaluwarsa, resep (+varian), HPP & profit produk, supplier & katalog harga, PO → terima → bayar (utang), opname, mutasi + ekspor, perkiraan & draf PO otomatis, pemotongan stok saat pesanan selesai | 2, 1C | ✅ kode selesai · menunggu file 05 |
+| 2 | Pesanan v2 & POS: `place_order` (idempoten, pajak, diskon, varian), reservasi stok + tolak checkout bila bahan kurang + HABIS di app, sesi kasir & rekonsiliasi, serah terima, hold, split payment, refund | 3, 1D, 1F, 2C | — |
+| 3 | Akuntansi & keuangan: jurnal otomatis, beban, laporan, saldo awal, PDF | 1A, 1B, 1E, 1G | — |
+| 4 | Customer app & QR meja | 4, 7 | — |
+| 5 | Payment gateway | 5 | — |
+| 6 | BI, forecast penjualan, AI advisor | 6 | — |
+| 7 | Izin per staff, langganan, tes isolasi, performa | 8, 9 | — |
+
+**Langkah 1 — catatan keputusan:**
+- Biaya bahan memakai **rata-rata tertimbang bergerak**; batch hanya untuk kedaluwarsa (FEFO saat stok keluar).
+- Stok dipotong saat pesanan **selesai**, hanya bila owner menyalakan pelacakan. Stok **boleh minus** dari pesanan (pesanan tidak pernah tertahan); stok manual (keluar/opname/penyesuaian) tidak boleh minus. Pencegahan oversell sebenarnya ada di langkah 2.
+- Varian belum tersimpan di pesanan, jadi pemotongan memakai resep dasar; tambahan per varian sudah bisa diisi dan dihitung HPP-nya.
+- Profit produk: HPP **aktual** dari mutasi pemakaian bila ada; selain itu **estimasi** (jumlah × HPP resep saat ini), ditandai jelas. Perkiraan stok menolak menebak bila < 7 hari berjualan.
+- Semua data inventori hanya untuk owner (RLS). Uji SQL: `supabase/tests` (PGlite, tanpa DB live).
+
+---
+
 ## 1. Ringkasan audit
 
 ### 1.1 Struktur proyek

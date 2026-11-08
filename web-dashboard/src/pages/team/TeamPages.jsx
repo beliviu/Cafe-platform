@@ -281,7 +281,7 @@ export function MembersPage() {
           title={`Nonaktifkan ${dialog.member.full_name}?`}
           description="Staff tidak bisa masuk lagi dan langsung kehilangan akses ke data kafe. Riwayat pesanan yang pernah diproses tetap tersimpan. Bisa diaktifkan kembali kapan saja."
           confirmLabel="Nonaktifkan"
-          onConfirm={() => setActive(dialog.member, false)}
+          onConfirm={async () => { await setActive(dialog.member, false); setDialog(null) }}
           onClose={() => setDialog(null)}
         />
       )}
@@ -492,6 +492,11 @@ const ENTITY_LABELS = {
   staff_shifts: 'shift',
   profiles: 'anggota tim',
   staff_account: 'akun staff',
+  ingredients: 'bahan baku',
+  suppliers: 'supplier',
+  purchase_orders: 'purchase order',
+  supplier_payments: 'pembayaran supplier',
+  recipe: 'resep',
 }
 const ACTION_LABELS = { insert: 'Menambah', update: 'Mengubah', delete: 'Menghapus' }
 const FIELD_LABELS = {
@@ -506,8 +511,13 @@ const FIELD_LABELS = {
   capacity: 'kursi', is_active: 'aktif', job_title: 'jabatan', role: 'peran', price_delta: 'harga tambahan',
   is_required: 'wajib', selection_type: 'jenis pilihan', is_default: 'bawaan', max_select: 'maks. pilihan',
   starts_at: 'mulai', ends_at: 'selesai', note: 'catatan', email: 'email', password: 'password',
+  sku: 'kode', category: 'kategori', unit: 'satuan', min_stock: 'stok minimum', purchase_unit: 'kemasan beli',
+  purchase_unit_size: 'isi kemasan', lead_time_days: 'waktu kirim (hari)', default_supplier_id: 'supplier utama',
+  contact_name: 'kontak', payment_terms_days: 'termin (hari)', notes: 'catatan', status: 'status', supplier_id: 'supplier',
+  paid_amount: 'dibayar', voided_at: 'dibatalkan', baris_resep: 'baris resep',
 }
-const MONEY_FIELDS = new Set(['price', 'price_delta'])
+const MONEY_FIELDS = new Set(['price', 'price_delta', 'paid_amount'])
+const STATUS_VALUES = { draft: 'draf', ordered: 'dipesan', partial: 'diterima sebagian', received: 'diterima', cancelled: 'dibatalkan' }
 
 function formatValue(field, value) {
   if (value === null || value === undefined || value === '') return '—'
@@ -515,6 +525,9 @@ function formatValue(field, value) {
   if (MONEY_FIELDS.has(field)) return formatRupiah(value)
   if (field === 'starts_at' || field === 'ends_at') return formatDateTime(value)
   if (field === 'logo_url' || field === 'image_url') return 'gambar'
+  if (field === 'status' && STATUS_VALUES[value]) return STATUS_VALUES[value]
+  if (field === 'default_supplier_id' || field === 'supplier_id') return 'diubah'
+  if (field === 'voided_at') return formatDateTime(value)
   if (Array.isArray(value)) return value.join(', ')
   if (typeof value === 'object') return 'diubah'
   const text = String(value)

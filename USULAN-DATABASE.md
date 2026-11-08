@@ -12,9 +12,36 @@
 | 1a. Tutup celah keamanan profil — [`supabase/usulan/01-tutup-celah-profil.sql`](supabase/usulan/01-tutup-celah-profil.sql) | ✅ sudah dijalankan (8 Nov) |
 | 1b. Fitur operasional — [`supabase/usulan/02-fitur-operasional.sql`](supabase/usulan/02-fitur-operasional.sql) | ✅ sudah dijalankan (8 Nov) |
 | 3. Branding kafe (nama tampilan, logo, tagline, warna) — [`supabase/usulan/03-branding-kafe.sql`](supabase/usulan/03-branding-kafe.sql) | ✅ sudah dijalankan (8 Nov) |
-| 4. **Fase 3 owner** (gradasi brand, pajak & biaya, meja, varian produk, tim, shift, log aktivitas) — [`supabase/usulan/04-owner-dashboard.sql`](supabase/usulan/04-owner-dashboard.sql) | 🟢 **siap dijalankan** |
-| 4b. **Edge Function `staff-admin`** (tambah/nonaktifkan staff, reset password) — [`supabase/functions/staff-admin/index.ts`](supabase/functions/staff-admin/index.ts) | 🟢 **siap di-deploy** (setelah file 04) |
+| 4. Fase 3 owner (gradasi brand, pajak & biaya, meja, varian produk, tim, shift, log aktivitas) — [`supabase/usulan/04-owner-dashboard.sql`](supabase/usulan/04-owner-dashboard.sql) | ✅ sudah dijalankan (halaman Tim aktif) |
+| 4b. **Edge Function `staff-admin`** (tambah/nonaktifkan staff, reset password) — [`supabase/functions/staff-admin/index.ts`](supabase/functions/staff-admin/index.ts) | ⚠️ **belum terhubung** — web menampilkan "belum di-deploy". Lihat checklist di bawah |
+| 5. **Inventori, resep & supplier** (stok bahan, mutasi, opname, PO, utang supplier, HPP, perkiraan) — [`supabase/usulan/05-inventori-supplier.sql`](supabase/usulan/05-inventori-supplier.sql) | 🟢 **siap dijalankan** · diuji 86 skenario di Postgres lokal |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 05 — inventori, resep & supplier
+
+**Dampak ke data yang sudah ada (semua aditif, satu transaksi):**
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| `cafe_settings` | 4 kolom baru: `inventory_tracking` (default **mati**), `inventory_started_at`, `expiry_alert_days` (3), `reorder_cover_days` (7) | Tidak ada. Selama pelacakan mati, pesanan berjalan **persis** seperti sekarang. |
+| `orders` | **Satu trigger baru** `AFTER UPDATE` — hanya bekerja bila pelacakan stok **aktif** dan pesanan berubah menjadi `completed` | Kolom & baris pesanan **tidak diubah**. Bila pencatatan stok gagal, pesanan **tetap selesai**; kegagalan dicatat di `inventory_sync_issues` dan muncul di dashboard. |
+| `log_audit_event` | Dibuat ulang, hanya menambah label nomor PO | Log lama tidak tersentuh. |
+| 13 tabel baru | supplier, bahan, batch kedaluwarsa, katalog supplier, resep, mutasi stok, opname (+baris), PO (+item), pembayaran supplier, penghitung nomor dokumen, catatan gagal sinkron | Tabel baru kosong. Tidak ada `UPDATE`/`DELETE`/`DROP` pada tabel lama. |
+
+**Keamanan:** semua tabel baru RLS aktif, hanya **owner kafe itu** yang bisa membaca (staff & customer tidak melihat harga modal, supplier, atau stok). Saldo stok, harga rata-rata, PO, pembayaran, resep, dan opname hanya bisa diubah lewat fungsi database yang memeriksa owner; mutasi stok tidak bisa diubah (koreksi = mutasi baru).
+
+**Cara menjalankan:**
+1. Pastikan file 04 sudah jalan (sudah ✅). File 05 berhenti sendiri dengan pesan jelas bila prasyarat atau kolom pesanan yang dibutuhkan tidak ada.
+2. SQL Editor → New query → tempel **seluruh isi** `supabase/usulan/05-inventori-supplier.sql` → **Run**.
+3. Hasil verifikasi harus **26 baris**: 13 `table`, 12 `function`, 1 `trigger` (`inv_on_order_completed`).
+4. Error merah = tidak ada yang berubah. Kirim pesan error-nya.
+5. Aman dijalankan ulang (idempoten).
+
+**Setelah dijalankan (urutan yang disarankan):** Supplier → Stok bahan (isi bahan + stok awal) → Resep & HPP (isi resep) → baru **Aktifkan pelacakan** di tab Bahan. Sebelum diaktifkan, stok tidak berkurang dari pesanan.
+
+**Belum termasuk (Fase 2 · POS):** stok dipesan (*reserve*) saat pesanan dibuat, checkout ditolak bila bahan kurang, dan label HABIS otomatis di app customer. Di fase ini stok dipotong saat pesanan **selesai** dan boleh minus (tanda perlu opname) agar pesanan tidak pernah tertahan.
+
+**Uji ulang lokal (tanpa database live):** `cd supabase/tests && npm install && npm test`.
 
 ### Cara menjalankan file 04 (fase 3 owner)
 
@@ -35,8 +62,13 @@ Fungsi ini memegang kunci service-role di server, jadi tombol **Tambah staff / N
 1. Supabase Dashboard → **Edge Functions** → **Deploy a new function** → **Via Editor**.
 2. Nama fungsi: `staff-admin` (harus persis).
 3. Hapus contoh kode, tempel **seluruh isi** `supabase/functions/staff-admin/index.ts`, klik **Deploy**.
-4. Biarkan **Verify JWT** menyala. Tidak perlu menambah secret — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` sudah disediakan otomatis.
-5. Uji: web owner → **Tim → Tambah staff** dengan email uji milikmu. Sebelum di-deploy, tombol itu menampilkan pesan "Fungsi server staff-admin belum di-deploy".
+4. **Matikan Verify JWT** (Details/Settings fungsi → *Enforce JWT verification* OFF). Project ini memakai kunci API baru (publishable/secret); bila menyala, gateway menolak dengan "Invalid JWT". Aman: fungsi sendiri memeriksa token dan peran owner. Tidak perlu menambah secret — kunci server disediakan otomatis (lama atau baru, keduanya didukung).
+5. Uji: web owner → **Tim → Tambah staff** dengan email uji milikmu.
+
+**Bila muncul pesan error di web:**
+- *"tidak ditemukan (404)"* → fungsi belum ada atau namanya bukan persis `staff-admin`.
+- *"tidak bisa dihubungi"* → cek nama fungsi, Verify JWT OFF, dan tab **Logs** (error saat start).
+- *"menolak token (401 Invalid JWT)"* → Verify JWT masih menyala.
 
 ### Cara menjalankan file 03 (branding)
 

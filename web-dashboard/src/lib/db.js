@@ -28,7 +28,7 @@ function probeColumns(supabase, table, columns) {
 }
 
 /**
- * { operations, branding, phase3 } — true bila migrasi 02 / 03 / 04 sudah diterapkan. Di-cache per klien.
+ * { operations, branding, phase3, inventory } — true bila migrasi 02 / 03 / 04 / 05 sudah diterapkan. Di-cache per klien.
  * Kolom yang belum ada membuat select gagal, jadi UI memilih kolom berdasarkan hasil ini.
  */
 export function detectDbFeatures(supabase) {
@@ -37,7 +37,8 @@ export function detectDbFeatures(supabase) {
       probeColumns(supabase, 'orders', 'queue_number, paid_at, cancel_reason, cancelled_at'),
       probeColumns(supabase, 'cafes', BRANDING_CAFE_COLUMNS),
       probeColumns(supabase, 'cafe_settings', 'cafe_id'),
-    ]).then(([operations, branding, phase3]) => ({ operations, branding, phase3 }))
+      probeColumns(supabase, 'ingredients', 'id'),
+    ]).then(([operations, branding, phase3, inventory]) => ({ operations, branding, phase3, inventory }))
     featureCache.set(supabase, probe)
   }
   return featureCache.get(supabase)
@@ -55,6 +56,7 @@ export function cafeColumns(features) {
 }
 
 export const PHASE3_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/04-owner-dashboard.sql dijalankan.'
+export const INVENTORY_REQUIRED = 'Modul inventori aktif setelah file supabase/usulan/05-inventori-supplier.sql dijalankan.'
 
 /** Metode bayar yang bisa dipilih staff saat menandai lunas. */
 export function cafePaymentMethods(cafe) {

@@ -1,0 +1,12 @@
+{
+  "name": "dailybrew-sql-tests",
+  "private": true,
+  "type": "module",
+  "description": "Uji SQL usulan di Postgres dalam memori (PGlite). Tidak terhubung ke Supabase.",
+  "scripts": {
+    "test": "node test-05-inventori.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.3.14"
+  }
+}

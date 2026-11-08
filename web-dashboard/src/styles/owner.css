@@ -111,7 +111,7 @@
 
 /* ---------- Tabel data ---------- */
 .table-card { overflow: hidden; }
-.table-scroll { overflow-x: auto; }
+.table-scroll { position: relative; overflow-x: auto; } /* relative: teks sr-only di header ikut terpotong, tidak melebarkan halaman */
 .data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
 .data-table th {
   padding: 12px 14px; color: var(--text-muted); background: var(--surface-canvas); border-bottom: 1px solid var(--border-subtle);

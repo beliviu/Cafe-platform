@@ -3,6 +3,7 @@
  * Dipakai rute /preview/owner untuk QA visual tanpa login & tanpa menyentuh database.
  * Tidak pernah ikut ke build produksi (dimuat lewat import.meta.env.DEV).
  */
+import { createInventoryFixtures, inventoryRpc } from './mockInventory.js'
 
 function seeded(seed) {
   let value = seed
@@ -129,6 +130,8 @@ export function createFixtures(now = new Date()) {
     })
   }
 
+  const inventory = createInventoryFixtures({ cafeId, orders, items, now })
+
   return {
     cafe: {
       id: cafeId, name: 'Kopi Senja', address: 'Jl. Kaliurang Km 5, Yogyakarta', phone: '0812 3456 7890',
@@ -149,8 +152,21 @@ export function createFixtures(now = new Date()) {
         tax_inclusive: false, service_charge_enabled: false, service_charge_rate: 5, service_charge_taxable: true,
         rounding_unit: 500, order_types: ['dine_in', 'takeaway'], receipt_header: null,
         receipt_footer: 'Terima kasih! Wi-Fi: kopisenja', receipt_show_logo: true, receipt_show_address: true,
-        receipt_paper_mm: 58, updated_at: '2026-11-08T00:00:00Z',
+        receipt_paper_mm: 58, updated_at: '2026-11-08T00:00:00Z', ...inventory.settings,
       }],
+      suppliers: inventory.suppliers,
+      ingredients: inventory.ingredients,
+      ingredient_batches: inventory.ingredient_batches,
+      supplier_items: inventory.supplier_items,
+      recipe_items: inventory.recipe_items,
+      stock_movements: inventory.stock_movements,
+      stock_counts: inventory.stock_counts,
+      stock_count_lines: inventory.stock_count_lines,
+      purchase_orders: inventory.purchase_orders,
+      purchase_order_items: inventory.purchase_order_items,
+      supplier_payments: inventory.supplier_payments,
+      inventory_sync_issues: inventory.inventory_sync_issues,
+      document_counters: inventory.document_counters,
       cafe_tables: ['1', '2', '3', '4', 'Teras 1', 'Teras 2'].map((label, index) => ({
         id: `table-${index}`, cafe_id: cafeId, label, area: label.startsWith('Teras') ? 'Teras' : 'Indoor',
         capacity: label.startsWith('Teras') ? 2 : 4, is_active: index !== 5, sort_order: index,
@@ -170,8 +186,11 @@ export function createFixtures(now = new Date()) {
         { id: 2, cafe_id: cafeId, actor_id: 'owner-1', action: 'update', entity: 'cafe_settings', entity_id: cafeId, label: null, changes: { tax_enabled: [false, true], tax_rate: [0, 10] }, created_at: new Date(Date.now() - 3 * 3600000).toISOString() },
         { id: 1, cafe_id: cafeId, actor_id: 'owner-1', action: 'insert', entity: 'staff_account', entity_id: 'staff-2', label: 'Raka Kasir', changes: { email: 'raka@kopisenja.id', job_title: 'Kasir' }, created_at: new Date(Date.now() - 26 * 3600000).toISOString() },
       ],
-      product_option_groups: [],
-      product_options: [],
+      product_option_groups: [{ id: 'grp-size', cafe_id: cafeId, product_id: 'p2', name: 'Ukuran', selection_type: 'single', is_required: true, max_select: null, sort_order: 0, created_at: '2026-10-20T00:00:00Z' }],
+      product_options: [
+        { id: 'opt-reg', cafe_id: cafeId, group_id: 'grp-size', name: 'Regular', price_delta: 0, is_available: true, is_default: true, sort_order: 0, created_at: '2026-10-20T00:00:00Z' },
+        { id: 'opt-large', cafe_id: cafeId, group_id: 'grp-size', name: 'Large', price_delta: 6000, is_available: true, is_default: false, sort_order: 1, created_at: '2026-10-20T00:00:00Z' },
+      ],
     },
     names,
     team: [
@@ -181,6 +200,13 @@ export function createFixtures(now = new Date()) {
       { id: 'staff-3', full_name: 'Dewi Lestari', role: 'staff', job_title: null, is_active: false, email: 'dewi@kopisenja.id', last_sign_in_at: '2026-10-20T08:00:00Z', created_at: '2026-10-05T00:00:00Z' },
     ],
   }
+}
+
+// Nilai bawaan kolom (meniru DEFAULT di database) untuk insert dari UI
+const TABLE_DEFAULTS = {
+  ingredients: { on_hand: 0, avg_cost: 0, last_purchase_cost: null, updated_at: new Date().toISOString() },
+  suppliers: { is_active: true, payment_terms_days: 0 },
+  supplier_items: { cafe_id: 'cafe-1', last_purchased_at: null, supplier_sku: null },
 }
 
 class Query {
@@ -198,6 +224,8 @@ class Query {
   eq(column, value) { this.filters.push((row) => column.includes('.') || row[column] === value); return this }
   neq(column, value) { this.filters.push((row) => column.includes('.') || row[column] !== value); return this }
   gte(column, value) { this.filters.push((row) => row[column] >= value); return this }
+  gt(column, value) { this.filters.push((row) => row[column] > value); return this }
+  lte(column, value) { this.filters.push((row) => row[column] <= value); return this }
   lt(column, value) { this.filters.push((row) => row[column] < value); return this }
   in(column, values) { this.filters.push((row) => values.includes(row[column])); return this }
   or() { return this }
@@ -217,7 +245,7 @@ class Query {
       const saved = payload.map((values, index) => {
         const existing = this.mode === 'upsert' && rows.find((row) => row.id === values.id)
         if (existing) return Object.assign(existing, values)
-        const row = { id: `${this.table}-${rows.length + index + 1}-${Math.round(performance.now())}`, created_at: new Date().toISOString(), ...values }
+        const row = { id: `${this.table}-${rows.length + index + 1}-${Math.round(performance.now())}`, created_at: new Date().toISOString(), ...(TABLE_DEFAULTS[this.table] || {}), ...values }
         rows.push(row)
         return row
       })
@@ -311,6 +339,11 @@ export function createMockSupabase(fixtures) {
         const product = store.products.find((row) => row.id === args.p_product_id)
         product.is_available = args.p_is_available
         return { data: product, error: null }
+      }
+      const inventoryResult = inventoryRpc(store, name, args)
+      if (inventoryResult) {
+        await new Promise((resolve) => window.setTimeout(resolve, 150))
+        return inventoryResult
       }
       return { data: null, error: { message: `RPC ${name} tidak ada di mock` } }
     },

@@ -5,7 +5,12 @@
 import { friendlyError } from './db.js'
 
 export const EDGE_FUNCTION_MISSING =
-  'Fungsi server "staff-admin" belum di-deploy. Ikuti langkah di USULAN-DATABASE.md bagian Edge Function.'
+  'Fungsi server "staff-admin" tidak ditemukan (404). Pastikan sudah di-deploy dengan nama persis staff-admin.'
+
+/** Browser tidak mendapat jawaban sama sekali — biasanya ditolak sebelum masuk fungsi. */
+export const EDGE_FUNCTION_UNREACHABLE =
+  'Fungsi server "staff-admin" tidak bisa dihubungi. Cek di Supabase → Edge Functions: (1) fungsi bernama persis staff-admin, '
+  + '(2) Verify JWT dimatikan, (3) tab Logs tidak menunjukkan error saat start.'
 
 export async function fetchTeam(supabase, cafeId) {
   const { data, error } = await supabase.rpc('cafe_team_members', { p_cafe_id: cafeId })
@@ -26,14 +31,17 @@ export async function staffAdmin(supabase, payload) {
     return data
   }
   const status = error.context?.status
-  if (status === 404 || error.name === 'FunctionsFetchError' || error.name === 'FunctionsRelayError') {
-    throw new Error(EDGE_FUNCTION_MISSING)
-  }
+  if (status === 404) throw new Error(EDGE_FUNCTION_MISSING)
+  if (error.name === 'FunctionsFetchError' || error.name === 'FunctionsRelayError') throw new Error(EDGE_FUNCTION_UNREACHABLE)
   let message = ''
   try {
     message = (await error.context?.json?.())?.error || ''
   } catch {
     // body bukan JSON
+  }
+  // Fungsi kita selalu menjawab { error }. 401 tanpa itu berasal dari gateway = Verify JWT masih menyala.
+  if (!message && status === 401) {
+    throw new Error('Fungsi staff-admin menolak token (401 Invalid JWT). Matikan Verify JWT di pengaturan fungsi, lalu coba lagi.')
   }
   throw new Error(message || error.message || 'Permintaan ke server gagal.')
 }

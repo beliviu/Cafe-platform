@@ -1,8 +1,8 @@
-import { ClipboardList, Layers3, LayoutDashboard, Package2, Settings2, Users } from 'lucide-react'
+import { Boxes, Building2, ChefHat, ClipboardList, Layers3, LayoutDashboard, Package2, Settings2, ShoppingCart, Users } from 'lucide-react'
 
 /**
  * Menu owner. Hanya modul yang sudah berfungsi yang tampil —
- * Inventori, POS, dan Keuangan ditambahkan saat fasenya selesai.
+ * POS dan Keuangan ditambahkan saat fasenya selesai.
  */
 export const OWNER_NAVIGATION = [
   {
@@ -18,6 +18,15 @@ export const OWNER_NAVIGATION = [
     items: [
       { to: '/products', label: 'Produk', icon: Package2 },
       { to: '/categories', label: 'Kategori', icon: Layers3 },
+    ],
+  },
+  {
+    label: 'Inventori',
+    items: [
+      { to: '/inventory', label: 'Stok bahan', icon: Boxes },
+      { to: '/recipes', label: 'Resep & HPP', icon: ChefHat },
+      { to: '/purchases', label: 'Pembelian', icon: ShoppingCart },
+      { to: '/suppliers', label: 'Supplier', icon: Building2 },
     ],
   },
   {

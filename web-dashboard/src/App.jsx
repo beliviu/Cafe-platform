@@ -46,6 +46,16 @@ const TeamLayout = lazy(() => import('./pages/team/TeamPages.jsx').then((module)
 const MembersPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.MembersPage })))
 const ShiftsPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.ShiftsPage })))
 const ActivityPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.ActivityPage })))
+const InventoryLayout = lazy(() => import('./pages/inventory/InventoryLayout.jsx').then((module) => ({ default: module.InventoryLayout })))
+const IngredientsPage = lazy(() => import('./pages/inventory/IngredientsPage.jsx').then((module) => ({ default: module.IngredientsPage })))
+const MovementsPage = lazy(() => import('./pages/inventory/MovementsPage.jsx').then((module) => ({ default: module.MovementsPage })))
+const StockCountPage = lazy(() => import('./pages/inventory/StockCountPage.jsx').then((module) => ({ default: module.StockCountPage })))
+const ForecastPage = lazy(() => import('./pages/inventory/ForecastPage.jsx').then((module) => ({ default: module.ForecastPage })))
+const RecipesLayout = lazy(() => import('./pages/recipes/RecipesPages.jsx').then((module) => ({ default: module.RecipesLayout })))
+const ProductCostingPage = lazy(() => import('./pages/recipes/RecipesPages.jsx').then((module) => ({ default: module.ProductCostingPage })))
+const ProfitabilityPage = lazy(() => import('./pages/recipes/RecipesPages.jsx').then((module) => ({ default: module.ProfitabilityPage })))
+const PurchasesPage = lazy(() => import('./pages/purchases/PurchasesPage.jsx').then((module) => ({ default: module.PurchasesPage })))
+const SuppliersPage = lazy(() => import('./pages/purchases/SuppliersPage.jsx').then((module) => ({ default: module.SuppliersPage })))
 
 /** Rute owner — dipakai aplikasi asli dan pratinjau dev. */
 function ownerRoutes() {
@@ -55,6 +65,18 @@ function ownerRoutes() {
       <Route path="products" element={<ProductsPage />} />
       <Route path="categories" element={<CategoriesPage />} />
       <Route path="orders" element={<OrdersPage />} />
+      <Route path="inventory" element={<InventoryLayout />}>
+        <Route index element={<IngredientsPage />} />
+        <Route path="movements" element={<MovementsPage />} />
+        <Route path="counts" element={<StockCountPage />} />
+        <Route path="forecast" element={<ForecastPage />} />
+      </Route>
+      <Route path="recipes" element={<RecipesLayout />}>
+        <Route index element={<ProductCostingPage />} />
+        <Route path="profit" element={<ProfitabilityPage />} />
+      </Route>
+      <Route path="purchases" element={<PurchasesPage />} />
+      <Route path="suppliers" element={<SuppliersPage />} />
       <Route path="team" element={<TeamLayout />}>
         <Route index element={<MembersPage />} />
         <Route path="shifts" element={<ShiftsPage />} />

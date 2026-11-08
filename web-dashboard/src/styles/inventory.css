@@ -1,0 +1,203 @@
+/* Inventori: stok bahan, resep & HPP, pembelian, supplier */
+
+.inv-page { display: grid; gap: 18px; min-width: 0; }
+.inv-page > .toolbar { margin-bottom: 0; }
+.inv-stats { margin: 0; }
+.nowrap { white-space: nowrap; }
+.drawer-footer-start { margin-right: auto; }
+.inv-low { color: var(--status-red-fg); }
+
+/* Status pelacakan */
+.inv-tracking { padding: 16px 20px; }
+.inv-tracking .ui-card-header { align-items: center; margin: 0; }
+.inv-tracking:not(.is-on) { background: var(--status-amber-bg); border-color: color-mix(in srgb, var(--status-amber-dot) 35%, transparent); }
+.inv-tracking:not(.is-on) .ui-card-title { color: var(--status-amber-fg); }
+.inv-tracking.is-on .ui-card-title::before {
+  display: inline-block; width: 8px; height: 8px; margin: 0 9px 1px 0; background: var(--status-green-dot); border-radius: 50%; content: "";
+}
+
+.inv-alert {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 12px; padding: 14px 16px;
+  color: var(--status-red-fg); background: var(--status-red-bg); border-radius: var(--radius-lg);
+}
+.inv-alert svg { margin-top: 2px; }
+.inv-alert p { margin: 2px 0 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; }
+
+/* Tabel */
+.inv-name { display: grid; gap: 1px; min-width: 0; }
+.inv-name strong { color: var(--text-primary); font-weight: 650; }
+.inv-name small { overflow: hidden; color: var(--text-muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.inv-name.is-right { justify-items: end; }
+.inv-stock { display: inline-grid; justify-items: end; gap: 3px; }
+.inv-stock small { color: var(--text-muted); font-size: var(--text-xs); }
+.inv-meter { display: block; overflow: hidden; width: 84px; height: 4px; background: var(--surface-sunken); border-radius: var(--radius-full); }
+.inv-meter span { display: block; height: 100%; background: var(--status-green-dot); border-radius: inherit; }
+.inv-meter.is-low span { background: var(--status-amber-dot); }
+.inv-meter.is-empty span, .inv-meter.is-minus span { background: var(--status-red-dot); }
+.inv-expiry { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.inv-inline-badge { margin-left: 6px; vertical-align: middle; }
+.inv-qty { color: var(--status-green-fg); font-weight: 650; }
+.inv-qty.is-out { color: var(--status-red-fg); }
+.inv-note { max-width: 280px; color: var(--text-secondary); font-size: var(--text-sm); }
+.data-table .cell-check { width: 1%; }
+.data-table .cell-check input { width: 17px; height: 17px; accent-color: var(--brand-600); }
+.inv-margin { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; font-weight: 650; }
+.inv-margin-bar { display: block; overflow: hidden; width: 56px; height: 4px; background: var(--surface-sunken); border-radius: var(--radius-full); }
+.inv-margin-bar span { display: block; height: 100%; background: var(--brand-600); border-radius: inherit; }
+.inv-margin.is-low { color: var(--status-amber-fg); }
+.inv-margin.is-low .inv-margin-bar span { background: var(--status-amber-dot); }
+.inv-suggest { display: inline-grid; justify-items: end; gap: 1px; }
+.inv-suggest small { color: var(--text-muted); font-size: var(--text-xs); }
+
+/* Ringkasan mutasi */
+.inv-summary {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden;
+  background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-xl);
+}
+.inv-summary-item { display: grid; gap: 2px; padding: 14px 18px; border-left: 1px solid var(--border-subtle); }
+.inv-summary-item:first-child { border-left: 0; }
+.inv-summary-item span { color: var(--text-muted); font-size: var(--text-xs); }
+.inv-summary-item strong { color: var(--text-primary); font-size: var(--text-lg); }
+.inv-summary-item small { color: var(--text-muted); font-size: var(--text-xs); }
+.inv-summary-item.is-loss strong { color: var(--status-red-fg); }
+
+/* Form & dialog */
+.inv-form { display: grid; gap: 14px; min-width: 0; }
+.inv-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.inv-form-row.is-3 { grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); }
+.inv-fieldset { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 14px 0 0; border: 0; border-top: 1px solid var(--border-subtle); }
+.inv-fieldset legend { padding: 0 8px 0 0; color: var(--text-primary); font-size: var(--text-sm); font-weight: 700; }
+.inv-switch-line { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
+.inv-switch-line span { display: grid; gap: 2px; }
+.inv-switch-line small { color: var(--text-muted); font-size: var(--text-xs); }
+.inv-check { display: flex; align-items: flex-start; gap: 10px; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; cursor: pointer; }
+.inv-check input { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--brand-600); }
+.inv-current { margin: 0; padding: 10px 12px; color: var(--text-secondary); background: var(--surface-sunken); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.inv-current strong { color: var(--text-primary); }
+
+/* Detail bahan */
+.inv-detail-badge { margin-top: 8px; }
+.inv-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; margin: 0 0 20px; }
+.inv-facts.is-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.inv-facts div { display: grid; gap: 2px; min-width: 0; }
+.inv-facts dt { color: var(--text-muted); font-size: var(--text-xs); }
+.inv-facts dd { margin: 0; color: var(--text-primary); font-weight: 650; overflow-wrap: anywhere; }
+.inv-section { display: grid; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-subtle); }
+.inv-section h3 { margin: 0; color: var(--text-primary); font-size: var(--text-sm); font-weight: 700; }
+.inv-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.inv-section-head a { color: var(--text-link); font-size: var(--text-sm); font-weight: 650; }
+.inv-batches, .inv-moves, .po-payments, .inv-rank, .inv-plan { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.inv-batches li { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); font-size: var(--text-sm); }
+.inv-moves li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--border-subtle); }
+.inv-moves-main { display: grid; justify-items: start; gap: 3px; min-width: 0; }
+.inv-moves-main small { overflow: hidden; max-width: 100%; color: var(--text-muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.inv-moves-qty { color: var(--status-green-fg); font-weight: 700; font-size: var(--text-sm); }
+.inv-moves-qty.is-out { color: var(--status-red-fg); }
+.inv-moves-balance { min-width: 72px; color: var(--text-muted); font-size: var(--text-sm); text-align: right; }
+.inv-note-box { margin: 0 0 12px; padding: 10px 12px; color: var(--text-secondary); background: var(--surface-sunken); border-radius: var(--radius-md); font-size: var(--text-sm); line-height: 1.5; }
+
+/* Opname */
+.inv-count-head { padding: 16px 20px; }
+.inv-count-head .ui-card-header { margin-bottom: 12px; }
+.inv-count-tools { margin: 0; }
+.inv-count-group { overflow: hidden; }
+.inv-count-title { margin: 0; padding: 12px 16px; color: var(--text-muted); background: var(--surface-sunken); font-size: var(--text-xs); font-weight: 700; letter-spacing: .04em; }
+.inv-count-table td, .inv-count-table th { vertical-align: middle; }
+.inv-count-table { table-layout: fixed; min-width: 640px; }
+.inv-count-table thead th:nth-child(1) { width: 32%; }
+.inv-count-table thead th:nth-child(2) { width: 14%; }
+.inv-count-table thead th:nth-child(3) { width: 28%; }
+.inv-count-table thead th:nth-child(4), .inv-count-table thead th:nth-child(5) { width: 13%; }
+.inv-count-table tr.is-changed th strong { color: var(--status-amber-fg); }
+.inv-count-input { display: flex; align-items: flex-start; gap: 4px; max-width: 230px; }
+.inv-count-input .ui-field { flex: 1; }
+.inv-count-bar {
+  position: sticky; z-index: 5; bottom: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding: 12px 14px 12px 18px;
+  color: var(--nav-text-muted); background: var(--nav-bg); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); font-size: var(--text-sm);
+}
+.inv-count-bar strong { color: var(--nav-text); }
+.inv-count-bar .inv-qty.is-out { color: #f0a493; }
+.inv-count-bar .inv-qty { color: #a8d8b3; }
+.inv-count-note { flex: 1 1 200px; margin-left: auto; }
+
+/* Perkiraan */
+.inv-basis { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 12px 16px; border-radius: var(--radius-lg); font-size: var(--text-sm); line-height: 1.55; }
+.inv-basis p { margin: 2px 0 0; color: var(--text-secondary); }
+.inv-basis svg { margin-top: 2px; }
+.inv-basis.is-aktual { color: var(--status-green-fg); background: var(--status-green-bg); }
+.inv-basis.is-estimasi { color: var(--status-amber-fg); background: var(--status-amber-bg); }
+.inv-basis.is-data_kurang { color: var(--status-neutral-fg); background: var(--status-neutral-bg); }
+.inv-plan { margin-top: 12px; }
+.inv-plan li { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--border-subtle); font-size: var(--text-sm); }
+.inv-plan span { color: var(--text-secondary); }
+.inv-plan small { color: var(--text-muted); }
+
+/* Resep */
+.recipe-editor { display: grid; gap: 4px; }
+.recipe-section { display: grid; gap: 8px; padding: 4px 0 16px; border-bottom: 1px solid var(--border-subtle); }
+.recipe-section + .recipe-section { padding-top: 14px; }
+.recipe-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.recipe-section-head h3 { margin: 0; font-size: var(--text-sm); font-weight: 700; }
+.recipe-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(96px, auto) auto; align-items: start; gap: 8px; }
+.recipe-cost { display: grid; justify-items: end; gap: 1px; padding-top: 9px; font-size: var(--text-sm); font-weight: 650; }
+.recipe-cost small { color: var(--text-muted); font-size: 11px; font-weight: 500; }
+.recipe-option { display: grid; gap: 8px; padding: 10px 0 0; }
+.recipe-option-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: var(--text-sm); }
+.recipe-option-head .ui-btn { margin-left: auto; }
+.recipe-summary { position: sticky; bottom: -1px; display: grid; gap: 10px; margin: 8px -4px 0; padding: 16px 4px 4px; background: var(--surface-card); }
+.recipe-summary dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.recipe-summary dl div { display: grid; gap: 2px; padding: 10px 12px; background: var(--surface-sunken); border-radius: var(--radius-md); }
+.recipe-summary dt { color: var(--text-muted); font-size: var(--text-xs); }
+.recipe-summary dd { margin: 0; color: var(--text-primary); font-size: var(--text-lg); font-weight: 700; }
+.recipe-summary dd.is-low { color: var(--status-amber-fg); }
+.recipe-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+/* Purchase order */
+.po-form { display: grid; gap: 16px; }
+.po-lines { display: grid; gap: 8px; }
+.po-line { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(64px, .7fr) minmax(70px, .8fr) minmax(86px, .9fr) minmax(110px, 1.1fr) minmax(86px, auto) auto; align-items: start; gap: 6px; }
+.po-line.is-head { color: var(--text-muted); font-size: var(--text-xs); font-weight: 650; }
+.po-line-total { padding-top: 9px; font-size: var(--text-sm); font-weight: 650; }
+.po-lines > .ui-btn { justify-self: start; }
+.po-form-footer { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
+.po-form-footer > span { font-size: var(--text-md); }
+.po-form-footer strong { font-size: var(--text-xl); }
+.po-payments li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border-subtle); }
+.po-payments li.is-void strong { color: var(--text-muted); text-decoration: line-through; }
+.receive-line { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+.catalog-add { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(70px, .8fr) minmax(90px, 1fr) minmax(110px, 1.1fr) auto; align-items: start; gap: 6px; }
+.inv-wa { display: inline-flex; align-items: center; gap: 4px; color: var(--text-link); font-weight: 650; }
+
+/* Profit */
+.inv-footnote { margin: 0; color: var(--text-muted); font-size: var(--text-xs); line-height: 1.6; }
+.inv-footnote strong { color: var(--text-secondary); }
+.inv-rank-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.inv-rank li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border-subtle); }
+.inv-rank-index { color: var(--text-muted); font-size: var(--text-sm); font-weight: 700; }
+.inv-page > div > .inv-stats, .inv-page > div > .inv-footnote, .inv-page > div > .inv-rank-grid { margin-bottom: 18px; }
+
+@media (max-width: 1100px) {
+  .inv-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inv-summary-item:nth-child(3) { border-left: 0; }
+  .inv-summary-item:nth-child(n + 3) { border-top: 1px solid var(--border-subtle); }
+  .inv-facts.is-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+  .inv-alert { grid-template-columns: auto 1fr; }
+  .inv-alert .ui-btn { grid-column: 1 / -1; justify-self: start; }
+  .inv-form-row, .inv-form-row.is-3 { grid-template-columns: 1fr; }
+  .inv-rank-grid { grid-template-columns: 1fr; }
+  .recipe-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .recipe-row .recipe-cost { grid-column: 1 / 3; justify-items: start; padding-top: 0; }
+  .recipe-row > .ui-icon-btn, .recipe-row > button { grid-column: 3; grid-row: 1; }
+  .recipe-summary dl { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .recipe-summary dd { font-size: var(--text-md); }
+  .po-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+  .po-line.is-head { display: none; }
+  .po-line > :first-child { grid-column: 1 / -1; }
+  .receive-line, .catalog-add { grid-template-columns: 1fr 1fr; }
+  .receive-line > :first-child, .catalog-add > :first-child { grid-column: 1 / -1; }
+  .inv-count-bar { position: static; }
+  .inv-count-note { flex-basis: 100%; margin-left: 0; }
+}
