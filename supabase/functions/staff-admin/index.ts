@@ -15,7 +15,9 @@
 //   - Email yang sudah terdaftar (mis. akun customer) ditolak — tidak mengambil alih akun orang.
 //
 // Deploy: Supabase Dashboard → Edge Functions → Deploy a new function → Via Editor,
-//         nama "staff-admin", tempel isi file ini, Deploy. (Verify JWT: biarkan ON.)
+//         nama "staff-admin", hapus SEMUA contoh kode, tempel isi file ini, Deploy.
+//         Verify JWT boleh OFF: fungsi ini sendiri memeriksa token & peran owner
+//         (wajib OFF bila project memakai kunci API baru publishable/secret).
 // Requires migration 04 (profiles.is_active, profiles.job_title).
 // =====================================================================
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1'
@@ -45,6 +47,17 @@ function cleanText(value: unknown, max: number) {
   return value.replace(/\s+/g, ' ').trim().slice(0, max)
 }
 
+/** Variabel kunci baru Supabase berbentuk JSON, mis. {"default":"sb_secret_..."}. */
+function firstKey(name: string): string | undefined {
+  try {
+    const parsed = JSON.parse(Deno.env.get(name) ?? '')
+    const value = parsed?.default ?? Object.values(parsed ?? {})[0]
+    return typeof value === 'string' && value ? value : undefined
+  } catch {
+    return undefined
+  }
+}
+
 function validPassword(value: unknown): value is string {
   return typeof value === 'string' && value.length >= 8 && value.length <= 72
 }
@@ -54,8 +67,9 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return fail('Metode tidak didukung', 405)
 
   const url = Deno.env.get('SUPABASE_URL')
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  // Kunci lama (anon/service_role) atau kunci baru (publishable/secret) — mana yang tersedia di project
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || firstKey('SUPABASE_PUBLISHABLE_KEYS')
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || firstKey('SUPABASE_SECRET_KEYS')
   if (!url || !anonKey || !serviceKey) return fail('Konfigurasi server belum lengkap', 500)
 
   // 1. Siapa pemanggilnya (dari token, bukan dari body)
