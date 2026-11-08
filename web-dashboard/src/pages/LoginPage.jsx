@@ -1,18 +1,34 @@
 import { useState } from 'react'
-import { ArrowRight, Coffee, Eye, EyeOff, Leaf } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
+import { BrandMark } from '../components/shell/AppShell.jsx'
+import { Button, TextField } from '../components/ui/index.js'
+import { usePublicBrand, useDocumentBranding } from '../lib/branding.js'
+
+const YEAR = new Date().getFullYear()
+
+function loginErrorMessage(error) {
+  const message = String(error?.message || '')
+  if (/invalid login credentials/i.test(message)) return 'Email atau password salah.'
+  if (/email not confirmed/i.test(message)) return 'Email belum dikonfirmasi. Cek kotak masuk email Anda.'
+  if (/failed to fetch|network/i.test(message)) return 'Koneksi terputus. Periksa internet lalu coba lagi.'
+  return `Gagal masuk: ${message}`
+}
 
 export function LoginPage() {
   const { authError, loading, session, supabase } = useAuth()
   const location = useLocation()
+  const brand = usePublicBrand(supabase)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  if (loading) return <div className="login-loading" role="status">Memeriksa sesi...</div>
+  useDocumentBranding(brand, 'Masuk')
+
+  if (loading) return <div className="login-loading" role="status">Memeriksa sesi…</div>
   if (session) return <Navigate to={location.state?.from || '/'} replace />
 
   async function handleSubmit(event) {
@@ -24,99 +40,84 @@ export function LoginPage() {
       return
     }
     if (!supabase) {
-      setErrorMessage(authError || 'Koneksi Supabase belum tersedia.')
+      setErrorMessage(authError || 'Koneksi ke server belum tersedia.')
       return
     }
 
     setSubmitting(true)
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    })
-    if (error) setErrorMessage(`Gagal masuk: ${error.message}`)
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    if (error) setErrorMessage(loginErrorMessage(error))
     setSubmitting(false)
   }
 
+  const alert = errorMessage || authError
+
   return (
     <main className="login-page">
-      <section className="login-intro" aria-label="Tentang Dailybrew">
-        <a className="brand-lockup login-brand" href="/" aria-label="Dailybrew">
-          <span className="brand-mark"><Coffee size={20} strokeWidth={2.2} /></span>
-          <span className="brand-name">daily<span>brew</span></span>
-        </a>
-        <div className="intro-copy">
-          <span className="eyebrow"><Leaf size={14} /> YOUR CAFE, IN GOOD HANDS</span>
-          <h1>Make room<br />for <em>great</em> coffee.</h1>
-          <p>Semua yang Anda butuhkan untuk menjalankan cafe, dalam satu tempat yang tenang.</p>
+      <section className="login-intro" aria-label={`Tentang ${brand.name}`}>
+        <div className="login-brand">
+          <BrandMark brand={brand} size={44} />
+          <span className="login-brand-name">{brand.name}</span>
         </div>
-        <div className="intro-footer">
-          <span className="intro-dot" />
-          <span>Dirancang untuk hari yang lebih baik.</span>
+        <div className="login-intro-copy">
+          <span className="login-eyebrow">Ruang kerja kafe</span>
+          <h1>{brand.tagline || 'Kelola penjualan, menu, dan tim dari satu tempat.'}</h1>
+          <p>Owner membuka dashboard bisnis. Staff langsung menuju antrean pesanan.</p>
         </div>
+        <span className="login-intro-foot">© {YEAR} {brand.businessName}</span>
+        <span className="login-ornament login-ornament-a" aria-hidden="true" />
+        <span className="login-ornament login-ornament-b" aria-hidden="true" />
       </section>
 
       <section className="login-panel">
         <div className="login-form-wrap">
-          <div className="login-heading">
-            <span className="form-kicker">CAFE WORKSPACE</span>
-            <h2>Selamat datang kembali</h2>
-            <p>Masuk untuk membuka dashboard sesuai peran dan akses akun Anda.</p>
+          <div className="login-mobile-brand">
+            <BrandMark brand={brand} size={40} />
+            <span className="login-brand-name">{brand.name}</span>
           </div>
+          <header className="login-heading">
+            <h2>Selamat datang kembali</h2>
+            <p>Masuk dengan akun owner atau staff Anda.</p>
+          </header>
 
-          {(errorMessage || authError) && (
-            <div className="form-alert" role="alert">
-              {errorMessage || authError}
-            </div>
-          )}
+          {alert && <div className="login-alert" role="alert">{alert}</div>}
 
           <form className="login-form" onSubmit={handleSubmit} noValidate>
-            <label className="field-label" htmlFor="email">Email</label>
-            <input
-              id="email"
-              className="text-input"
+            <TextField
+              label="Email"
               type="email"
               autoComplete="email"
-              placeholder="nama@cafe.com"
+              placeholder="nama@kafe.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
             />
-
-            <div className="password-label-row">
-              <label className="field-label" htmlFor="password">Password</label>
-            </div>
-            <div className="password-field">
-              <input
-                id="password"
-                className="text-input"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                placeholder="Masukkan password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-              <button
-                className="password-toggle"
-                type="button"
-                onClick={() => setShowPassword((shown) => !shown)}
-                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-              >
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
-            </div>
-
-            <button className="button button-primary login-submit" type="submit" disabled={submitting}>
-              {submitting ? 'Sedang masuk...' : 'Masuk ke dashboard'}
-              {!submitting && <ArrowRight size={17} />}
-            </button>
+            <TextField
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              placeholder="Masukkan password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              suffix={(
+                <button
+                  className="login-password-toggle"
+                  type="button"
+                  onClick={() => setShowPassword((shown) => !shown)}
+                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                >
+                  {showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                </button>
+              )}
+            />
+            <Button type="submit" size="lg" block loading={submitting} iconRight={ArrowRight}>
+              {submitting ? 'Sedang masuk…' : 'Masuk'}
+            </Button>
           </form>
 
-          <p className="login-footnote">
-            Akun owner membuka dashboard manajemen. Akun staff langsung menuju operasional pesanan. Butuh bantuan? Hubungi administrator Anda.
-          </p>
+          <p className="login-footnote">Lupa password atau belum punya akun? Hubungi owner kafe Anda.</p>
         </div>
-        <span className="login-copyright">Dailybrew. Dibuat untuk hospitality.</span>
       </section>
     </main>
   )

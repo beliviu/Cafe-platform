@@ -1,7 +1,7 @@
 import { AlertCircle, Inbox } from 'lucide-react'
 import { Button } from './Button.jsx'
 
-export function EmptyState({ icon: Icon = Inbox, title, description, action, compact = false, tone = 'sage' }) {
+export function EmptyState({ icon: Icon = Inbox, title, description, action, compact = false, tone = 'brand' }) {
   return (
     <div className={`ui-empty${compact ? ' ui-empty-compact' : ''}`}>
       <span className={`ui-empty-icon ui-empty-icon-${tone}`}><Icon size={compact ? 18 : 22} aria-hidden="true" /></span>

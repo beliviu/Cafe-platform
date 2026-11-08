@@ -133,6 +133,7 @@ export function createFixtures(now = new Date()) {
     cafe: {
       id: cafeId, name: 'Kopi Senja', address: 'Jl. Kaliurang Km 5, Yogyakarta', phone: '0812 3456 7890',
       description: 'Kopi susu gula aren & roti panggang sejak 2019.', opening_hours: null, accepted_payment_methods: ['cash', 'qris'],
+      app_name: null, logo_url: null, tagline: null, brand_color: null,
     },
     profile: { id: 'owner-1', full_name: 'Iqlal Iwan', phone: '081200000000', role: 'owner', cafe_id: cafeId },
     tables: {
@@ -207,6 +208,7 @@ class Query {
 }
 
 export function createMockSupabase(fixtures) {
+  const uploads = new Map()
   const store = fixtures.tables
   store.cafes = [fixtures.cafe]
   store.profiles = [fixtures.profile]
@@ -271,10 +273,11 @@ export function createMockSupabase(fixtures) {
       return { data: null, error: { message: `RPC ${name} tidak ada di mock` } }
     },
     storage: {
-      from: () => ({
-        upload: async () => ({ error: null }),
+      // Simpan file sebagai blob URL agar pratinjau bisa menampilkan gambar yang baru diunggah.
+      from: (bucket) => ({
+        upload: async (path, file) => { uploads.set(`${bucket}/${path}`, URL.createObjectURL(file)); return { error: null } },
         remove: async () => ({ error: null }),
-        getPublicUrl: (path) => ({ data: { publicUrl: `https://example.invalid/storage/v1/object/public/product-images/${path}` } }),
+        getPublicUrl: (path) => ({ data: { publicUrl: uploads.get(`${bucket}/${path}`) || `https://example.invalid/storage/v1/object/public/${bucket}/${path}` } }),
       }),
     },
     auth: { signOut: async () => ({ error: null }) },

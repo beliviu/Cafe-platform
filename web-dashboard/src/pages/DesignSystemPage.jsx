@@ -10,8 +10,8 @@ import { formatDateTime, formatQueueNumber, formatRupiah, summarizeItems } from 
 import { ORDER_STATUS, PAYMENT_STATUS } from '../lib/status.js'
 
 const SWATCHES = [
-  ['--sage-50', 'sage 50'], ['--sage-100', '100'], ['--sage-200', '200'], ['--sage-300', '300'], ['--sage-400', '400'],
-  ['--sage-500', '500'], ['--sage-600', '600 · primary'], ['--sage-700', '700'], ['--sage-800', '800'], ['--sage-900', '900'],
+  ['--brand-50', 'brand 50'], ['--brand-100', '100'], ['--brand-200', '200'], ['--brand-300', '300'], ['--brand-400', '400'],
+  ['--brand-500', '500'], ['--brand-600', '600 · primary'], ['--brand-700', '700'], ['--brand-800', '800'], ['--brand-900', '900'],
 ]
 const SURFACES = [['--surface-canvas', 'canvas'], ['--surface-card', 'card'], ['--surface-sunken', 'sunken'], ['--border-default', 'border']]
 const TEXTS = [['--text-primary', 'Teks utama · 14.2:1'], ['--text-secondary', 'Teks sekunder · 7.4:1'], ['--text-muted', 'Teks muted · 5.2:1']]
@@ -106,7 +106,7 @@ export function DesignSystemPage() {
         <div className="ds-row">
           {Object.keys(PAYMENT_STATUS).map((status) => <PaymentBadge key={status} status={status} />)}
           <PaymentBadge status="paid" method="qris" showMethod />
-          <Badge tone="sage" dot={false}>Terlaris</Badge>
+          <Badge tone="brand" dot={false}>Terlaris</Badge>
         </div>
       </Section>
 

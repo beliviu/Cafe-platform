@@ -4,8 +4,23 @@ import { ZoomIn, ZoomOut } from 'lucide-react'
 import { Button, Dialog } from '../ui/index.js'
 import { cropToFile } from '../../lib/imageCrop.js'
 
-/** Crop rasio 1:1 tetap — sama dengan kartu produk di aplikasi customer. */
-export function ImageCropDialog({ src, onCancel, onDone }) {
+/**
+ * Crop rasio 1:1 tetap — sama dengan kartu produk di aplikasi customer.
+ * Dipakai juga untuk logo kafe (title/description/cropOptions berbeda).
+ */
+export function ImageCropDialog({
+  src,
+  onCancel,
+  onDone,
+  title = 'Atur foto produk',
+  description = 'Geser dan perbesar foto. Hasilnya persegi, sama seperti di menu customer.',
+  doneLabel = 'Pakai foto ini',
+  cropOptions,
+  shape = 'rect',
+  allowPadding = false,
+}) {
+  // allowPadding: logo boleh diperkecil di dalam kotak (sisa area transparan), tidak harus terpotong.
+  const minZoom = allowPadding ? 0.4 : 1
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [area, setArea] = useState(null)
@@ -17,7 +32,7 @@ export function ImageCropDialog({ src, onCancel, onDone }) {
     setBusy(true)
     setError('')
     try {
-      onDone(await cropToFile(src, area))
+      onDone(await cropToFile(src, area, cropOptions))
     } catch (caught) {
       setError(caught.message)
       setBusy(false)
@@ -26,15 +41,15 @@ export function ImageCropDialog({ src, onCancel, onDone }) {
 
   return (
     <Dialog
-      title="Atur foto produk"
-      description="Geser dan perbesar foto. Hasilnya persegi, sama seperti di menu customer."
+      title={title}
+      description={description}
       size="md"
       onClose={busy ? undefined : onCancel}
       dismissible={!busy}
       footer={(
         <>
           <Button variant="ghost" onClick={onCancel} disabled={busy}>Batal</Button>
-          <Button onClick={handleDone} loading={busy} disabled={!area}>Pakai foto ini</Button>
+          <Button onClick={handleDone} loading={busy} disabled={!area}>{doneLabel}</Button>
         </>
       )}
     >
@@ -44,10 +59,12 @@ export function ImageCropDialog({ src, onCancel, onDone }) {
           crop={crop}
           zoom={zoom}
           aspect={1}
-          minZoom={1}
+          minZoom={minZoom}
           maxZoom={4}
-          objectFit="cover"
-          showGrid
+          restrictPosition={!allowPadding}
+          objectFit={allowPadding ? 'contain' : 'cover'}
+          cropShape={shape}
+          showGrid={shape === 'rect'}
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onCropComplete={(_, pixels) => setArea(pixels)}
@@ -57,11 +74,11 @@ export function ImageCropDialog({ src, onCancel, onDone }) {
         <ZoomOut size={16} aria-hidden="true" />
         <input
           type="range"
-          min={1}
+          min={minZoom}
           max={4}
           step={0.01}
           value={zoom}
-          aria-label="Perbesar foto"
+          aria-label="Perbesar gambar"
           onChange={(event) => setZoom(Number(event.target.value))}
         />
         <ZoomIn size={16} aria-hidden="true" />

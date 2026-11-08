@@ -1,6 +1,6 @@
 import { orderStatusMeta, paymentMethodLabel, paymentStatusMeta } from '../../lib/status.js'
 
-/** tone: amber | blue | green | neutral | red | sage */
+/** tone: amber | blue | green | neutral | red | brand */
 export function Badge({ tone = 'neutral', dot = true, size = 'md', className = '', children, ...props }) {
   return (
     <span className={`ui-badge ui-badge-${tone} ui-badge-${size} ${className}`.trim()} {...props}>

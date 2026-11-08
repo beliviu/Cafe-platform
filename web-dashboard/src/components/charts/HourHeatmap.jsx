@@ -14,7 +14,7 @@ function level(count, max) {
 }
 
 /**
- * Heatmap hari × jam (jumlah pesanan). Satu warna sage, terang → gelap.
+ * Heatmap hari × jam (jumlah pesanan). Satu warna brand, terang → gelap.
  * Keyboard: fokus ke grid lalu panah untuk berpindah sel.
  */
 export function HourHeatmap({ matrix }) {

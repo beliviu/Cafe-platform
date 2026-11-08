@@ -18,7 +18,7 @@ export function StatCard({
   deltaLabel = 'vs periode sebelumnya',
   deltaInverse = false,
   trend,
-  tone = 'sage',
+  tone = 'brand',
   loading = false,
   compact = false,
   onClick,

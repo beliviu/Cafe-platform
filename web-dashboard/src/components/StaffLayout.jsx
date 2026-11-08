@@ -6,6 +6,7 @@ import { AccessState } from './shell/AccessState.jsx'
 import { AppShell } from './shell/AppShell.jsx'
 import { staffNavigation } from '../config/staffNavigation.js'
 import { cafeColumns, detectDbFeatures } from '../lib/db.js'
+import { brandOf, cacheBrand, useDocumentBranding } from '../lib/branding.js'
 
 export function StaffLayout() {
   const { session, supabase } = useAuth()
@@ -75,6 +76,13 @@ export function StaffLayout() {
     navigate('/login', { replace: true })
   }
 
+  const brand = staffData ? brandOf(staffData.cafe) : null
+  const brandKey = brand ? JSON.stringify(brand) : ''
+  useDocumentBranding(brand, 'Staff')
+  useEffect(() => {
+    if (brandKey) cacheBrand(JSON.parse(brandKey))
+  }, [brandKey])
+
   if (loading) return <LoadingScreen label="Memeriksa akses staff..." />
   if (loadError) {
     return <AccessState title="Halaman staff belum tersedia" message={loadError} onRetry={() => setAttempt((value) => value + 1)} />
@@ -83,6 +91,7 @@ export function StaffLayout() {
 
   return (
     <AppShell
+      brand={brand}
       homeTo="/staff"
       navigation={staffNavigation(pendingCount)}
       account={{ title: staffData.profile.full_name || staffData.cafe.name, subtitle: `Staff · ${staffData.cafe.name}`, onSignOut: handleSignOut }}

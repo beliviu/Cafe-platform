@@ -10,21 +10,32 @@ const BASE_ORDER_COLUMNS = 'id, cafe_id, order_number, customer_id, total_amount
 const OPERATION_ORDER_COLUMNS = ', queue_number, paid_at, cancel_reason, cancelled_at'
 const BASE_CAFE_COLUMNS = 'id, name, address, phone'
 const OPERATION_CAFE_COLUMNS = ', description, opening_hours, accepted_payment_methods'
+export const BRANDING_CAFE_COLUMNS = 'app_name, logo_url, tagline, brand_color'
 
 export const ALL_PAYMENT_METHODS = ['cash', 'qris', 'bank_transfer', 'ewallet']
 export const DB_UPDATE_REQUIRED = 'Fitur ini aktif setelah pembaruan database diterapkan.'
 
 const featureCache = new WeakMap()
 
-/** { operations: boolean } — true bila migrasi 02 sudah diterapkan. Di-cache per klien. */
+function probeColumns(supabase, table, columns) {
+  return supabase
+    .from(table)
+    .select(columns)
+    .limit(1)
+    .then(({ error }) => !error)
+    .catch(() => false)
+}
+
+/**
+ * { operations, branding } — true bila migrasi 02 / 03 sudah diterapkan. Di-cache per klien.
+ * Kolom yang belum ada membuat select gagal, jadi UI memilih kolom berdasarkan hasil ini.
+ */
 export function detectDbFeatures(supabase) {
   if (!featureCache.has(supabase)) {
-    const probe = supabase
-      .from('orders')
-      .select('queue_number, paid_at, cancel_reason, cancelled_at')
-      .limit(1)
-      .then(({ error }) => ({ operations: !error }))
-      .catch(() => ({ operations: false }))
+    const probe = Promise.all([
+      probeColumns(supabase, 'orders', 'queue_number, paid_at, cancel_reason, cancelled_at'),
+      probeColumns(supabase, 'cafes', BRANDING_CAFE_COLUMNS),
+    ]).then(([operations, branding]) => ({ operations, branding }))
     featureCache.set(supabase, probe)
   }
   return featureCache.get(supabase)
@@ -35,7 +46,9 @@ export function orderColumns(features) {
 }
 
 export function cafeColumns(features) {
-  return BASE_CAFE_COLUMNS + (features?.operations ? OPERATION_CAFE_COLUMNS : '')
+  return BASE_CAFE_COLUMNS
+    + (features?.operations ? OPERATION_CAFE_COLUMNS : '')
+    + (features?.branding ? `, ${BRANDING_CAFE_COLUMNS}` : '')
 }
 
 /** Metode bayar yang bisa dipilih staff saat menandai lunas. */

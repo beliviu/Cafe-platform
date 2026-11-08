@@ -9,11 +9,22 @@
 | Langkah | Status |
 |---|---|
 | 0. Cek kondisi database (read-only) | ✅ 0a, 0b, 0c diterima (8 Nov) |
-| 1a. **Tutup celah keamanan profil** — [`supabase/usulan/01-tutup-celah-profil.sql`](supabase/usulan/01-tutup-celah-profil.sql) | 🔴 **siap dijalankan, prioritas** |
-| 1b. Fitur operasional — [`supabase/usulan/02-fitur-operasional.sql`](supabase/usulan/02-fitur-operasional.sql) | 🟢 siap dijalankan (setelah 1a) |
+| 1a. Tutup celah keamanan profil — [`supabase/usulan/01-tutup-celah-profil.sql`](supabase/usulan/01-tutup-celah-profil.sql) | ✅ sudah dijalankan (8 Nov) |
+| 1b. Fitur operasional — [`supabase/usulan/02-fitur-operasional.sql`](supabase/usulan/02-fitur-operasional.sql) | ✅ sudah dijalankan (8 Nov) |
+| 3. **Branding kafe** (nama tampilan, logo, tagline, warna) — [`supabase/usulan/03-branding-kafe.sql`](supabase/usulan/03-branding-kafe.sql) | 🟢 **siap dijalankan** |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
 
-### Cara menjalankan
+### Cara menjalankan file 03 (branding)
+
+1. Supabase Dashboard → **SQL Editor** → New query.
+2. Copy **seluruh isi** `supabase/usulan/03-branding-kafe.sql`, paste, **Run**.
+3. Hasil verifikasi harus **9 baris**: 4 `column` (app_name, brand_color, logo_url, tagline), 1 `bucket` (cafe-assets), dan 4 `policy` (…cafe assets).
+4. Kalau ada error merah, **tidak ada yang berubah** — kirim pesan error-nya.
+5. Muat ulang web owner (Ctrl+Shift+R) → **Pengaturan → Brand & tampilan** aktif.
+
+Isi file 03: hanya menambah 4 kolom kosong di `cafes`, membuat bucket `cafe-assets` (logo, maks 2 MB, PNG/JPG/WebP), dan policy: semua orang boleh melihat logo, hanya owner kafe itu yang boleh unggah/hapus di folder kafenya. Tidak ada data lama yang diubah.
+
+### Cara menjalankan (file 01 & 02 — sudah selesai)
 
 1. Supabase Dashboard → **SQL Editor** → New query.
 2. Buka file `01-tutup-celah-profil.sql`, copy **seluruh isinya**, paste, **Run**. Hasil di bawah harus 2 baris: `full_name`, `phone`.

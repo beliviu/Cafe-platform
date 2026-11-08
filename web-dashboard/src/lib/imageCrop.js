@@ -1,5 +1,6 @@
-/* Potong foto produk di browser sebelum diunggah. */
+/* Potong gambar (foto produk, logo) di browser sebelum diunggah. */
 export const PRODUCT_IMAGE_SIZE = 800
+export const LOGO_IMAGE_SIZE = 512
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -14,23 +15,29 @@ function canvasToBlob(canvas, type, quality) {
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality))
 }
 
-/** Potong area terpilih jadi persegi 800×800 (WebP, fallback JPEG). */
-export async function cropToFile(src, area, baseName = 'produk') {
+/**
+ * Potong area terpilih jadi persegi `size`×`size` (WebP, fallback JPEG/PNG).
+ * transparent = true mempertahankan latar transparan (logo); fallback-nya PNG, bukan JPEG.
+ */
+export async function cropToFile(src, area, { size = PRODUCT_IMAGE_SIZE, baseName = 'produk', transparent = false } = {}) {
   const image = await loadImage(src)
   const canvas = document.createElement('canvas')
-  canvas.width = PRODUCT_IMAGE_SIZE
-  canvas.height = PRODUCT_IMAGE_SIZE
+  canvas.width = size
+  canvas.height = size
   const context = canvas.getContext('2d')
   context.imageSmoothingQuality = 'high'
-  context.fillStyle = '#ffffff'
-  context.fillRect(0, 0, PRODUCT_IMAGE_SIZE, PRODUCT_IMAGE_SIZE)
-  context.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, PRODUCT_IMAGE_SIZE, PRODUCT_IMAGE_SIZE)
-  let blob = await canvasToBlob(canvas, 'image/webp', 0.86)
+  if (!transparent) {
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, size, size)
+  }
+  context.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, size, size)
+  let blob = await canvasToBlob(canvas, 'image/webp', 0.88)
   let type = 'image/webp'
   if (!blob || blob.type !== 'image/webp') {
-    blob = await canvasToBlob(canvas, 'image/jpeg', 0.88)
-    type = 'image/jpeg'
+    type = transparent ? 'image/png' : 'image/jpeg'
+    blob = await canvasToBlob(canvas, type, 0.88)
   }
   if (!blob) throw new Error('Gambar gagal diproses.')
-  return new File([blob], `${baseName}.${type === 'image/webp' ? 'webp' : 'jpg'}`, { type })
+  const extension = { 'image/webp': 'webp', 'image/png': 'png', 'image/jpeg': 'jpg' }[type]
+  return new File([blob], `${baseName}.${extension}`, { type })
 }

@@ -1,40 +1,66 @@
 /*
- * dailybrew design tokens — sumber kebenaran untuk web owner & staff.
+ * Design tokens "Warm Luxury" — sumber kebenaran untuk web owner & staff.
+ * Palet: Warm Ivory #F2E9DC · Sand #D8C3A9 · Taupe #B69A7D · Walnut #75543D
+ *        Espresso #38271E · Terracotta #B96843
  * Nilai yang sama dipakai di aplikasi customer: mobile-customer/src/theme/tokens.js.
  * Ubah keduanya bersamaan.
+ *
+ * --brand-* bisa ditimpa warna brand pilihan owner (lib/branding.js → useBrandTheme).
+ * Nilai di bawah = bawaan Walnut, dihitung dengan brandScale() di lib/color.js.
  */
 :root {
-  /* Sage — warna utama brand */
-  --sage-50: #f1f5f1;
-  --sage-100: #e2ebe3;
-  --sage-200: #c6d6c8;
-  --sage-300: #a2bca6;
-  --sage-400: #7e9e84;
-  --sage-500: #63846b;
-  --sage-600: #52705a; /* primary */
-  --sage-700: #435c4a;
-  --sage-800: #36493c;
-  --sage-900: #283629;
+  /* Brand (bawaan Walnut) — 600 = tombol utama, teks putih 6.8:1 */
+  --brand-50: #F4EEE6;
+  --brand-100: #E9E0D8;
+  --brand-200: #D3C6BA;
+  --brand-300: #BAA899;
+  --brand-400: #A18978;
+  --brand-500: #886B57;
+  --brand-600: #75543D;
+  --brand-700: #644734;
+  --brand-800: #543C2B;
+  --brand-900: #453123;
+
+  /* Palet dasar */
+  --ivory: #F2E9DC;
+  --sand: #D8C3A9;
+  --taupe: #B69A7D;
+  --walnut: #75543D;
+  --espresso: #38271E;
+
+  /* Aksen terracotta — 500 hanya untuk ikon/badge/teks besar (3.4:1), 700 untuk teks (5.4:1) */
+  --accent-100: #F3E0D4;
+  --accent-500: #B96843;
+  --accent-700: #8F4C2D;
 
   /* Permukaan */
-  --surface-canvas: #f6f4f0;  /* krem latar */
-  --surface-card: #fffefb;    /* putih hangat */
-  --surface-sunken: #efece6;
-  --surface-hover: #f3f0ea;
-  --surface-overlay: rgb(40 33 26 / 42%);
+  --surface-canvas: #F2E9DC;  /* warm ivory — latar utama */
+  --surface-card: #FBF7F0;    /* kartu, sedikit lebih terang dari latar */
+  --surface-sunken: #EADFCF;  /* area cekung, input nonaktif */
+  --surface-hover: #EEE4D5;
+  --surface-sand: #E3D3BE;    /* permukaan sekunder (sand) */
+  --surface-overlay: rgb(56 39 30 / 46%);
 
-  /* Teks — semua lolos WCAG AA (>= 4.5:1) di atas canvas & card */
-  --text-primary: #2f2720;    /* 14.2:1 */
-  --text-secondary: #5a5047;  /* 7.4:1 */
-  --text-muted: #6e655b;      /* 5.2:1 */
-  --text-on-primary: #fffefb;
-  --text-link: var(--sage-700);
+  /* Navigasi gelap (espresso) */
+  --nav-bg: #38271E;
+  --nav-text: #F2E9DC;        /* 11.8:1 */
+  --nav-text-muted: #B3A595;  /* 5.9:1 */
+  --nav-hover: rgb(242 233 220 / 8%);
+  --nav-active: rgb(242 233 220 / 13%);
+  --nav-border: rgb(242 233 220 / 12%);
+
+  /* Teks — semua lolos WCAG AA (>= 4.5:1) di atas canvas, card, dan sunken */
+  --text-primary: #38271E;    /* espresso, 11.8:1 */
+  --text-secondary: #5A4638;  /* 7.4:1 */
+  --text-muted: #6F5D4F;      /* 5.2:1 (4.8:1 di sunken) */
+  --text-on-primary: #FFFBF5;
+  --text-link: var(--brand-700);
 
   /* Garis */
-  --border-subtle: #ece8e0;
-  --border-default: #e2ddd3;
-  --border-strong: #cfc8bb;
-  --focus-ring: 0 0 0 3px rgb(82 112 90 / 32%);
+  --border-subtle: #E4D8C7;
+  --border-default: #D9CAB5;
+  --border-strong: #C4AF94;
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--brand-600) 30%, transparent);
 
   /* Status — dipakai identik di owner, staff, dan customer */
   --status-amber-bg: #fbf0dc;
@@ -75,9 +101,10 @@
   --radius-lg: 14px;
   --radius-xl: 18px;
   --radius-full: 999px;
-  --shadow-sm: 0 1px 2px rgb(49 40 30 / 6%);
-  --shadow-md: 0 4px 14px rgb(49 40 30 / 8%);
-  --shadow-lg: 0 18px 50px rgb(49 40 30 / 16%);
+  /* Bayangan tipis — kedalaman utamanya dari garis & beda permukaan */
+  --shadow-sm: 0 1px 2px rgb(56 39 30 / 5%);
+  --shadow-md: 0 4px 12px rgb(56 39 30 / 7%);
+  --shadow-lg: 0 16px 40px rgb(56 39 30 / 14%);
 
   --space-1: 4px;
   --space-2: 8px;

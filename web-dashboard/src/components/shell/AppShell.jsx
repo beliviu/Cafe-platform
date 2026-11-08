@@ -17,11 +17,22 @@ function readCollapsed() {
   return window.innerWidth <= 1180
 }
 
-function BrandLockup({ compact = false, homeTo = '/' }) {
+/** Logo + nama kafe. Tanpa logo: ikon kopi di kotak warna brand. */
+export function BrandMark({ brand, size = 36 }) {
   return (
-    <Link className="shell-brand" to={homeTo} aria-label="dailybrew, ke halaman utama">
-      <span className="shell-brand-mark"><Coffee size={19} strokeWidth={2.2} aria-hidden="true" /></span>
-      {!compact && <span className="shell-brand-name">daily<span>brew</span></span>}
+    <span className={`shell-brand-mark${brand?.logoUrl ? ' has-logo' : ''}`} style={{ width: size, height: size }}>
+      {brand?.logoUrl
+        ? <img src={brand.logoUrl} alt="" />
+        : <Coffee size={Math.round(size * 0.53)} strokeWidth={2.2} aria-hidden="true" />}
+    </span>
+  )
+}
+
+function BrandLockup({ brand, compact = false, homeTo = '/' }) {
+  return (
+    <Link className="shell-brand" to={homeTo} aria-label={`${brand.name}, ke halaman utama`}>
+      <BrandMark brand={brand} />
+      {!compact && <span className="shell-brand-name" title={brand.name}>{brand.name}</span>}
     </Link>
   )
 }
@@ -80,7 +91,7 @@ function Account({ title, subtitle, imageUrl, onSignOut, collapsed }) {
  * - ≥ 768px: sidebar yang bisa diciutkan jadi ikon (disimpan di browser).
  * - < 768px: bar atas + menu dalam drawer.
  */
-export function AppShell({ navigation, account, banner, homeTo = '/', children }) {
+export function AppShell({ brand, navigation, account, banner, homeTo = '/', children }) {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
@@ -101,7 +112,7 @@ export function AppShell({ navigation, account, banner, homeTo = '/', children }
     <div className={`shell${collapsed ? ' is-collapsed' : ''}`}>
       <aside className="shell-sidebar" aria-label="Sidebar">
         <div className="shell-sidebar-top">
-          <BrandLockup compact={collapsed} homeTo={homeTo} />
+          <BrandLockup brand={brand} compact={collapsed} homeTo={homeTo} />
           <IconButton
             icon={collapsed ? PanelLeftOpen : PanelLeftClose}
             label={collapsed ? 'Lebarkan sidebar' : 'Ciutkan sidebar'}
@@ -118,7 +129,7 @@ export function AppShell({ navigation, account, banner, homeTo = '/', children }
 
       <header className="shell-topbar">
         <IconButton icon={Menu} label="Buka menu" onClick={() => setMobileOpen(true)} tooltip={false} />
-        <BrandLockup homeTo={homeTo} />
+        <BrandLockup brand={brand} homeTo={homeTo} />
         <span className="shell-topbar-page">{currentLabel}</span>
       </header>
 

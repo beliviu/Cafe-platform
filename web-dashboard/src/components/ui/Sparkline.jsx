@@ -2,7 +2,7 @@ import { useId } from 'react'
 
 /** Garis tren kecil tanpa sumbu. `values` = array angka. */
 /** fluid: melebar mengikuti wadah (garis tetap tipis berkat non-scaling-stroke). */
-export function Sparkline({ values = [], width = 96, height = 28, tone = 'sage', label, fluid = false }) {
+export function Sparkline({ values = [], width = 96, height = 28, tone = 'brand', label, fluid = false }) {
   const gradientId = useId()
   const clean = values.map((value) => Number(value) || 0)
   if (clean.length < 2) return null

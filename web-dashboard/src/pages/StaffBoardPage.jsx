@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { brandOf } from '../lib/branding.js'
 import {
   Bell, Check, CircleDollarSign, Inbox, Keyboard, PackageX, RefreshCw, SlidersHorizontal, Volume2, VolumeX, Wallet,
 } from 'lucide-react'
@@ -25,7 +26,6 @@ import { ACTIVE_ORDER_STATUSES, orderStatusMeta, paymentMethodLabel } from '../l
 
 const POLL_MS = 20000
 const NEW_HIGHLIGHT_MS = 12000
-const BASE_TITLE = 'Pesanan — dailybrew'
 
 function notificationPermission() {
   return typeof window.Notification === 'undefined' ? 'unsupported' : window.Notification.permission
@@ -50,6 +50,7 @@ function LiveIndicator({ state, onReload }) {
 
 export function StaffBoardPage() {
   const { cafe, features, setPendingCount } = useOutletContext()
+  const brandName = brandOf(cafe).name
   const { supabase } = useAuth()
   const { toast } = useToast()
   const now = useNow(15000)
@@ -90,7 +91,7 @@ export function StaffBoardPage() {
     toast({ tone: 'info', title, description: body, duration: 6000 })
     if (notificationPermission() === 'granted' && document.visibilityState !== 'visible') {
       try {
-        new window.Notification(title, { body, tag: 'dailybrew-order' })
+        new window.Notification(title, { body, tag: 'cafe-order' })
       } catch {
         // beberapa browser (mis. Android) hanya mengizinkan notifikasi lewat service worker
       }
@@ -194,13 +195,14 @@ export function StaffBoardPage() {
 
   // Judul tab + badge menu
   useEffect(() => {
-    document.title = pendingCount ? `(${pendingCount}) ${BASE_TITLE}` : BASE_TITLE
+    const baseTitle = `Pesanan — ${brandName}`
+    document.title = pendingCount ? `(${pendingCount}) ${baseTitle}` : baseTitle
     setPendingCount?.(pendingCount)
-  }, [pendingCount, setPendingCount])
+  }, [brandName, pendingCount, setPendingCount])
   useEffect(() => () => {
-    document.title = 'dailybrew'
+    document.title = `${brandName} · Staff`
     setPendingCount?.(0)
-  }, [setPendingCount])
+  }, [brandName, setPendingCount])
 
   const stats = useMemo(() => {
     const todayKey = jakartaDateKey()

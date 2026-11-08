@@ -7,8 +7,8 @@
 .chart-baseline { stroke: var(--border-strong); stroke-width: 1; shape-rendering: crispEdges; }
 .chart-tick { fill: var(--text-muted); font: 500 11.5px var(--font-sans); font-variant-numeric: tabular-nums; }
 .chart-value-label { fill: var(--text-secondary); font: 700 11.5px var(--font-sans); font-variant-numeric: tabular-nums; }
-.chart-bar { fill: var(--sage-600); transition: fill .12s, opacity .12s; }
-.chart-bar.is-active { fill: var(--sage-800); }
+.chart-bar { fill: var(--brand-600); transition: fill .12s, opacity .12s; }
+.chart-bar.is-active { fill: var(--brand-800); }
 .chart-bar.is-dimmed { opacity: .45; }
 .chart-hit { fill: transparent; cursor: crosshair; }
 .chart-tooltip {
@@ -19,7 +19,7 @@
 .chart-tooltip strong { font-size: var(--text-base); font-weight: 700; }
 .chart-tooltip span { color: var(--text-muted); }
 
-/* Heatmap hari × jam — satu warna sage, terang → gelap */
+/* Heatmap hari × jam — satu warna brand, terang → gelap */
 .heatmap-wrap { display: grid; gap: 12px; min-width: 0; }
 .heatmap {
   display: grid; grid-template-columns: 34px repeat(var(--heatmap-cols), minmax(14px, 1fr)); gap: 3px;
@@ -31,11 +31,11 @@
 .heatmap-cell { display: block; min-height: 22px; border-radius: 4px; transition: box-shadow .1s; }
 .heatmap-cell.is-active { box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 4px var(--text-primary); }
 .heatmap-l0 { background: var(--surface-sunken); }
-.heatmap-l1 { background: var(--sage-100); }
-.heatmap-l2 { background: var(--sage-200); }
-.heatmap-l3 { background: var(--sage-400); }
-.heatmap-l4 { background: var(--sage-600); }
-.heatmap-l5 { background: var(--sage-800); }
+.heatmap-l1 { background: var(--brand-100); }
+.heatmap-l2 { background: var(--brand-200); }
+.heatmap-l3 { background: var(--brand-400); }
+.heatmap-l4 { background: var(--brand-600); }
+.heatmap-l5 { background: var(--brand-800); }
 .heatmap-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
 .heatmap-readout { min-height: 20px; color: var(--text-secondary); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
 .heatmap-legend { display: inline-flex; align-items: center; gap: 4px; color: var(--text-muted); font-size: var(--text-xs); }

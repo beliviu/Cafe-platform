@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { AuthContext } from '../auth/AuthContext.js'
 import { AppShell } from '../components/shell/AppShell.jsx'
+import { brandOf, useDocumentBranding } from '../lib/branding.js'
 import { staffNavigation } from '../config/staffNavigation.js'
 import { createFixtures, createMockSupabase } from './mockSupabase.js'
 
@@ -22,14 +23,16 @@ export function StaffPreview() {
     items: group.items.map((item) => ({ ...item, to: item.to.replace('/staff', PREFIX) })),
   }))
 
+  useDocumentBranding(brandOf(fixtures.cafe), 'Staff')
+
   return (
     <AuthContext.Provider value={auth}>
-      <AppShell homeTo={PREFIX} navigation={navigation} account={{ title: 'Nadia Barista', subtitle: `Staff · ${fixtures.cafe.name}`, onSignOut: () => {} }}>
+      <AppShell brand={brandOf(fixtures.cafe)} homeTo={PREFIX} navigation={navigation} account={{ title: 'Nadia Barista', subtitle: `Staff · ${fixtures.cafe.name}`, onSignOut: () => {} }}>
         <Outlet
           context={{
             cafe: fixtures.cafe,
             profile: { id: 'staff-1', full_name: 'Nadia Barista', role: 'staff', cafe_id: fixtures.cafe.id },
-            features: { operations: true },
+            features: { operations: true, branding: true },
             setPendingCount,
           }}
         />

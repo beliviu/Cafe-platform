@@ -7,6 +7,7 @@ import { Outlet } from 'react-router-dom'
 import { AuthContext } from '../auth/AuthContext.js'
 import { AppShell } from '../components/shell/AppShell.jsx'
 import { OWNER_NAVIGATION } from '../config/ownerNavigation.js'
+import { brandOf, useDocumentBranding } from '../lib/branding.js'
 import { createFixtures, createMockSupabase } from './mockSupabase.js'
 
 const PREFIX = '/preview/owner'
@@ -22,14 +23,16 @@ export function OwnerPreview() {
     items: group.items.map((item) => ({ ...item, to: item.to === '/' ? PREFIX : `${PREFIX}${item.to}` })),
   }))
 
+  useDocumentBranding(brandOf(cafe), 'Owner')
+
   return (
     <AuthContext.Provider value={auth}>
-      <AppShell navigation={navigation} account={{ title: cafe.name, subtitle: 'Owner · pratinjau', onSignOut: () => {} }}>
+      <AppShell brand={brandOf(cafe)} navigation={navigation} account={{ title: profile.full_name, subtitle: `Owner · ${cafe.name} (pratinjau)`, onSignOut: () => {} }}>
         <Outlet
           context={{
             cafe,
             profile,
-            features: { operations: true },
+            features: { operations: true, branding: true },
             updateCafe: (patch) => setCafe((current) => ({ ...current, ...patch })),
             updateProfile: (patch) => setProfile((current) => ({ ...current, ...patch })),
           }}

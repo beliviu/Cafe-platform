@@ -8,35 +8,15 @@ import {
 import {
   DAY_KEYS, DAY_LABELS, defaultOpeningHours, normalizeOpeningHours, openStatus, validateOpeningHours,
 } from '../lib/cafeHours.js'
-import { ALL_PAYMENT_METHODS, cafeColumns, DB_UPDATE_REQUIRED, friendlyError } from '../lib/db.js'
+import { ALL_PAYMENT_METHODS, DB_UPDATE_REQUIRED, friendlyError } from '../lib/db.js'
+import { SectionFooter } from '../components/settings/SettingsShared.jsx'
+import { saveCafe } from '../lib/cafe.js'
+import { BrandingSection } from '../components/settings/BrandingSection.jsx'
 import { formatDate } from '../lib/format.js'
 import { paymentMethodLabel } from '../lib/status.js'
 
 const METHOD_ICONS = { cash: Banknote, qris: QrCode, bank_transfer: Landmark, ewallet: Wallet }
 const PHONE_PATTERN = /^[0-9+\-\s()]{6,20}$/
-
-/** Simpan sebagian kolom cafes, lalu kembalikan baris terbaru. Kosong = ditolak RLS. */
-async function saveCafe(supabase, cafe, features, values) {
-  const { data, error } = await supabase
-    .from('cafes')
-    .update(values)
-    .eq('id', cafe.id)
-    .select(cafeColumns(features))
-    .maybeSingle()
-  if (error) throw new Error(friendlyError(error))
-  if (!data) throw new Error('Perubahan ditolak database. Pastikan pembaruan database (file 02) sudah dijalankan.')
-  return data
-}
-
-function SectionFooter({ dirty, saving, onReset, children }) {
-  return (
-    <footer className="settings-footer">
-      <span className="settings-footer-note">{dirty ? 'Ada perubahan yang belum disimpan.' : 'Semua perubahan tersimpan.'}</span>
-      {dirty && <Button variant="ghost" onClick={onReset} disabled={saving}>Batalkan</Button>}
-      {children}
-    </footer>
-  )
-}
 
 function CafeInfoSection({ cafe, features, onSaved }) {
   const { supabase } = useAuth()
@@ -349,7 +329,7 @@ function TeamSection({ cafe, features }) {
                 <strong>{member.full_name || 'Tanpa nama'}</strong>
                 <small>Bergabung {formatDate(member.created_at)}</small>
               </span>
-              <Badge tone={member.role === 'owner' ? 'sage' : 'blue'} dot={false}>{member.role === 'owner' ? 'Owner' : 'Staff'}</Badge>
+              <Badge tone={member.role === 'owner' ? 'brand' : 'blue'} dot={false}>{member.role === 'owner' ? 'Owner' : 'Staff'}</Badge>
             </li>
           ))}
         </ul>
@@ -366,7 +346,13 @@ export function SettingsPage() {
   const { cafe, profile, features, updateCafe, updateProfile } = useOutletContext()
   return (
     <div className="page">
-      <PageHeader eyebrow="Pengaturan" title="Pengaturan" description="Info kafe, jam buka, metode pembayaran, dan tim." />
+      <PageHeader eyebrow="Pengaturan" title="Pengaturan" description="Brand, info kafe, jam buka, metode pembayaran, dan tim." />
+      <BrandingSection
+        key={`brand-${cafe.app_name}-${cafe.logo_url}-${cafe.tagline}-${cafe.brand_color}`}
+        cafe={cafe}
+        features={features}
+        onSaved={updateCafe}
+      />
       <div className="settings-grid">
         <div className="settings-column">
           <CafeInfoSection key={`info-${cafe.name}-${cafe.address}-${cafe.phone}-${cafe.description}`} cafe={cafe} features={features} onSaved={updateCafe} />

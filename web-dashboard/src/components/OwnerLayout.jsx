@@ -6,6 +6,7 @@ import { LoadingScreen } from './LoadingScreen.jsx'
 import { AccessState } from './shell/AccessState.jsx'
 import { AppShell } from './shell/AppShell.jsx'
 import { cafeColumns, detectDbFeatures } from '../lib/db.js'
+import { brandOf, cacheBrand, useDocumentBranding } from '../lib/branding.js'
 
 export function OwnerLayout() {
   const { session, supabase } = useAuth()
@@ -90,6 +91,13 @@ export function OwnerLayout() {
     navigate('/login', { replace: true })
   }
 
+  const brand = ownerData ? brandOf(ownerData.cafe) : null
+  const brandKey = brand ? JSON.stringify(brand) : ''
+  useDocumentBranding(brand, 'Owner')
+  useEffect(() => {
+    if (brandKey) cacheBrand(JSON.parse(brandKey))
+  }, [brandKey])
+
   if (loading) return <LoadingScreen label="Memuat cafe Anda..." />
   if (profileRole === 'staff') return <Navigate to="/staff" replace />
   if (loadError) {
@@ -112,8 +120,9 @@ export function OwnerLayout() {
 
   return (
     <AppShell
+      brand={brand}
       navigation={OWNER_NAVIGATION}
-      account={{ title: ownerData.cafe.name, subtitle: 'Owner', imageUrl: ownerData.cafe.logo_url, onSignOut: handleSignOut }}
+      account={{ title: ownerData.profile.full_name || ownerData.cafe.name, subtitle: `Owner · ${ownerData.cafe.name}`, onSignOut: handleSignOut }}
       banner={signOutError && (
         <div className="shell-banner" role="alert">
           <span>{signOutError}</span>
