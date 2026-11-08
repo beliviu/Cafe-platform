@@ -88,3 +88,22 @@ export function describeBrandColor(hex) {
   const adjusted = ensureContrast(hex)
   return { adjusted, changed: adjusted !== hex.toUpperCase(), ratio: contrastRatio(adjusted, '#FFFFFF') }
 }
+
+/**
+ * Pasangan gradasi pilihan. Kedua ujung lolos kontras dengan teks putih,
+ * dan pasangan dipilih yang serumpun agar tidak terlihat "pelangi".
+ */
+export const BRAND_GRADIENT_PRESETS = [
+  { from: '#75543D', to: '#9A5232', label: 'Kayu senja' },
+  { from: '#38271E', to: '#75543D', label: 'Espresso' },
+  { from: '#9A5232', to: '#6B3F4A', label: 'Terakota anggur' },
+  { from: '#5C6B4E', to: '#3F5A66', label: 'Hutan' },
+  { from: '#38271E', to: '#3F5A66', label: 'Malam' },
+]
+
+/** Isian CSS untuk --brand-fill: solid (1 warna) atau gradasi diagonal (2 warna). */
+export function brandFill(color, color2) {
+  const from = ensureContrast(isHexColor(color) ? color : DEFAULT_BRAND_COLOR)
+  if (!isHexColor(color2)) return from
+  return `linear-gradient(135deg, ${from} 0%, ${ensureContrast(color2)} 100%)`
+}

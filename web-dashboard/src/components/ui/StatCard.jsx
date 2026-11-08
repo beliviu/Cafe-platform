@@ -36,7 +36,7 @@ export function StatCard({
       onClick={onClick}
     >
       <div className="ui-stat-top">
-        {Icon && <span className="ui-stat-icon"><Icon size={compact ? 15 : 17} aria-hidden="true" /></span>}
+        {Icon && compact && <span className="ui-stat-icon"><Icon size={15} aria-hidden="true" /></span>}
         <span className="ui-stat-label">{label}</span>
       </div>
       {loading ? (

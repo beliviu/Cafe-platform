@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react'
 import { PLATFORM_NAME, TENANT_CAFE_ID } from '../config/platform.js'
-import { brandScale, isHexColor } from './color.js'
+import { brandFill, brandScale, isHexColor } from './color.js'
 import { BRANDING_CAFE_COLUMNS, friendlyError } from './db.js'
 
 const BUCKET = 'cafe-assets'
@@ -21,6 +21,7 @@ export function brandOf(cafe) {
     logoUrl: cafe?.logo_url || null,
     tagline: cafe?.tagline?.trim() || '',
     color: cafe?.brand_color || null,
+    color2: cafe?.brand_color_2 || null,
   }
 }
 
@@ -60,24 +61,30 @@ function setFavicon(href) {
  * Warna brand owner → CSS variable --brand-50 … --brand-900 di <html>.
  * Tanpa warna kustom: nilai bawaan dari tokens.css (Walnut) yang berlaku.
  */
-export function useBrandTheme(color) {
+export function useBrandTheme(color, color2) {
   useEffect(() => {
-    if (!isHexColor(color)) return undefined
+    const custom = isHexColor(color)
+    const gradient = isHexColor(color2)
+    if (!custom && !gradient) return undefined
     const root = document.documentElement
-    const scale = brandScale(color)
-    for (const [step, value] of Object.entries(scale)) root.style.setProperty(`--brand-${step}`, value)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', scale[600])
-    return () => {
-      for (const step of Object.keys(scale)) root.style.removeProperty(`--brand-${step}`)
+    const scale = custom ? brandScale(color) : null
+    if (scale) {
+      for (const [step, value] of Object.entries(scale)) root.style.setProperty(`--brand-${step}`, value)
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', scale[600])
     }
-  }, [color])
+    root.style.setProperty('--brand-fill', brandFill(color, color2))
+    return () => {
+      if (scale) for (const step of Object.keys(scale)) root.style.removeProperty(`--brand-${step}`)
+      root.style.removeProperty('--brand-fill')
+    }
+  }, [color, color2])
 }
 
 /** Pasang judul tab, favicon, dan warna brand. `section` mis. "Owner" atau "Staff". */
 export function useDocumentBranding(brand, section) {
   const name = brand?.name
   const logoUrl = brand?.logoUrl
-  useBrandTheme(brand?.color)
+  useBrandTheme(brand?.color, brand?.color2)
   useEffect(() => {
     if (!name) return undefined
     const previousTitle = document.title

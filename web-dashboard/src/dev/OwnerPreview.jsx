@@ -32,7 +32,7 @@ export function OwnerPreview() {
           context={{
             cafe,
             profile,
-            features: { operations: true, branding: true },
+            features: { operations: true, branding: true, phase3: true },
             updateCafe: (patch) => setCafe((current) => ({ ...current, ...patch })),
             updateProfile: (patch) => setProfile((current) => ({ ...current, ...patch })),
           }}

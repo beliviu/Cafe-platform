@@ -1,24 +1,22 @@
-import { useEffect, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
-import { Banknote, Clock3, Copy, Landmark, QrCode, Store, UserRound, Users, Wallet } from 'lucide-react'
-import { useAuth } from '../auth/useAuth.js'
+/* Bagian-bagian Pengaturan: info kafe, jam buka, metode pembayaran, profil owner. */
+import { useState } from 'react'
+import { Banknote, Clock3, Copy, Landmark, QrCode, Store, UserRound, Wallet } from 'lucide-react'
+import { useAuth } from '../../auth/useAuth.js'
 import {
-  Badge, Button, Card, CardHeader, EmptyState, ErrorState, PageHeader, SkeletonRows, Switch, TextField, useToast,
-} from '../components/ui/index.js'
+  Badge, Button, Card, CardHeader, EmptyState, Switch, TextField, useToast,
+} from '../ui/index.js'
 import {
   DAY_KEYS, DAY_LABELS, defaultOpeningHours, normalizeOpeningHours, openStatus, validateOpeningHours,
-} from '../lib/cafeHours.js'
-import { ALL_PAYMENT_METHODS, DB_UPDATE_REQUIRED, friendlyError } from '../lib/db.js'
-import { SectionFooter } from '../components/settings/SettingsShared.jsx'
-import { saveCafe } from '../lib/cafe.js'
-import { BrandingSection } from '../components/settings/BrandingSection.jsx'
-import { formatDate } from '../lib/format.js'
-import { paymentMethodLabel } from '../lib/status.js'
+} from '../../lib/cafeHours.js'
+import { ALL_PAYMENT_METHODS, DB_UPDATE_REQUIRED, friendlyError } from '../../lib/db.js'
+import { SectionFooter } from './SettingsShared.jsx'
+import { saveCafe } from '../../lib/cafe.js'
+import { paymentMethodLabel } from '../../lib/status.js'
 
 const METHOD_ICONS = { cash: Banknote, qris: QrCode, bank_transfer: Landmark, ewallet: Wallet }
 const PHONE_PATTERN = /^[0-9+\-\s()]{6,20}$/
 
-function CafeInfoSection({ cafe, features, onSaved }) {
+export function CafeInfoSection({ cafe, features, onSaved }) {
   const { supabase } = useAuth()
   const { toast } = useToast()
   const initial = {
@@ -94,7 +92,7 @@ function CafeInfoSection({ cafe, features, onSaved }) {
   )
 }
 
-function OpeningHoursSection({ cafe, features, onSaved }) {
+export function OpeningHoursSection({ cafe, features, onSaved }) {
   const { supabase } = useAuth()
   const { toast } = useToast()
   const stored = normalizeOpeningHours(cafe.opening_hours)
@@ -183,7 +181,7 @@ function OpeningHoursSection({ cafe, features, onSaved }) {
   )
 }
 
-function PaymentMethodsSection({ cafe, features, onSaved }) {
+export function PaymentMethodsSection({ cafe, features, onSaved }) {
   const { supabase } = useAuth()
   const { toast } = useToast()
   const stored = Array.isArray(cafe.accepted_payment_methods) ? cafe.accepted_payment_methods.filter((method) => ALL_PAYMENT_METHODS.includes(method)) : []
@@ -251,7 +249,7 @@ function PaymentMethodsSection({ cafe, features, onSaved }) {
   )
 }
 
-function ProfileSection({ profile, onSaved }) {
+export function ProfileSection({ profile, onSaved }) {
   const { supabase } = useAuth()
   const { toast } = useToast()
   const initial = { full_name: profile.full_name || '', phone: profile.phone || '' }
@@ -293,77 +291,5 @@ function ProfileSection({ profile, onSaved }) {
         <Button type="submit" loading={saving} disabled={!dirty}>Simpan profil</Button>
       </SectionFooter>
     </Card>
-  )
-}
-
-function TeamSection({ cafe, features }) {
-  const { supabase } = useAuth()
-  const [state, setState] = useState({ loading: true, members: [], error: '' })
-  const [attempt, setAttempt] = useState(0)
-
-  useEffect(() => {
-    if (!features?.operations) return undefined
-    let active = true
-    supabase.rpc('cafe_team_members', { p_cafe_id: cafe.id }).then(({ data, error }) => {
-      if (!active) return
-      setState({ loading: false, members: data || [], error: error ? friendlyError(error) : '' })
-    })
-    return () => { active = false }
-  }, [attempt, cafe.id, features?.operations, supabase])
-
-  return (
-    <Card className="settings-card">
-      <CardHeader icon={Users} title="Tim kafe" description="Akun owner dan staff yang terhubung ke kafe ini." />
-      {!features?.operations ? (
-        <EmptyState compact icon={Users} title="Belum tersedia" description={DB_UPDATE_REQUIRED} />
-      ) : state.loading ? (
-        <SkeletonRows rows={2} label="Memuat tim" />
-      ) : state.error ? (
-        <ErrorState compact message={state.error} onRetry={() => { setState((current) => ({ ...current, loading: true })); setAttempt((value) => value + 1) }} />
-      ) : (
-        <ul className="team-list">
-          {state.members.map((member) => (
-            <li key={member.id}>
-              <span className="shell-avatar" aria-hidden="true">{(member.full_name || '?').trim().slice(0, 1).toUpperCase()}</span>
-              <span className="team-name">
-                <strong>{member.full_name || 'Tanpa nama'}</strong>
-                <small>Bergabung {formatDate(member.created_at)}</small>
-              </span>
-              <Badge tone={member.role === 'owner' ? 'brand' : 'blue'} dot={false}>{member.role === 'owner' ? 'Owner' : 'Staff'}</Badge>
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="settings-note">
-        Menambah atau menghapus akun staff saat ini dilakukan oleh administrator, karena butuh akses server.
-        Staff yang sudah terdaftar masuk lewat halaman login yang sama dan otomatis diarahkan ke halaman Pesanan.
-      </p>
-    </Card>
-  )
-}
-
-export function SettingsPage() {
-  const { cafe, profile, features, updateCafe, updateProfile } = useOutletContext()
-  return (
-    <div className="page">
-      <PageHeader eyebrow="Pengaturan" title="Pengaturan" description="Brand, info kafe, jam buka, metode pembayaran, dan tim." />
-      <BrandingSection
-        key={`brand-${cafe.app_name}-${cafe.logo_url}-${cafe.tagline}-${cafe.brand_color}`}
-        cafe={cafe}
-        features={features}
-        onSaved={updateCafe}
-      />
-      <div className="settings-grid">
-        <div className="settings-column">
-          <CafeInfoSection key={`info-${cafe.name}-${cafe.address}-${cafe.phone}-${cafe.description}`} cafe={cafe} features={features} onSaved={updateCafe} />
-          <OpeningHoursSection key={`hours-${JSON.stringify(cafe.opening_hours)}`} cafe={cafe} features={features} onSaved={updateCafe} />
-        </div>
-        <div className="settings-column">
-          <PaymentMethodsSection key={`pay-${cafe.accepted_payment_methods}`} cafe={cafe} features={features} onSaved={updateCafe} />
-          <ProfileSection key={`profile-${profile.full_name}-${profile.phone}`} profile={profile} onSaved={updateProfile} />
-          <TeamSection cafe={cafe} features={features} />
-        </div>
-      </div>
-    </div>
   )
 }

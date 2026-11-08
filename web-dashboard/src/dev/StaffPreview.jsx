@@ -32,7 +32,7 @@ export function StaffPreview() {
           context={{
             cafe: fixtures.cafe,
             profile: { id: 'staff-1', full_name: 'Nadia Barista', role: 'staff', cafe_id: fixtures.cafe.id },
-            features: { operations: true, branding: true },
+            features: { operations: true, branding: true, phase3: true },
             setPendingCount,
           }}
         />

@@ -66,7 +66,6 @@ export function LoginPage() {
         </div>
         <span className="login-intro-foot">© {YEAR} {brand.businessName}</span>
         <span className="login-ornament login-ornament-a" aria-hidden="true" />
-        <span className="login-ornament login-ornament-b" aria-hidden="true" />
       </section>
 
       <section className="login-panel">

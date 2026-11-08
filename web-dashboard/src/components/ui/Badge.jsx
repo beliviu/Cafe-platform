@@ -18,7 +18,7 @@ export function OrderStatusBadge({ status, audience = 'staff', ...props }) {
 export function PaymentBadge({ status, method, showMethod = false, ...props }) {
   const meta = paymentStatusMeta(status)
   return (
-    <Badge tone={meta.tone} {...props}>
+    <Badge tone={meta.tone} dot={false} {...props}>
       {meta.label}
       {showMethod && method && <span className="ui-badge-extra">· {paymentMethodLabel(method)}</span>}
     </Badge>

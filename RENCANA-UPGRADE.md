@@ -204,7 +204,9 @@ Setiap fase terdiri dari: cek file terkait → rencana singkat → SQL usulan (k
 - Halaman **Pengaturan → Brand & tampilan** dengan pratinjau langsung web dan mockup app HP.
 - Mobile: token dan font sama. Branding runtime dibaca dari `cafe_branding`.
 
-### Fase 3 — Owner dashboard
+### Fase 3 — Owner dashboard ✅ (8 Nov, menunggu file 04 + Edge Function)
+> Selesai: design system v2 (tanpa pola template: judul tanpa titik, kartu tanpa kotak ikon, strip KPI menyatu dengan satu sorotan brand, badge ringkas, warna grafik pembayaran divalidasi), gradasi brand (web + app), navigasi baru, Pengaturan bertab (Umum, Operasional, Pajak & biaya dengan contoh hitung, Meja, Struk dengan pratinjau), varian & add-on produk, Tim (anggota + tambah/nonaktifkan/reset password via Edge Function, jadwal shift mingguan, log aktivitas).
+> Belum: KPI laba (menunggu fase 6), QR meja (fase 7), izin granular per staff (fase 5 bersama POS). Varian, pajak, dan meja **tersimpan** tetapi baru dipakai saat pesanan v2 (fase 5) — ditandai jelas di UI.
 - Navigasi baru: Ringkasan · Penjualan · Katalog · Inventori · Keuangan · Tim · Pengaturan.
 - Produk: varian/add-on (grup opsi, wajib/opsional, harga tambahan), ketersediaan, dan tautan ke resep.
 - Tim: undang/nonaktifkan staff (Edge Function), peran dan izin, log aktivitas (dari `audit_logs`), jadwal shift (`shifts`).

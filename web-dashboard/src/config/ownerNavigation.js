@@ -1,10 +1,17 @@
-import { ClipboardList, Layers3, LayoutDashboard, Package2, Settings2 } from 'lucide-react'
+import { ClipboardList, Layers3, LayoutDashboard, Package2, Settings2, Users } from 'lucide-react'
 
-/** Menu owner dikelompokkan: Ringkasan / Katalog / Operasional / Pengaturan. */
+/**
+ * Menu owner. Hanya modul yang sudah berfungsi yang tampil —
+ * Inventori, POS, dan Keuangan ditambahkan saat fasenya selesai.
+ */
 export const OWNER_NAVIGATION = [
   {
     label: 'Ringkasan',
     items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true }],
+  },
+  {
+    label: 'Penjualan',
+    items: [{ to: '/orders', label: 'Transaksi', icon: ClipboardList }],
   },
   {
     label: 'Katalog',
@@ -14,11 +21,10 @@ export const OWNER_NAVIGATION = [
     ],
   },
   {
-    label: 'Operasional',
-    items: [{ to: '/orders', label: 'Transaksi', icon: ClipboardList }],
-  },
-  {
-    label: 'Pengaturan',
-    items: [{ to: '/settings', label: 'Pengaturan', icon: Settings2 }],
+    label: 'Bisnis',
+    items: [
+      { to: '/team', label: 'Tim', icon: Users },
+      { to: '/settings', label: 'Pengaturan', icon: Settings2 },
+    ],
   },
 ]

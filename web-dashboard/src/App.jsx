@@ -34,9 +34,42 @@ const CategoriesPage = lazy(() =>
 const OrdersPage = lazy(() =>
   import('./pages/OrdersPage.jsx').then((module) => ({ default: module.OrdersPage })),
 )
-const SettingsPage = lazy(() =>
-  import('./pages/SettingsPage.jsx').then((module) => ({ default: module.SettingsPage })),
+const SettingsLayout = lazy(() =>
+  import('./pages/settings/SettingsLayout.jsx').then((module) => ({ default: module.SettingsLayout })),
 )
+const GeneralSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.GeneralSettings })))
+const OperationsSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.OperationsSettings })))
+const ChargesSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.ChargesSettings })))
+const ReceiptSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.ReceiptSettings })))
+const TablesSettings = lazy(() => import('./pages/settings/TablesSettings.jsx').then((module) => ({ default: module.TablesSettings })))
+const TeamLayout = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.TeamLayout })))
+const MembersPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.MembersPage })))
+const ShiftsPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.ShiftsPage })))
+const ActivityPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.ActivityPage })))
+
+/** Rute owner — dipakai aplikasi asli dan pratinjau dev. */
+function ownerRoutes() {
+  return (
+    <>
+      <Route index element={<DashboardPage />} />
+      <Route path="products" element={<ProductsPage />} />
+      <Route path="categories" element={<CategoriesPage />} />
+      <Route path="orders" element={<OrdersPage />} />
+      <Route path="team" element={<TeamLayout />}>
+        <Route index element={<MembersPage />} />
+        <Route path="shifts" element={<ShiftsPage />} />
+        <Route path="activity" element={<ActivityPage />} />
+      </Route>
+      <Route path="settings" element={<SettingsLayout />}>
+        <Route index element={<GeneralSettings />} />
+        <Route path="operations" element={<OperationsSettings />} />
+        <Route path="charges" element={<ChargesSettings />} />
+        <Route path="tables" element={<TablesSettings />} />
+        <Route path="receipt" element={<ReceiptSettings />} />
+      </Route>
+    </>
+  )
+}
 const StaffLayout = lazy(() =>
   import('./components/StaffLayout.jsx').then((module) => ({ default: module.StaffLayout })),
 )
@@ -75,11 +108,7 @@ function AppRoutes() {
         )}
         {OwnerPreview && (
           <Route path="/preview/owner" element={<OwnerPreview />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="products" element={<ProductsPage />} />
-            <Route path="categories" element={<CategoriesPage />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            {ownerRoutes()}
           </Route>
         )}
         <Route element={<RequireAuth />}>
@@ -89,11 +118,7 @@ function AppRoutes() {
             <Route path="menu" element={<StaffMenuPage />} />
           </Route>
           <Route element={<OwnerLayout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="products" element={<ProductsPage />} />
-            <Route path="categories" element={<CategoriesPage />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            {ownerRoutes()}
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

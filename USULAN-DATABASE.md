@@ -11,8 +11,32 @@
 | 0. Cek kondisi database (read-only) | ✅ 0a, 0b, 0c diterima (8 Nov) |
 | 1a. Tutup celah keamanan profil — [`supabase/usulan/01-tutup-celah-profil.sql`](supabase/usulan/01-tutup-celah-profil.sql) | ✅ sudah dijalankan (8 Nov) |
 | 1b. Fitur operasional — [`supabase/usulan/02-fitur-operasional.sql`](supabase/usulan/02-fitur-operasional.sql) | ✅ sudah dijalankan (8 Nov) |
-| 3. **Branding kafe** (nama tampilan, logo, tagline, warna) — [`supabase/usulan/03-branding-kafe.sql`](supabase/usulan/03-branding-kafe.sql) | 🟢 **siap dijalankan** |
+| 3. Branding kafe (nama tampilan, logo, tagline, warna) — [`supabase/usulan/03-branding-kafe.sql`](supabase/usulan/03-branding-kafe.sql) | ✅ sudah dijalankan (8 Nov) |
+| 4. **Fase 3 owner** (gradasi brand, pajak & biaya, meja, varian produk, tim, shift, log aktivitas) — [`supabase/usulan/04-owner-dashboard.sql`](supabase/usulan/04-owner-dashboard.sql) | 🟢 **siap dijalankan** |
+| 4b. **Edge Function `staff-admin`** (tambah/nonaktifkan staff, reset password) — [`supabase/functions/staff-admin/index.ts`](supabase/functions/staff-admin/index.ts) | 🟢 **siap di-deploy** (setelah file 04) |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### Cara menjalankan file 04 (fase 3 owner)
+
+1. Supabase Dashboard → **SQL Editor** → New query → copy **seluruh isi** `supabase/usulan/04-owner-dashboard.sql` → **Run**.
+2. Hasil verifikasi harus **11 baris**: 6 `table` (audit_logs, cafe_settings, cafe_tables, product_option_groups, product_options, staff_shifts), 3 `column` (cafes.brand_color_2, profiles.is_active, profiles.job_title), 2 `function`.
+3. Error merah = tidak ada yang berubah (satu transaksi). Kirim pesan error-nya.
+
+Isi file 04 (semua aditif):
+- Kolom baru: `cafes.brand_color_2` (gradasi), `profiles.is_active` (default **true** — staff lama tetap aktif), `profiles.job_title`.
+- Tabel baru: pengaturan bisnis (1 baris default per kafe, **pajak & service charge nonaktif**), meja, varian produk, shift, log aktivitas.
+- `is_cafe_member` diperbarui: staff yang dinonaktifkan langsung kehilangan akses. `cafe_team_members` dibuat ulang (kolom bertambah: jabatan, status, email untuk owner).
+- Trigger log aktivitas di tabel katalog/pengaturan/meja/shift dan perubahan peran/status staff (perubahan nama customer **tidak** dicatat).
+
+### Cara deploy Edge Function `staff-admin` (setelah file 04)
+
+Fungsi ini memegang kunci service-role di server, jadi tombol **Tambah staff / Nonaktifkan / Reset password** aman dari browser.
+
+1. Supabase Dashboard → **Edge Functions** → **Deploy a new function** → **Via Editor**.
+2. Nama fungsi: `staff-admin` (harus persis).
+3. Hapus contoh kode, tempel **seluruh isi** `supabase/functions/staff-admin/index.ts`, klik **Deploy**.
+4. Biarkan **Verify JWT** menyala. Tidak perlu menambah secret — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` sudah disediakan otomatis.
+5. Uji: web owner → **Tim → Tambah staff** dengan email uji milikmu. Sebelum di-deploy, tombol itu menampilkan pesan "Fungsi server staff-admin belum di-deploy".
 
 ### Cara menjalankan file 03 (branding)
 

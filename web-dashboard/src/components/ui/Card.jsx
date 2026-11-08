@@ -6,10 +6,10 @@ export function Card({ as: Component = 'section', padding = 'md', interactive = 
   )
 }
 
-export function CardHeader({ title, description, actions, icon: Icon, as: Heading = 'h2' }) {
+/** Judul kartu cukup teks. Prop `icon` lama diabaikan agar pemanggil lama tetap jalan. */
+export function CardHeader({ title, description, actions, as: Heading = 'h2' }) {
   return (
     <header className="ui-card-header">
-      {Icon && <span className="ui-card-header-icon"><Icon size={17} aria-hidden="true" /></span>}
       <div className="ui-card-header-text">
         <Heading className="ui-card-title">{title}</Heading>
         {description && <p className="ui-card-description">{description}</p>}

@@ -133,7 +133,7 @@ export function createFixtures(now = new Date()) {
     cafe: {
       id: cafeId, name: 'Kopi Senja', address: 'Jl. Kaliurang Km 5, Yogyakarta', phone: '0812 3456 7890',
       description: 'Kopi susu gula aren & roti panggang sejak 2019.', opening_hours: null, accepted_payment_methods: ['cash', 'qris'],
-      app_name: null, logo_url: null, tagline: null, brand_color: null,
+      app_name: null, logo_url: null, tagline: null, brand_color: null, brand_color_2: null,
     },
     profile: { id: 'owner-1', full_name: 'Iqlal Iwan', phone: '081200000000', role: 'owner', cafe_id: cafeId },
     tables: {
@@ -144,11 +144,41 @@ export function createFixtures(now = new Date()) {
       })),
       cafes: [],
       profiles: [],
+      cafe_settings: [{
+        cafe_id: cafeId, timezone: 'Asia/Jakarta', currency: 'IDR', tax_enabled: true, tax_name: 'PB1', tax_rate: 10,
+        tax_inclusive: false, service_charge_enabled: false, service_charge_rate: 5, service_charge_taxable: true,
+        rounding_unit: 500, order_types: ['dine_in', 'takeaway'], receipt_header: null,
+        receipt_footer: 'Terima kasih! Wi-Fi: kopisenja', receipt_show_logo: true, receipt_show_address: true,
+        receipt_paper_mm: 58, updated_at: '2026-11-08T00:00:00Z',
+      }],
+      cafe_tables: ['1', '2', '3', '4', 'Teras 1', 'Teras 2'].map((label, index) => ({
+        id: `table-${index}`, cafe_id: cafeId, label, area: label.startsWith('Teras') ? 'Teras' : 'Indoor',
+        capacity: label.startsWith('Teras') ? 2 : 4, is_active: index !== 5, sort_order: index,
+      })),
+      staff_shifts: (() => {
+        const monday = new Date(Date.now() + 7 * 3600000)
+        monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7))
+        const key = monday.toISOString().slice(0, 10)
+        const at = (offset, hour) => { const date = new Date(`${key}T${String(hour).padStart(2, '0')}:00:00+07:00`); date.setUTCDate(date.getUTCDate() + offset); return date.toISOString() }
+        return [0, 1, 2, 3, 4].flatMap((day) => [
+          { id: `shift-a${day}`, cafe_id: cafeId, user_id: 'staff-1', starts_at: at(day, 7), ends_at: at(day, 15), note: day === 0 ? 'Buka toko' : null },
+          { id: `shift-b${day}`, cafe_id: cafeId, user_id: 'staff-2', starts_at: at(day, 14), ends_at: at(day, 22), note: null },
+        ])
+      })(),
+      audit_logs: [
+        { id: 3, cafe_id: cafeId, actor_id: 'owner-1', action: 'update', entity: 'products', entity_id: 'p1', label: 'Es Kopi Susu Gula Aren', changes: { price: [25000, 28000] }, created_at: new Date(Date.now() - 12 * 60000).toISOString() },
+        { id: 2, cafe_id: cafeId, actor_id: 'owner-1', action: 'update', entity: 'cafe_settings', entity_id: cafeId, label: null, changes: { tax_enabled: [false, true], tax_rate: [0, 10] }, created_at: new Date(Date.now() - 3 * 3600000).toISOString() },
+        { id: 1, cafe_id: cafeId, actor_id: 'owner-1', action: 'insert', entity: 'staff_account', entity_id: 'staff-2', label: 'Raka Kasir', changes: { email: 'raka@kopisenja.id', job_title: 'Kasir' }, created_at: new Date(Date.now() - 26 * 3600000).toISOString() },
+      ],
+      product_option_groups: [],
+      product_options: [],
     },
     names,
     team: [
-      { id: 'owner-1', full_name: 'Iqlal Iwan', role: 'owner', created_at: '2026-10-01T00:00:00Z' },
-      { id: 'staff-1', full_name: 'Nadia Barista', role: 'staff', created_at: '2026-10-03T00:00:00Z' },
+      { id: 'owner-1', full_name: 'Iqlal Iwan', role: 'owner', job_title: 'Pemilik', is_active: true, email: 'iqlal@kopisenja.id', last_sign_in_at: new Date().toISOString(), created_at: '2026-10-01T00:00:00Z' },
+      { id: 'staff-1', full_name: 'Nadia Barista', role: 'staff', job_title: 'Barista', is_active: true, email: 'nadia@kopisenja.id', last_sign_in_at: new Date(Date.now() - 2 * 3600000).toISOString(), created_at: '2026-10-03T00:00:00Z' },
+      { id: 'staff-2', full_name: 'Raka Pratama', role: 'staff', job_title: 'Kasir', is_active: true, email: 'raka@kopisenja.id', last_sign_in_at: null, created_at: '2026-11-07T00:00:00Z' },
+      { id: 'staff-3', full_name: 'Dewi Lestari', role: 'staff', job_title: null, is_active: false, email: 'dewi@kopisenja.id', last_sign_in_at: '2026-10-20T08:00:00Z', created_at: '2026-10-05T00:00:00Z' },
     ],
   }
 }
@@ -177,14 +207,21 @@ class Query {
   maybeSingle() { this.single = true; return this }
   update(values) { this.mode = 'update'; this.payload = values; return this }
   insert(values) { this.mode = 'insert'; this.payload = values; return this }
+  upsert(values) { this.mode = 'upsert'; this.payload = values; return this }
   delete() { this.mode = 'delete'; return this }
 
   run() {
     const rows = this.store[this.table] || (this.store[this.table] = [])
-    if (this.mode === 'insert') {
-      const row = { id: `${this.table}-${rows.length + 1}-${Math.round(performance.now())}`, created_at: new Date().toISOString(), ...this.payload }
-      rows.unshift(row)
-      return { data: this.single ? row : [row], error: null }
+    if (this.mode === 'insert' || this.mode === 'upsert') {
+      const payload = Array.isArray(this.payload) ? this.payload : [this.payload]
+      const saved = payload.map((values, index) => {
+        const existing = this.mode === 'upsert' && rows.find((row) => row.id === values.id)
+        if (existing) return Object.assign(existing, values)
+        const row = { id: `${this.table}-${rows.length + index + 1}-${Math.round(performance.now())}`, created_at: new Date().toISOString(), ...values }
+        rows.push(row)
+        return row
+      })
+      return { data: this.single ? saved[0] : saved, error: null }
     }
     let matched = rows.filter((row) => this.filters.every((filter) => filter(row)))
     if (this.mode === 'update') {
@@ -255,6 +292,11 @@ export function createMockSupabase(fixtures) {
         return { data: args.p_order_ids.map((id) => ({ order_id: id, customer_name: fixtures.names.get(id) || '' })), error: null }
       }
       if (name === 'cafe_team_members') return { data: fixtures.team, error: null }
+      if (name === 'owner_set_member_title') {
+        const member = fixtures.team.find((row) => row.id === args.p_user_id)
+        if (member) member.job_title = args.p_job_title?.trim() || null
+        return { data: null, error: null }
+      }
       if (name === 'staff_mark_order_paid') {
         const order = store.orders.find((row) => row.id === args.p_order_id)
         Object.assign(order, { payment_status: 'paid', payment_method: args.p_method, paid_at: new Date().toISOString() })
@@ -281,6 +323,20 @@ export function createMockSupabase(fixtures) {
       }),
     },
     auth: { signOut: async () => ({ error: null }) },
+    // Edge Function staff-admin tiruan
+    functions: {
+      invoke: async (_name, { body }) => {
+        await new Promise((resolve) => window.setTimeout(resolve, 300))
+        if (body.action === 'create') {
+          fixtures.team.push({ id: `staff-${fixtures.team.length + 1}`, full_name: body.full_name, role: 'staff', job_title: body.job_title || null, is_active: true, email: body.email, last_sign_in_at: null, created_at: new Date().toISOString() })
+        }
+        if (body.action === 'deactivate' || body.action === 'reactivate') {
+          const member = fixtures.team.find((row) => row.id === body.user_id)
+          if (member) member.is_active = body.action === 'reactivate'
+        }
+        return { data: { ok: true }, error: null }
+      },
+    },
     channel: () => {
       const own = { listeners: [], statuses: [] }
       return {

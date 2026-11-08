@@ -11,6 +11,7 @@ const OPERATION_ORDER_COLUMNS = ', queue_number, paid_at, cancel_reason, cancell
 const BASE_CAFE_COLUMNS = 'id, name, address, phone'
 const OPERATION_CAFE_COLUMNS = ', description, opening_hours, accepted_payment_methods'
 export const BRANDING_CAFE_COLUMNS = 'app_name, logo_url, tagline, brand_color'
+const PHASE3_CAFE_COLUMNS = ', brand_color_2'
 
 export const ALL_PAYMENT_METHODS = ['cash', 'qris', 'bank_transfer', 'ewallet']
 export const DB_UPDATE_REQUIRED = 'Fitur ini aktif setelah pembaruan database diterapkan.'
@@ -27,7 +28,7 @@ function probeColumns(supabase, table, columns) {
 }
 
 /**
- * { operations, branding } — true bila migrasi 02 / 03 sudah diterapkan. Di-cache per klien.
+ * { operations, branding, phase3 } — true bila migrasi 02 / 03 / 04 sudah diterapkan. Di-cache per klien.
  * Kolom yang belum ada membuat select gagal, jadi UI memilih kolom berdasarkan hasil ini.
  */
 export function detectDbFeatures(supabase) {
@@ -35,7 +36,8 @@ export function detectDbFeatures(supabase) {
     const probe = Promise.all([
       probeColumns(supabase, 'orders', 'queue_number, paid_at, cancel_reason, cancelled_at'),
       probeColumns(supabase, 'cafes', BRANDING_CAFE_COLUMNS),
-    ]).then(([operations, branding]) => ({ operations, branding }))
+      probeColumns(supabase, 'cafe_settings', 'cafe_id'),
+    ]).then(([operations, branding, phase3]) => ({ operations, branding, phase3 }))
     featureCache.set(supabase, probe)
   }
   return featureCache.get(supabase)
@@ -49,7 +51,10 @@ export function cafeColumns(features) {
   return BASE_CAFE_COLUMNS
     + (features?.operations ? OPERATION_CAFE_COLUMNS : '')
     + (features?.branding ? `, ${BRANDING_CAFE_COLUMNS}` : '')
+    + (features?.phase3 ? PHASE3_CAFE_COLUMNS : '')
 }
+
+export const PHASE3_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/04-owner-dashboard.sql dijalankan.'
 
 /** Metode bayar yang bisa dipilih staff saat menandai lunas. */
 export function cafePaymentMethods(cafe) {

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
-import { Check, Coffee, FolderPlus, LayoutGrid, Package2, Pencil, Plus, Rows3, Trash2, TrendingUp } from 'lucide-react'
+import { Check, Coffee, FolderPlus, LayoutGrid, Package2, Pencil, Plus, Rows3, SlidersHorizontal, Trash2, TrendingUp } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
 import { ProductFormDrawer } from '../components/products/ProductFormDrawer.jsx'
+import { ProductOptionsDrawer } from '../components/products/ProductOptionsDrawer.jsx'
+import { fetchOptionCounts } from '../lib/productOptions.js'
 import {
   Badge, Button, Card, ConfirmDialog, EmptyState, ErrorState, IconButton, PageHeader, SearchInput,
   SegmentedControl, Select, Skeleton, Switch, useToast,
@@ -85,7 +87,7 @@ function ProductThumb({ product, size = 'md' }) {
   )
 }
 
-function ProductCard({ product, categoryName, sold, bestSeller, busy, onEdit, onToggle }) {
+function ProductCard({ product, categoryName, sold, bestSeller, busy, optionCount, onEdit, onToggle, onOptions }) {
   return (
     <article className={`pcard${product.is_available ? '' : ' is-unavailable'}`}>
       <button type="button" className="pcard-image" onClick={onEdit} aria-label={`Edit ${product.name}`} tabIndex={-1}>
@@ -100,6 +102,7 @@ function ProductCard({ product, categoryName, sold, bestSeller, busy, onEdit, on
         <div className="pcard-meta">
           <strong className="tabular">{formatRupiah(product.price)}</strong>
           <span className="tabular">{sold ? `${formatNumber(sold)} terjual · 30 hari` : 'Belum terjual · 30 hari'}</span>
+          {optionCount > 0 && <span className="pcard-options">{optionCount} grup varian</span>}
         </div>
       </div>
       <footer className="pcard-footer">
@@ -111,7 +114,10 @@ function ProductCard({ product, categoryName, sold, bestSeller, busy, onEdit, on
           onLabel="Tersedia"
           offLabel="Habis"
         />
-        <IconButton icon={Pencil} label={`Edit ${product.name}`} variant="secondary" onClick={onEdit} />
+        <span className="pcard-actions">
+          {onOptions && <IconButton icon={SlidersHorizontal} label={`Varian ${product.name}`} variant="secondary" onClick={onOptions} />}
+          <IconButton icon={Pencil} label={`Edit ${product.name}`} variant="secondary" onClick={onEdit} />
+        </span>
       </footer>
     </article>
   )
@@ -134,7 +140,7 @@ function ProductsSkeleton({ view }) {
 }
 
 export function ProductsPage() {
-  const { cafe } = useOutletContext()
+  const { cafe, features } = useOutletContext()
   const { supabase } = useAuth()
   const { toast } = useToast()
   const [searchParams] = useSearchParams()
@@ -152,6 +158,15 @@ export function ProductsPage() {
   const [editing, setEditing] = useState(undefined)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [busyId, setBusyId] = useState('')
+  const [optionsFor, setOptionsFor] = useState(null)
+  const [optionCounts, setOptionCounts] = useState(new Map())
+
+  useEffect(() => {
+    if (!features?.phase3) return undefined
+    let active = true
+    fetchOptionCounts(supabase, cafe.id).then((counts) => { if (active) setOptionCounts(counts) })
+    return () => { active = false }
+  }, [cafe.id, features?.phase3, supabase])
 
   const loadProducts = useCallback(async () => {
     setLoading(true)
@@ -328,6 +343,8 @@ export function ProductsPage() {
               sold={soldById.get(product.id) || 0}
               bestSeller={bestSellers.has(product.id)}
               busy={busyId === product.id}
+              optionCount={optionCounts.get(product.id) || 0}
+              onOptions={features?.phase3 ? () => setOptionsFor(product) : undefined}
               onEdit={() => setEditing(product)}
               onToggle={(value) => toggleAvailability(product, value)}
             />
@@ -367,6 +384,7 @@ export function ProductsPage() {
                         onChange={(value) => toggleAvailability(product, value)} label={`${product.name} tersedia`} onLabel="Tersedia" offLabel="Habis" />
                     </td>
                     <td className="actions-col">
+                      {features?.phase3 && <IconButton icon={SlidersHorizontal} label={`Varian ${product.name}`} size="sm" onClick={() => setOptionsFor(product)} />}
                       <IconButton icon={Pencil} label={`Edit ${product.name}`} size="sm" onClick={() => setEditing(product)} />
                       <IconButton icon={Trash2} size="sm" variant="danger" label={`Hapus ${product.name}`} onClick={() => setConfirmDelete(product)} />
                     </td>
@@ -389,6 +407,15 @@ export function ProductsPage() {
           onClose={() => setEditing(undefined)}
           onSaved={handleSaved}
           onDelete={(product) => setConfirmDelete(product)}
+        />
+      )}
+
+      {optionsFor && (
+        <ProductOptionsDrawer
+          key={optionsFor.id}
+          product={optionsFor}
+          onClose={() => setOptionsFor(null)}
+          onSaved={(productId, count) => setOptionCounts((current) => new Map(current).set(productId, count))}
         />
       )}
 
