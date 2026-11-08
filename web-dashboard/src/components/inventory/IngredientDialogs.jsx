@@ -184,7 +184,15 @@ const MODE_COPY = {
   adjust: { title: 'Sesuaikan stok', description: 'Ubah saldo ke angka sebenarnya. Untuk menghitung banyak bahan sekaligus, pakai Stok opname.', confirm: 'Simpan penyesuaian' },
 }
 
-export function StockMoveDialog({ mode, ingredient, suppliers = [], batches = [], onClose, onDone }) {
+const FUNDING_OPTIONS = [
+  { value: 'cash', label: 'Kas tunai' },
+  { value: 'bank', label: 'Rekening bank' },
+  { value: 'qris', label: 'Saldo QRIS / e-wallet' },
+  { value: 'payable', label: 'Belum dibayar (utang)' },
+]
+
+/** finance: modul akuntansi (07) aktif — tampilkan sumber dana stok masuk untuk jurnal. */
+export function StockMoveDialog({ mode, ingredient, suppliers = [], batches = [], finance = false, onClose, onDone }) {
   const { supabase } = useAuth()
   const { toast } = useToast()
   const copy = MODE_COPY[mode]
@@ -199,6 +207,7 @@ export function StockMoveDialog({ mode, ingredient, suppliers = [], batches = []
     reason: 'waste',
     batch_id: '',
     note: '',
+    funding: 'cash',
     opening: Number(ingredient.on_hand) === 0 && Number(ingredient.avg_cost) === 0,
   })
   const [error, setError] = useState('')
@@ -229,6 +238,7 @@ export function StockMoveDialog({ mode, ingredient, suppliers = [], batches = []
         await callRpc(supabase, 'inventory_stock_in', {
           p_ingredient_id: ingredient.id, p_quantity: Number(baseQty.toFixed(3)), p_unit_cost: Number(unitCost.toFixed(4)),
           p_expires_at: form.expires_at || null, p_supplier_id: form.supplier_id || null, p_note: form.note || null, p_is_opening: form.opening,
+          ...(finance ? { p_funding: form.opening ? null : form.funding } : {}),
         })
       } else if (mode === 'out') {
         await callRpc(supabase, 'inventory_stock_out', {
@@ -295,6 +305,10 @@ export function StockMoveDialog({ mode, ingredient, suppliers = [], batches = []
         )}
         <TextField label={mode === 'adjust' ? 'Alasan' : 'Catatan'} value={form.note} onChange={set('note')} maxLength={300}
           placeholder={mode === 'adjust' ? 'Mis. salah hitung saat input awal' : 'Opsional'} />
+        {mode === 'in' && finance && !form.opening && (
+          <Select label="Dibayar dari" value={form.funding} onChange={set('funding')} options={FUNDING_OPTIONS}
+            hint="Untuk jurnal: kas/bank berkurang, atau dicatat sebagai utang" />
+        )}
         {mode === 'in' && (
           <label className="inv-check">
             <input type="checkbox" checked={form.opening} onChange={set('opening')} />

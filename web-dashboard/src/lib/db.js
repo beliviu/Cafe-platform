@@ -40,7 +40,8 @@ export function detectDbFeatures(supabase) {
       probeColumns(supabase, 'cafe_settings', 'cafe_id'),
       probeColumns(supabase, 'ingredients', 'id'),
       probeColumns(supabase, 'orders', 'pricing_version, source'),
-    ]).then(([operations, branding, phase3, inventory, pos]) => ({ operations, branding, phase3, inventory, pos }))
+      probeColumns(supabase, 'accounts', 'id'),
+    ]).then(([operations, branding, phase3, inventory, pos, finance]) => ({ operations, branding, phase3, inventory, pos, finance }))
     featureCache.set(supabase, probe)
   }
   return featureCache.get(supabase)
@@ -58,6 +59,7 @@ export function cafeColumns(features) {
 }
 
 export const PHASE3_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/04-owner-dashboard.sql dijalankan.'
+export const FINANCE_REQUIRED = 'Modul keuangan aktif setelah file supabase/usulan/07-akuntansi.sql dijalankan.'
 export const POS_REQUIRED = 'Kasir aktif setelah file supabase/usulan/06-pesanan-v2-pos.sql dijalankan.'
 export const INVENTORY_REQUIRED = 'Modul inventori aktif setelah file supabase/usulan/05-inventori-supplier.sql dijalankan.'
 

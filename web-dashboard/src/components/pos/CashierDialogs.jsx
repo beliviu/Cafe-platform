@@ -44,10 +44,26 @@ export function OpenSessionDialog({ cafeId, suggestion, onClose, onOpened }) {
   )
 }
 
-export function CashMoveDialog({ sessionId, onClose, onDone }) {
+const CASH_PURPOSES = {
+  out: [
+    { value: 'expense', label: 'Belanja / biaya operasional' },
+    { value: 'to_bank', label: 'Setor ke rekening bank' },
+    { value: 'to_owner', label: 'Diambil owner' },
+    { value: 'other', label: 'Lainnya' },
+  ],
+  in: [
+    { value: 'from_owner', label: 'Tambahan modal dari owner' },
+    { value: 'from_bank', label: 'Tarik dari rekening bank' },
+    { value: 'other', label: 'Lainnya' },
+  ],
+}
+
+/** finance: modul akuntansi (07) aktif — tanyakan tujuan agar jurnalnya tepat. */
+export function CashMoveDialog({ sessionId, finance = false, onClose, onDone }) {
   const { supabase } = useAuth()
   const { toast } = useToast()
   const [direction, setDirection] = useState('out')
+  const [purpose, setPurpose] = useState('expense')
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
@@ -59,7 +75,10 @@ export function CashMoveDialog({ sessionId, onClose, onDone }) {
     if (reason.trim().length < 3) return setError('Tulis keterangan')
     setBusy(true)
     try {
-      await rpc(supabase, 'cashier_cash_move', { p_session_id: sessionId, p_direction: direction, p_amount: Number(amount), p_reason: reason })
+      await rpc(supabase, 'cashier_cash_move', {
+        p_session_id: sessionId, p_direction: direction, p_amount: Number(amount), p_reason: reason,
+        ...(finance ? { p_purpose: purpose } : {}),
+      })
       toast({ tone: 'success', title: direction === 'in' ? 'Kas masuk dicatat' : 'Kas keluar dicatat', description: formatRupiah(amount) })
       onDone()
       onClose()
@@ -74,7 +93,9 @@ export function CashMoveDialog({ sessionId, onClose, onDone }) {
     <Dialog size="sm" title="Kas masuk / keluar" description="Uang yang masuk atau keluar laci di luar penjualan." onClose={busy ? undefined : onClose}
       footer={<><Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button><Button type="submit" form="cash-move" loading={busy}>Simpan</Button></>}>
       <form id="cash-move" className="inv-form" onSubmit={submit} noValidate>
-        <SegmentedControl label="Arah" value={direction} onChange={setDirection} options={[{ value: 'out', label: 'Kas keluar' }, { value: 'in', label: 'Kas masuk' }]} />
+        <SegmentedControl label="Arah" value={direction} onChange={(value) => { setDirection(value); setPurpose(CASH_PURPOSES[value][0].value) }}
+          options={[{ value: 'out', label: 'Kas keluar' }, { value: 'in', label: 'Kas masuk' }]} />
+        {finance && <Select label="Tujuan" value={purpose} onChange={(event) => setPurpose(event.target.value)} options={CASH_PURPOSES[direction]} />}
         <RupiahInput label="Nominal" value={amount} onChange={(value) => { setAmount(value); setError('') }} autoFocus />
         <TextField label="Keterangan" value={reason} onChange={(event) => { setReason(event.target.value); setError('') }} maxLength={200}
           placeholder={direction === 'out' ? 'Mis. beli es batu, setor ke owner' : 'Mis. tambahan uang kecil'} />

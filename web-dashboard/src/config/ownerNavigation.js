@@ -1,9 +1,6 @@
-import { Boxes, Building2, ChefHat, ClipboardList, Layers3, LayoutDashboard, Package2, Settings2, ShoppingCart, Users, Wallet } from 'lucide-react'
+import { Boxes, Building2, ChefHat, ClipboardList, Landmark, Layers3, LayoutDashboard, Package2, ReceiptText, Settings2, ShoppingCart, Users, Wallet } from 'lucide-react'
 
-/**
- * Menu owner. Hanya modul yang sudah berfungsi yang tampil —
- * Keuangan ditambahkan saat fasenya selesai.
- */
+/** Menu owner. Hanya modul yang sudah berfungsi yang tampil. */
 export const OWNER_NAVIGATION = [
   {
     label: 'Ringkasan',
@@ -30,6 +27,13 @@ export const OWNER_NAVIGATION = [
       { to: '/recipes', label: 'Resep & HPP', icon: ChefHat },
       { to: '/purchases', label: 'Pembelian', icon: ShoppingCart },
       { to: '/suppliers', label: 'Supplier', icon: Building2 },
+    ],
+  },
+  {
+    label: 'Keuangan',
+    items: [
+      { to: '/finance', label: 'Keuangan', icon: Landmark },
+      { to: '/expenses', label: 'Beban', icon: ReceiptText },
     ],
   },
   {

@@ -13,12 +13,22 @@ Brief V2 mengurutkan keuangan lebih dulu, tetapi HPP, profit produk, rekonsilias
 |---|---|---|---|
 | 0b | Fondasi: file 04 + `staff-admin`, skema live (diagnostik), perubahan belum commit | 8 | ✅ |
 | 1 | Inventori & supplier: bahan, batch kedaluwarsa, resep (+varian), HPP & profit produk, supplier & katalog harga, PO → terima → bayar (utang), opname, mutasi + ekspor, perkiraan & draf PO otomatis, pemotongan stok saat pesanan selesai | 2, 1C | ✅ file 05 dijalankan |
-| **2** | **Pesanan v2 & POS**: `place_order` (idempoten, pajak, diskon berizin, varian), cadangan stok + tolak checkout bila bahan kurang + HABIS di app, sesi kasir & rekonsiliasi, serah terima, hold, split payment, refund berpersetujuan, struk & tiket dapur | 3, 1D, 1F, 2C | ✅ kode selesai · menunggu file 06 |
-| 3 | Akuntansi & keuangan: jurnal otomatis, beban, laporan, saldo awal, PDF | 1A, 1B, 1E, 1G | — |
+| 2 | Pesanan v2 & POS: `place_order` (idempoten, pajak, diskon berizin, varian), cadangan stok + tolak checkout bila bahan kurang + HABIS di app, sesi kasir & rekonsiliasi, serah terima, hold, split payment, refund berpersetujuan, struk & tiket dapur | 3, 1D, 1F, 2C | ✅ file 06 dijalankan |
+| **3** | **Akuntansi & keuangan**: bagan akun, jurnal double-entry otomatis (pesanan, pembayaran, refund, stok, PO & bayar supplier, kas kasir, selisih kas, beban), jurnal manual & pembalik, tutup periode, saldo awal (go-live), beban + foto nota, laporan laba rugi / neraca / arus kas / perubahan ekuitas / neraca saldo / buku besar, ekspor Excel/CSV/PDF | 1A, 1B, 1E, 1G | ✅ kode selesai · menunggu file 07 |
 | 4 | Customer app & QR meja | 4, 7 | — |
 | 5 | Payment gateway | 5 | — |
 | 6 | BI, forecast penjualan, AI advisor | 6 | — |
 | 7 | Izin per staff, langganan, tes isolasi, performa | 8, 9 | — |
+
+**Langkah 3 — catatan keputusan:**
+- Pembukuan dimulai dari **tanggal go-live** yang dipilih owner + saldo awal (kas, bank, QRIS, persediaan, piutang, peralatan, utang, pajak, pinjaman, modal). Selisihnya masuk *Ekuitas saldo awal* sehingga neraca seimbang. Transaksi sebelum go-live **tidak** dijurnal (tidak ada angka karangan); sesudahnya otomatis, termasuk yang terlewat (backfill idempoten).
+- Pendapatan diakui saat pesanan **selesai**; pembayaran yang masuk lebih dulu dicatat sebagai *uang muka pesanan* (1-1300). HPP = nilai bahan yang benar-benar terpakai (mutasi stok), bukan estimasi.
+- QRIS/e-wallet masuk *Saldo QRIS & e-wallet* (1-1150); pencairan ke bank dicatat owner lewat jurnal manual sampai payment gateway (langkah 5) memberi data settlement.
+- Jurnal **tidak pernah diedit/dihapus**: koreksi lewat jurnal pembalik. Satu sumber hanya bisa menghasilkan satu jurnal per kejadian (unik di DB) → tidak ada jurnal dobel. Jurnal wajib seimbang (dicek fungsi + constraint trigger).
+- Kegagalan jurnal **tidak pernah memblokir transaksi** (kasir tetap jalan); kejadian dicatat di `acc_sync_issues` dan tampil di Ringkasan → *Sinkronkan*.
+- Periode yang ditutup menolak jurnal baru bertanggal di bulan itu (termasuk otomatis); membuka kembali wajib alasan dan tercatat di log aktivitas.
+- Laporan dihitung di database dari jurnal; browser hanya menampilkan. Semua data keuangan hanya untuk owner (RLS).
+- Belum: penyesuaian pajak saat refund (refund penuh ke *Retur & refund*), penyusutan otomatis, rekonsiliasi bank, multi-cabang. Dashboard operasional (omzet) masih belum mengurangi refund sebagian; angka yang benar ada di Laba rugi.
 
 **Langkah 2 — catatan keputusan:**
 - `create_order` dipertahankan sebagai pembungkus `place_order` sehingga app lama tetap jalan dan otomatis ikut cek stok/pajak.

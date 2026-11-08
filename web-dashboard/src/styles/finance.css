@@ -1,0 +1,128 @@
+/* Keuangan: ringkasan, laporan, jurnal, buku besar, akun & periode, beban. */
+
+.period-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.period-picker .ui-field { width: auto; min-width: 150px; }
+
+.fin-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fin-link { color: var(--text-link); font-size: var(--text-sm); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.fin-link:hover { text-decoration: underline; }
+.fin-code { display: inline-block; min-width: 54px; margin-right: 10px; color: var(--text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+
+.fin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.fin-grid.is-wide-left { grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); }
+
+/* Daftar label–nilai (posisi keuangan, neraca ringkas, wizard) */
+.fin-position { display: grid; gap: 0; margin: 0; }
+.fin-position > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }
+.fin-position > div:last-child { border-bottom: 0; }
+.fin-position dt { color: var(--text-secondary); font-size: var(--text-sm); }
+.fin-position dd { margin: 0; color: var(--text-primary); font-weight: 650; }
+.fin-position.is-strong dd { font-size: var(--text-md); font-weight: 750; }
+
+/* Wizard mulai pembukuan */
+.fin-setup .fin-grid { margin-top: 4px; }
+.fin-explain ul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.fin-explain li { display: flex; gap: 10px; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.55; }
+.fin-explain li svg { flex: none; margin-top: 3px; color: var(--brand-600); }
+
+/* Laporan */
+.fin-report { overflow-x: auto; }
+.fin-report-head { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.fin-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.fin-table th, .fin-table td { padding: 9px 4px; border-bottom: 1px solid var(--border-subtle); color: var(--text-primary); text-align: left; vertical-align: top; }
+.fin-table thead th { color: var(--text-muted); font-size: var(--text-xs); font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+.fin-table .num { width: 1%; padding-left: 24px; text-align: right; white-space: nowrap; }
+.fin-table .is-indent { padding-left: 22px; }
+.fin-table .is-negative { color: var(--status-red-fg); }
+.fin-table tr.is-head th { padding-top: 18px; border-bottom-color: var(--border-default); color: var(--text-secondary); font-size: var(--text-xs); font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.fin-table tr:first-child.is-head th { padding-top: 4px; }
+.fin-table tr.is-total td { font-weight: 700; background: var(--surface-canvas); }
+.fin-table tr.is-final td { border-top: 2px solid var(--border-strong); border-bottom: 3px double var(--border-strong); font-size: var(--text-md); font-weight: 800; }
+.fin-table.is-compact th, .fin-table.is-compact td { padding: 6px 4px; }
+
+/* Jurnal */
+.fin-journals { margin: 0; padding: 0; list-style: none; }
+.fin-journal { border-bottom: 1px solid var(--border-subtle); }
+.fin-journal:last-child { border-bottom: 0; }
+.fin-journal-head { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 18px; border: 0; color: var(--text-primary); background: none; text-align: left; cursor: pointer; font: inherit; }
+.fin-journal-head:hover { background: var(--surface-hover); }
+.fin-journal-head:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+.fin-journal-head > svg { flex: none; color: var(--text-muted); }
+.fin-journal-date { flex: none; width: 92px; color: var(--text-secondary); font-size: var(--text-sm); }
+.fin-journal-memo { display: grid; flex: 1; gap: 1px; min-width: 0; }
+.fin-journal-memo strong { overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.fin-journal-memo small { color: var(--text-muted); font-size: var(--text-xs); }
+.fin-journal-total { flex: none; min-width: 110px; text-align: right; }
+.fin-journal.is-reversed .fin-journal-memo strong, .fin-journal.is-reversed .fin-journal-total { color: var(--text-muted); text-decoration: line-through; }
+.fin-journal-body { padding: 4px 18px 14px 46px; background: var(--surface-canvas); }
+.fin-journal-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+/* Jurnal manual */
+.fin-lines { display: grid; gap: 8px; }
+.fin-line { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) 36px; gap: 8px; align-items: center; }
+.fin-line.is-head span { color: var(--text-muted); font-size: var(--text-xs); font-weight: 700; }
+.fin-lines > .ui-btn { justify-self: start; }
+.fin-balance { margin-right: auto; color: var(--status-red-fg); font-size: var(--text-sm); font-weight: 700; font-variant-numeric: tabular-nums; }
+.fin-balance.is-ok { color: var(--status-green-fg); }
+
+/* Buku besar */
+.fin-account-select { min-width: 280px; max-width: 100%; }
+.fin-ledger-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.fin-ledger-head > div { display: grid; gap: 2px; }
+.fin-ledger-sums { display: flex; gap: 24px; margin: 0; }
+.fin-ledger-sums div { display: grid; gap: 2px; text-align: right; }
+.fin-ledger-sums dt { color: var(--text-muted); font-size: var(--text-xs); }
+.fin-ledger-sums dd { margin: 0; color: var(--text-primary); font-weight: 750; }
+
+/* Bagan akun */
+.fin-account-group { padding: 6px 18px 12px; border-top: 1px solid var(--border-subtle); }
+.fin-account-group h3 { margin: 10px 0 4px; color: var(--text-secondary); font-size: var(--text-xs); font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.fin-account-group ul { margin: 0; padding: 0; list-style: none; }
+.fin-account-group li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 8px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--border-subtle); }
+.fin-account-group li:last-child { border-bottom: 0; }
+.fin-account-group li.is-muted .fin-account-name { color: var(--text-muted); }
+.fin-account-group .fin-code { margin-right: 4px; }
+.fin-account-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--text-primary); font-size: var(--text-sm); font-weight: 600; }
+
+.fin-periods { margin: 0; padding: 0; list-style: none; }
+.fin-periods li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; min-height: 52px; border-bottom: 1px solid var(--border-subtle); }
+.fin-periods li:last-child { border-bottom: 0; }
+
+/* Beban */
+.fin-method { display: grid; gap: 1px; font-size: var(--text-sm); }
+.fin-method small { font-size: var(--text-xs); }
+.data-table td.is-struck { color: var(--text-muted); text-decoration: line-through; }
+.fin-bars { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.fin-bars li { display: grid; gap: 5px; }
+.fin-bars-label { display: flex; justify-content: space-between; gap: 12px; color: var(--text-primary); font-size: var(--text-sm); font-weight: 600; }
+.fin-bars-label span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fin-bars-track { display: block; height: 8px; overflow: hidden; border-radius: var(--radius-full); background: var(--surface-sunken); }
+.fin-bars-track span { display: block; height: 100%; border-radius: var(--radius-full); background: var(--brand-600); }
+.fin-bars small { font-size: var(--text-xs); }
+.fin-upload { display: grid; gap: 6px; justify-items: start; }
+.fin-upload-file { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 4px 4px 4px 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); color: var(--text-primary); font-size: var(--text-sm); }
+.fin-upload-file > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 1100px) {
+  .fin-grid, .fin-grid.is-wide-left { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 767px) {
+  .fin-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+  .fin-line > :first-child { grid-column: 1 / -1; }
+  .fin-line.is-head { display: none; }
+  .fin-journal-head { flex-wrap: wrap; gap: 6px 10px; padding: 10px 14px; }
+  .fin-journal-date { width: auto; }
+  .fin-journal-memo { flex-basis: calc(100% - 30px); order: 3; }
+  .fin-journal-total { order: 2; margin-left: auto; min-width: 0; }
+  .fin-journal-body { padding: 4px 14px 12px; }
+  .fin-account-select { min-width: 0; width: 100%; }
+  .fin-ledger-sums { width: 100%; justify-content: space-between; }
+  .fin-ledger-sums div { text-align: left; }
+  .fin-periods li { grid-template-columns: minmax(0, 1fr) auto; }
+  .fin-periods li .ui-btn { grid-column: 1 / -1; justify-self: start; }
+  .fin-account-group li { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .fin-account-group li > small { display: none; }
+  .fin-table th, .fin-table td { padding: 8px 2px; }
+  .fin-table .num { padding-left: 12px; }
+}

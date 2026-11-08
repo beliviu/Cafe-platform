@@ -15,8 +15,41 @@
 | 4. Fase 3 owner (gradasi brand, pajak & biaya, meja, varian produk, tim, shift, log aktivitas) — [`supabase/usulan/04-owner-dashboard.sql`](supabase/usulan/04-owner-dashboard.sql) | ✅ sudah dijalankan (halaman Tim aktif) |
 | 4b. Edge Function `staff-admin` (tambah/nonaktifkan staff, reset password) — [`supabase/functions/staff-admin/index.ts`](supabase/functions/staff-admin/index.ts) | ✅ terhubung (8 Nov) |
 | 5. Inventori, resep & supplier — [`supabase/usulan/05-inventori-supplier.sql`](supabase/usulan/05-inventori-supplier.sql) | ✅ sudah dijalankan (dari diagnostik 8 Nov) |
-| 6. **Pesanan v2 & kasir (POS)** (place_order, varian, diskon, pajak, cadangan stok, HABIS di app, sesi kasir, split payment, hold, refund) — [`supabase/usulan/06-pesanan-v2-pos.sql`](supabase/usulan/06-pesanan-v2-pos.sql) | 🟢 **siap dijalankan** · diuji 89 skenario di skema tiruan identik live |
+| 6. Pesanan v2 & kasir (POS) (place_order, varian, diskon, pajak, cadangan stok, HABIS di app, sesi kasir, split payment, hold, refund) — [`supabase/usulan/06-pesanan-v2-pos.sql`](supabase/usulan/06-pesanan-v2-pos.sql) | ✅ sudah dijalankan (kasir dipakai) |
+| 7. **Akuntansi & keuangan** (bagan akun, jurnal otomatis, beban, laporan, saldo awal, tutup periode) — [`supabase/usulan/07-akuntansi.sql`](supabase/usulan/07-akuntansi.sql) | 🟢 **siap dijalankan** · diuji 83 skenario (+ 05 & 06 diuji ulang) |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 07 — akuntansi & keuangan
+
+Jalankan **setelah** file 06 (file 07 menolak jalan bila 06 belum ada). **Dampak ke data yang sudah ada:**
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| 6 tabel baru | `accounts` (bagan akun), `accounting_periods`, `journal_entries`, `journal_lines`, `expenses` (beban), `acc_sync_issues` | Kosong. **Tidak ada jurnal yang dibuat** sampai owner menekan *Mulai pembukuan* (tanggal go-live + saldo awal). Transaksi sebelum go-live tidak pernah dijurnal. |
+| `cafe_settings` | Kolom `accounting_go_live` | Kosong (= pembukuan belum dimulai). |
+| `stock_movements` | Kolom `funding` (stok masuk dibayar dari kas/bank/QRIS/utang) | Kosong untuk data lama. |
+| `cash_movements` | Kolom `purpose` (tujuan kas masuk/keluar kasir) | Data lama = `other`. |
+| 6 trigger baru (AFTER) | `orders`, `payments`, `stock_movements`, `supplier_payments`, `cash_movements`, `cashier_sessions` → jurnal otomatis | Hanya aktif setelah go-live. **Tidak pernah memblokir transaksi**: bila jurnal gagal (mis. periode ditutup), transaksi tetap tersimpan dan kejadiannya dicatat di `acc_sync_issues`. |
+| `inventory_stock_in` | Parameter baru `p_funding` (bawaan `cash`) | Pemanggilan lama tetap jalan. |
+| `cashier_cash_move` | Parameter baru `p_purpose` (bawaan `other`) | Pemanggilan lama tetap jalan. |
+| `inv_next_document_number` | Nomor dokumen tidak terpotong setelah 9999 per tahun | Nomor yang sudah ada tidak berubah. |
+| `log_audit_event` | Label untuk akun, periode, beban | Log lama tidak berubah. |
+| Storage | Bucket privat `expense-receipts` (foto/PDF nota, maks. 5 MB) | Baru; hanya owner kafe itu yang bisa unggah/lihat. |
+
+**Keamanan & integritas:** semua data keuangan hanya untuk owner (RLS + cek di setiap fungsi); jurnal wajib seimbang (dicek fungsi + constraint trigger), tidak bisa diubah/dihapus (koreksi = jurnal pembalik), satu kejadian hanya satu jurnal (unik di DB, anti-dobel); periode tertutup menolak jurnal baru; laporan dihitung di database, bukan di browser.
+
+**Cara menjalankan:**
+1. SQL Editor → tempel **seluruh isi** `supabase/usulan/07-akuntansi.sql` → **Run**.
+2. Verifikasi harus **26 baris**: 6 `table`, 14 `function`, 6 `trigger` (`zz_acc_*`).
+3. Error merah = tidak ada yang berubah. Aman dijalankan ulang.
+
+**Setelah dijalankan:**
+1. Web owner → **Keuangan** → isi tanggal mulai (paling mudah: hari ini atau tanggal 1 bulan ini) dan saldo awal. Persediaan, piutang, dan utang supplier diberi saran dari data. Selisihnya otomatis menjadi *Ekuitas saldo awal*.
+2. Tekan **Mulai pembukuan**. Transaksi sejak tanggal itu langsung dijurnal (termasuk yang sudah terjadi sejak tanggal itu).
+3. Catat sewa, listrik, gaji, dll. di **Beban**. Pencairan QRIS ke bank dicatat lewat **Keuangan → Jurnal → Jurnal manual**.
+4. Kasir: kas masuk/keluar kini punya pilihan *Tujuan* (belanja, setor ke bank, diambil owner, …) agar jurnalnya tepat. Stok masuk punya pilihan *Dibayar dari*.
+
+**Uji ulang lokal:** `cd supabase/tests && npm test` (05 + 06 + 07).
 
 ### File 06 — pesanan v2 & kasir (POS)
 
@@ -41,7 +74,7 @@ Dirancang dari hasil `diagnostik-fase2.sql` (skema live persis). **Dampak ke dat
 
 **Setelah dijalankan:** staff membuka **Sesi kasir** → **Kasir**. Owner mengatur batas diskon staff di Pengaturan → Pajak & biaya, dan cetak otomatis di Pengaturan → Struk. Refund disetujui di **Kasir & refund**.
 
-**Uji ulang lokal:** `cd supabase/tests && npm install && npm test` (05 + 06).
+**Uji ulang lokal:** `cd supabase/tests && npm install && npm test`.
 
 ### File 05 — inventori, resep & supplier
 

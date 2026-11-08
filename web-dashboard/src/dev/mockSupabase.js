@@ -5,6 +5,7 @@
  */
 import { createInventoryFixtures, inventoryRpc } from './mockInventory.js'
 import { createPosFixtures, posRpc } from './mockPos.js'
+import { createFinanceFixtures, financeRpc } from './mockFinance.js'
 
 function seeded(seed) {
   let value = seed
@@ -133,6 +134,8 @@ export function createFixtures(now = new Date()) {
 
   const inventory = createInventoryFixtures({ cafeId, orders, items, now })
   const pos = createPosFixtures({ cafeId, orders, now })
+  const setupMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('finance') === 'setup'
+  const { goLive, ...finance } = createFinanceFixtures({ cafeId, now, setup: setupMode })
 
   return {
     cafe: {
@@ -155,8 +158,9 @@ export function createFixtures(now = new Date()) {
         rounding_unit: 500, order_types: ['dine_in', 'takeaway'], receipt_header: null,
         receipt_footer: 'Terima kasih! Wi-Fi: kopisenja', receipt_show_logo: true, receipt_show_address: true,
         receipt_paper_mm: 58, updated_at: '2026-11-08T00:00:00Z', ...inventory.settings,
-        staff_max_discount_pct: 10, print_kitchen_ticket: false, auto_print_receipt: false,
+        staff_max_discount_pct: 10, print_kitchen_ticket: false, auto_print_receipt: false, accounting_go_live: goLive,
       }],
+      ...finance,
       cashier_sessions: pos.cashier_sessions,
       cash_movements: pos.cash_movements,
       refunds: pos.refunds,
@@ -237,6 +241,7 @@ class Query {
   lte(column, value) { this.filters.push((row) => row[column] <= value); return this }
   lt(column, value) { this.filters.push((row) => row[column] < value); return this }
   in(column, values) { this.filters.push((row) => values.includes(row[column])); return this }
+  is(column, value) { this.filters.push((row) => (row[column] ?? null) === value); return this }
   or() { return this }
   order(column, { ascending = true } = {}) { this.sorts.push([column, ascending]); return this }
   limit(count) { this.window = [0, count - 1]; return this }
@@ -354,6 +359,11 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
         return posResult
       }
+      const financeResult = financeRpc(store, name, args)
+      if (financeResult) {
+        await new Promise((resolve) => window.setTimeout(resolve, 150))
+        return financeResult
+      }
       const inventoryResult = inventoryRpc(store, name, args)
       if (inventoryResult) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
@@ -366,6 +376,7 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
       from: (bucket) => ({
         upload: async (path, file) => { uploads.set(`${bucket}/${path}`, URL.createObjectURL(file)); return { error: null } },
         remove: async () => ({ error: null }),
+        createSignedUrl: async (path) => ({ data: { signedUrl: uploads.get(`${bucket}/${path}`) || `data:text/plain;charset=utf-8,${encodeURIComponent(`Nota tiruan: ${path}`)}` }, error: null }),
         getPublicUrl: (path) => ({ data: { publicUrl: uploads.get(`${bucket}/${path}`) || `https://example.invalid/storage/v1/object/public/${bucket}/${path}` } }),
       }),
     },

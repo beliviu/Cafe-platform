@@ -500,6 +500,11 @@ const ENTITY_LABELS = {
   cashier_sessions: 'sesi kasir',
   cash_movements: 'kas masuk/keluar',
   refunds: 'refund',
+  accounts: 'akun keuangan',
+  accounting_periods: 'periode akuntansi',
+  accounting_setup: 'mulai pembukuan',
+  journal_entries: 'jurnal',
+  expenses: 'beban',
 }
 const ACTION_LABELS = { insert: 'Menambah', update: 'Mengubah', delete: 'Menghapus' }
 const FIELD_LABELS = {
@@ -516,7 +521,8 @@ const FIELD_LABELS = {
   starts_at: 'mulai', ends_at: 'selesai', note: 'catatan', email: 'email', password: 'password',
   sku: 'kode', category: 'kategori', unit: 'satuan', min_stock: 'stok minimum', purchase_unit: 'kemasan beli',
   purchase_unit_size: 'isi kemasan', lead_time_days: 'waktu kirim (hari)', default_supplier_id: 'supplier utama',
-  contact_name: 'kontak', payment_terms_days: 'termin (hari)', notes: 'catatan', status: 'status', supplier_id: 'supplier',
+  contact_name: 'kontak', cash_flow: 'kelompok arus kas', paid_on: 'tanggal lunas', dibalik: 'alasan pembalik', go_live: 'mulai pembukuan', total_aset: 'total aset awal',
+  payment_terms_days: 'termin (hari)', notes: 'catatan', status: 'status', supplier_id: 'supplier',
   paid_amount: 'dibayar', voided_at: 'dibatalkan', baris_resep: 'baris resep',
 }
 const MONEY_FIELDS = new Set(['price', 'price_delta', 'paid_amount'])

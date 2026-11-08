@@ -20,12 +20,12 @@ export function CashierPage() {
   return (
     <div className="page">
       <PageHeader eyebrow={context.cafe.name} title="Sesi kasir" description="Modal awal, kas masuk/keluar, dan hitung laci saat tutup." />
-      {context.features?.pos ? <CashierContent cafe={context.cafe} profile={context.profile} /> : <Card><EmptyState title="Belum tersedia" description={POS_REQUIRED} /></Card>}
+      {context.features?.pos ? <CashierContent cafe={context.cafe} profile={context.profile} finance={Boolean(context.features?.finance)} /> : <Card><EmptyState title="Belum tersedia" description={POS_REQUIRED} /></Card>}
     </div>
   )
 }
 
-function CashierContent({ cafe, profile }) {
+function CashierContent({ cafe, profile, finance }) {
   const { supabase, session: authSession } = useAuth()
   const userId = authSession?.user?.id || profile?.id
   const [dialog, setDialog] = useState(null)
@@ -126,7 +126,7 @@ function CashierContent({ cafe, profile }) {
       </Card>
 
       {dialog === 'open' && <OpenSessionDialog cafeId={cafe.id} suggestion={lastHandover ? Number(lastHandover.counted_cash) : undefined} onClose={() => setDialog(null)} onOpened={() => { setDialog(null); reload() }} />}
-      {dialog === 'move' && <CashMoveDialog sessionId={open.id} onClose={() => setDialog(null)} onDone={reload} />}
+      {dialog === 'move' && <CashMoveDialog sessionId={open.id} finance={finance} onClose={() => setDialog(null)} onDone={reload} />}
       {dialog === 'close' && <CloseSessionDialog session={open} summary={summary} team={data.team} onClose={() => setDialog(null)} onClosed={() => { setDialog(null); reload() }} />}
     </div>
   )

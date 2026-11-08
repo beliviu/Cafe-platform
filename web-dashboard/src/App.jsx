@@ -55,6 +55,13 @@ const RecipesLayout = lazy(() => import('./pages/recipes/RecipesPages.jsx').then
 const ProductCostingPage = lazy(() => import('./pages/recipes/RecipesPages.jsx').then((module) => ({ default: module.ProductCostingPage })))
 const ProfitabilityPage = lazy(() => import('./pages/recipes/RecipesPages.jsx').then((module) => ({ default: module.ProfitabilityPage })))
 const PurchasesPage = lazy(() => import('./pages/purchases/PurchasesPage.jsx').then((module) => ({ default: module.PurchasesPage })))
+const FinanceLayout = lazy(() => import('./pages/finance/FinanceLayout.jsx').then((module) => ({ default: module.FinanceLayout })))
+const FinanceOverviewPage = lazy(() => import('./pages/finance/FinanceOverviewPage.jsx').then((module) => ({ default: module.FinanceOverviewPage })))
+const ReportsPage = lazy(() => import('./pages/finance/ReportsPage.jsx').then((module) => ({ default: module.ReportsPage })))
+const JournalPage = lazy(() => import('./pages/finance/JournalPage.jsx').then((module) => ({ default: module.JournalPage })))
+const LedgerPage = lazy(() => import('./pages/finance/LedgerPage.jsx').then((module) => ({ default: module.LedgerPage })))
+const AccountsPage = lazy(() => import('./pages/finance/AccountsPage.jsx').then((module) => ({ default: module.AccountsPage })))
+const ExpensesPage = lazy(() => import('./pages/ExpensesPage.jsx').then((module) => ({ default: module.ExpensesPage })))
 const SuppliersPage = lazy(() => import('./pages/purchases/SuppliersPage.jsx').then((module) => ({ default: module.SuppliersPage })))
 
 /** Rute owner — dipakai aplikasi asli dan pratinjau dev. */
@@ -78,6 +85,14 @@ function ownerRoutes() {
       </Route>
       <Route path="purchases" element={<PurchasesPage />} />
       <Route path="suppliers" element={<SuppliersPage />} />
+      <Route path="finance" element={<FinanceLayout />}>
+        <Route index element={<FinanceOverviewPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="journal" element={<JournalPage />} />
+        <Route path="ledger" element={<LedgerPage />} />
+        <Route path="accounts" element={<AccountsPage />} />
+      </Route>
+      <Route path="expenses" element={<ExpensesPage />} />
       <Route path="team" element={<TeamLayout />}>
         <Route index element={<MembersPage />} />
         <Route path="shifts" element={<ShiftsPage />} />

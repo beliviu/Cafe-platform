@@ -25,7 +25,7 @@ const FILTERS = [
 ]
 
 export function IngredientsPage() {
-  const { cafe, inventory } = useOutletContext()
+  const { cafe, inventory, features } = useOutletContext()
   const { supabase } = useAuth()
   const { toast } = useToast()
   const base = useOwnerBase()
@@ -224,7 +224,7 @@ export function IngredientsPage() {
           onClose={() => setDialog(null)} onSaved={inventory.reload} />
       )}
       {['in', 'out', 'adjust'].includes(dialog?.type) && target && (
-        <StockMoveDialog mode={dialog.type} ingredient={target} suppliers={suppliers}
+        <StockMoveDialog mode={dialog.type} ingredient={target} suppliers={suppliers} finance={Boolean(features?.finance)}
           batches={dialog.batches || batches.filter((batch) => batch.ingredient_id === target.id)}
           onClose={() => setDialog(dialog.from === 'detail' ? { type: 'detail', id: target.id } : null)} onDone={inventory.reload} />
       )}
