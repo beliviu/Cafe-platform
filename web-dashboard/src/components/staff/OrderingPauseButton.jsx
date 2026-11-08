@@ -7,6 +7,7 @@ import { PauseCircle, PlayCircle } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import { Button, Dialog, TextField, useToast } from '../ui/index.js'
 import { rpc } from '../../lib/pos.js'
+import { useCan } from '../../lib/permissions.js'
 
 export function OrderingPauseButton({ cafeId }) {
   const { supabase } = useAuth()
@@ -15,6 +16,7 @@ export function OrderingPauseButton({ cafeId }) {
   const [dialog, setDialog] = useState(false)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const allowed = useCan()('ordering.pause')
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('cafe_settings').select('ordering_paused').eq('cafe_id', cafeId).maybeSingle()
@@ -40,7 +42,7 @@ export function OrderingPauseButton({ cafeId }) {
     setBusy(false)
   }
 
-  if (paused === null) return null
+  if (paused === null || !allowed) return null
   return (
     <>
       {paused

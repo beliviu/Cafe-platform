@@ -13,6 +13,7 @@ import {
 import { CancelOrderDialog } from './CancelOrderDialog.jsx'
 import { MarkPaidDialog } from './MarkPaidDialog.jsx'
 import { RefundDialog } from './RefundDialog.jsx'
+import { useCan } from '../../lib/permissions.js'
 
 const REFUND_STATUS = { requested: { label: 'Menunggu owner', tone: 'amber' }, approved: { label: 'Disetujui', tone: 'green' }, rejected: { label: 'Ditolak', tone: 'neutral' } }
 const methodList = (note) => String(note || '').split('+').filter(Boolean).map(paymentMethodLabel).join(' + ')
@@ -94,6 +95,7 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, a
   const { supabase } = useAuth()
   const outlet = useOutletContext()
   const isOwner = outlet?.profile?.role === 'owner'
+  const can = useCan()
   const [state, setState] = useState({ loading: true, error: '', items: [], payments: [], events: [], refunds: [], teamNames: new Map() })
   const [attempt, setAttempt] = useState(0)
   const [dialog, setDialog] = useState(null)
@@ -162,8 +164,8 @@ export function OrderDetailDrawer({ order, cafe, features, onClose, onChanged, a
             {features?.pos && (
               <Button variant="ghost" icon={ReceiptText} className={onPrint ? '' : 'order-drawer-print'} disabled={state.loading} onClick={handlePrintReceipt}>Struk</Button>
             )}
-            {canRefund && <Button variant="ghost" icon={RotateCcw} onClick={() => setDialog('refund')}>{isOwner ? 'Refund' : 'Ajukan refund'}</Button>}
-            {canCancel && <Button variant="danger-soft" icon={Ban} onClick={() => setDialog('cancel')}>Batalkan</Button>}
+            {canRefund && can('refund.request') && <Button variant="ghost" icon={RotateCcw} onClick={() => setDialog('refund')}>{isOwner ? 'Refund' : 'Ajukan refund'}</Button>}
+            {canCancel && can('order.cancel') && <Button variant="danger-soft" icon={Ban} onClick={() => setDialog('cancel')}>Batalkan</Button>}
             {canPay && <Button variant={actions ? 'secondary' : 'primary'} icon={CircleDollarSign} onClick={() => setDialog('pay')}>Tandai lunas</Button>}
             {actions}
           </>

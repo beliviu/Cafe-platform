@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useCan } from '../../lib/permissions.js'
 import { Banknote, Landmark, QrCode, Wallet } from 'lucide-react'
 import { Button, Dialog } from '../ui/index.js'
 import { useAuth } from '../../auth/useAuth.js'
@@ -16,7 +17,9 @@ const METHOD_ICONS = { cash: Banknote, qris: QrCode, bank_transfer: Landmark, ew
  */
 export function MarkPaidDialog({ order, cafe, onClose, onPaid, confirmLabel }) {
   const { supabase } = useAuth()
-  const methods = cafePaymentMethods(cafe)
+  const can = useCan()
+  const allowedMethods = cafePaymentMethods(cafe).filter((value) => value === 'cash' || can('payment.manual'))
+  const methods = allowedMethods.length ? allowedMethods : ['cash']
   const [method, setMethod] = useState(methods.includes(order.payment_method) ? order.payment_method : methods[0])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')

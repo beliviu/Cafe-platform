@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Banknote, Landmark, Plus, QrCode, ScanLine, Trash2, Wallet } from 'lucide-react'
 import { GatewayQris } from './GatewayQris.jsx'
+import { useCan } from '../../lib/permissions.js'
 import { fetchGatewaySettings } from '../../lib/payments.js'
 import { Button, Dialog, IconButton, RupiahInput, Select, TextField } from '../ui/index.js'
 import { cafePaymentMethods } from '../../lib/db.js'
@@ -18,7 +19,9 @@ const ICONS = { cash: Banknote, qris: QrCode, bank_transfer: Landmark, ewallet: 
 const methodLabel = (method, gateway) => (method === 'qris_auto' ? 'QRIS otomatis' : method === 'qris' && gateway ? 'QRIS manual' : paymentMethodLabel(method))
 
 export function PaymentDialog({ cafe, total, session, ensureOrder, onClose, onPaid, supabase }) {
-  const methods = cafePaymentMethods(cafe)
+  const can = useCan()
+  const allowedMethods = cafePaymentMethods(cafe).filter((method) => method === 'cash' || can('payment.manual'))
+  const methods = allowedMethods.length ? allowedMethods : ['cash']
   const firstMethod = methods.includes('cash') && session ? 'cash' : methods.find((method) => method !== 'cash') || 'cash'
   const [rows, setRows] = useState([{ method: firstMethod, amount: total, tendered: '', reference: '' }])
   const [error, setError] = useState('')

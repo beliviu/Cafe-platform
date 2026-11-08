@@ -4,6 +4,7 @@
  */
 import { useCallback, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { canDo } from '../../lib/permissions.js'
 import {
   CircleCheck, Coffee, Minus, PauseCircle, PercentCircle, Plus, Printer, RefreshCw, ShoppingBag, Trash2, Wallet,
 } from 'lucide-react'
@@ -46,6 +47,9 @@ export function PosPage() {
   const context = useOutletContext()
   if (!context.features?.pos) {
     return <div className="page"><Card><EmptyState icon={ShoppingBag} title="Kasir belum aktif" description={POS_REQUIRED} /></Card></div>
+  }
+  if (!canDo(context.permissions, 'pos.sell')) {
+    return <div className="page"><Card><EmptyState icon={ShoppingBag} title="Kasir tidak tersedia untuk akunmu" description="Owner belum memberi izin Kasir (POS). Minta diaktifkan di menu Tim → Atur izin." /></Card></div>
   }
   return <Pos context={context} />
 }
@@ -99,7 +103,7 @@ function PosScreen({ cafe, profile, features, data, reload, loading, supabase, t
   const settings = data.settings
   const totals = cartTotals(cart, settings)
   const isOwner = profile?.role === 'owner'
-  const discountLimit = isOwner ? 100 : Number(settings.staff_max_discount_pct) || 0
+  const discountLimit = isOwner ? 100 : canDo(context.permissions, 'pos.discount') ? Number(settings.staff_max_discount_pct) || 0 : 0
 
   const setCart = useCallback((updater) => {
     setCartState((current) => {

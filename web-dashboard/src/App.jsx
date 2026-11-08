@@ -48,6 +48,7 @@ const SupportPage = lazy(() => import('./pages/customers/SupportPage.jsx').then(
 const StaffSupportPage = lazy(() => import('./pages/customers/SupportPage.jsx').then((module) => ({ default: module.StaffSupportPage })))
 const PaymentSettings = lazy(() => import('./pages/settings/PaymentSettings.jsx').then((module) => ({ default: module.PaymentSettings })))
 const OnlinePaymentsPage = lazy(() => import('./pages/payments/OnlinePaymentsPage.jsx').then((module) => ({ default: module.OnlinePaymentsPage })))
+const SubscriptionSettings = lazy(() => import('./pages/settings/SubscriptionSettings.jsx').then((module) => ({ default: module.SubscriptionSettings })))
 const TablesSettings = lazy(() => import('./pages/settings/TablesSettings.jsx').then((module) => ({ default: module.TablesSettings })))
 const TeamLayout = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.TeamLayout })))
 const MembersPage = lazy(() => import('./pages/team/TeamPages.jsx').then((module) => ({ default: module.MembersPage })))
@@ -115,6 +116,7 @@ function ownerRoutes() {
         <Route path="charges" element={<ChargesSettings />} />
         <Route path="ordering" element={<OrderingSettings />} />
         <Route path="payments" element={<PaymentSettings />} />
+        <Route path="subscription" element={<SubscriptionSettings />} />
         <Route path="tables" element={<TablesSettings />} />
         <Route path="receipt" element={<ReceiptSettings />} />
       </Route>

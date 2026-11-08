@@ -6,6 +6,7 @@ import { AccessState } from './shell/AccessState.jsx'
 import { AppShell } from './shell/AppShell.jsx'
 import { staffNavigation } from '../config/staffNavigation.js'
 import { cafeColumns, detectDbFeatures } from '../lib/db.js'
+import { fetchOwnPermissions } from '../lib/permissions.js'
 import { brandOf, cacheBrand, useDocumentBranding } from '../lib/branding.js'
 
 export function StaffLayout() {
@@ -55,7 +56,9 @@ export function StaffLayout() {
       if (cafeError) {
         setLoadError(`Data cafe tidak dapat dimuat: ${cafeError.message}`)
       } else if (cafe) {
-        setStaffData({ profile, cafe, features })
+        const permissions = await fetchOwnPermissions(supabase, profile.id)
+        if (!active) return
+        setStaffData({ profile, cafe, features, permissions })
       } else {
         setLoadError('Cafe yang ditugaskan ke akun staff ini tidak ditemukan.')
       }

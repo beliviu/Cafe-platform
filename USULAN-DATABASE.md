@@ -21,7 +21,35 @@
 | 8b. Edge Function `push-send` (kirim notifikasi push) — [`supabase/functions/push-send/index.ts`](supabase/functions/push-send/index.ts) | 📝 opsional — kotak masuk notifikasi di app tetap jalan tanpa ini |
 | 9. **Payment gateway — QRIS dinamis Midtrans** (tagihan QRIS, webhook terverifikasi, rekonsiliasi, refund lewat gateway) — [`supabase/usulan/09-payment-gateway.sql`](supabase/usulan/09-payment-gateway.sql) | 🟢 **siap dijalankan** · diuji 51 skenario end-to-end |
 | 9b. Edge Function `payments` — [`supabase/functions/payments/index.ts`](supabase/functions/payments/index.ts) | 📝 wajib untuk QRIS online (butuh akun Midtrans) |
+| 10. **Izin staff, langganan & pengetatan keamanan** — [`supabase/usulan/10-izin-langganan-keamanan.sql`](supabase/usulan/10-izin-langganan-keamanan.sql) | 🟢 **siap dijalankan** · diuji 60 skenario termasuk penyisiran isolasi lintas kafe |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 10 — izin staff, langganan & pengetatan keamanan
+
+Jalankan **setelah file 06** (07/08/09 opsional; bagian yang membutuhkan tabelnya dilewati otomatis). Bila nanti menjalankan 08/09 **setelah** 10, jalankan ulang file 10 agar gerbang fiturnya ikut terpasang. **Dampak ke data yang sudah ada:**
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| `profiles` | Kolom `staff_permissions` | Kosong = **semua izin** (perilaku sekarang). Staff tidak bisa mengubahnya sendiri (hak kolom dari file 01). |
+| Trigger izin | `orders`, `payments`, `refunds`, `cash_movements`, `products`, `support_messages`, `cafe_settings` | Hanya membatasi **staff** yang izinnya dicabut owner. Owner, customer, dan proses server tidak terpengaruh. |
+| Langganan | Tabel `plans` (Basic, Pro, Enterprise) & `cafe_subscriptions` | **Semua kafe yang ada = Enterprise aktif** (semua fitur, tanpa batas) → tidak ada yang terkunci. Kafe baru = Pro masa coba 30 hari. |
+| Batas & gerbang fitur | Trigger: jumlah staff aktif, meja, menu; inventori, keuangan, loyalti, QR meja, QRIS online | Hanya berlaku untuk paket yang punya batas (Basic/Pro). Enterprise tidak dibatasi. |
+| Hak akses | RLS dinyalakan di `categories` & `order_status_events` (policy setara sekarang); hak INSERT/UPDATE/DELETE **anon** dicabut; TRUNCATE/REFERENCES/TRIGGER dicabut dari pengguna; default untuk tabel baru ikut | Aplikasi tidak pernah menulis tanpa login, jadi tidak ada fitur yang berubah. Menutup celah: tabel tanpa RLS bisa diubah siapa saja. |
+| Index | Riwayat pesanan customer, item pesanan, menu, kategori, profil per kafe | Hanya mempercepat. |
+| Pembayaran | Fungsi `pay_intent_cafe` (bila file 09 ada) | Edge Function `payments` bisa memakai kunci Midtrans per kafe. |
+
+**Cara menjalankan:**
+1. SQL Editor → tempel **seluruh isi** `supabase/usulan/10-izin-langganan-keamanan.sql` → **Run**.
+2. Verifikasi harus **8 baris** (2 `table`, 6 `function`) dan **tidak boleh ada baris `tanpa_rls`**. Bila ada, kirim hasilnya ke saya.
+3. Error merah = tidak ada yang berubah. Aman dijalankan ulang.
+
+**Setelah dijalankan:**
+- Owner → **Tim** → menu ⋯ staff → **Atur izin** (preset Semua / Kasir / Barista).
+- Owner → **Pengaturan → Langganan**: paket, fitur, pemakaian vs batas.
+- Pengelola platform mengubah paket lewat SQL Editor: `select subscription_set('<cafe_id>', 'pro', 'active', now() + interval '30 days');`
+- Banyak kafe dengan akun Midtrans masing-masing: Secrets Edge Function `MIDTRANS_SERVER_KEY_<ID KAFE TANPA TANDA ->` (tanpa itu memakai `MIDTRANS_SERVER_KEY`). Deploy ulang Edge Function `payments` dari file terbaru.
+
+**Uji ulang lokal:** `cd supabase/tests && npm test` (05–10).
 
 ### File 09 — payment gateway (QRIS dinamis Midtrans)
 

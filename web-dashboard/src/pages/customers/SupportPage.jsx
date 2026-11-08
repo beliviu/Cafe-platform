@@ -11,6 +11,7 @@ import { CUSTOMER_REQUIRED, friendlyError } from '../../lib/db.js'
 import { formatDateTime, formatQueueNumber, formatRelative } from '../../lib/format.js'
 import { useLoader } from '../../lib/inventory.js'
 import { rpc } from '../../lib/pos.js'
+import { useCan } from '../../lib/permissions.js'
 
 const TICKET_STATUS = {
   open: { label: 'Perlu dibalas', tone: 'amber' },
@@ -88,6 +89,7 @@ export function SupportInbox({ cafe }) {
 
 function Thread({ ticket, order, onChanged }) {
   const { supabase } = useAuth()
+  const can = useCan()
   const { toast } = useToast()
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
@@ -138,10 +140,10 @@ function Thread({ ticket, order, onChanged }) {
           ))}
         </ol>
       )}
-      <div className="sp-compose">
+      {can('support.reply') ? <div className="sp-compose">
         <TextField label="Balasan" hideLabel multiline rows={3} maxLength={2000} value={reply} placeholder="Tulis balasan untuk pelanggan…" onChange={(event) => setReply(event.target.value)} />
         <Button icon={Send} onClick={send} loading={sending} disabled={!reply.trim()}>Kirim balasan</Button>
-      </div>
+      </div> : <p className="text-muted">Kamu belum diberi izin membalas pelanggan. Minta owner mengaktifkannya di menu Tim.</p>}
     </Card>
   )
 }

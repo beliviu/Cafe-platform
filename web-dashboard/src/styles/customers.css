@@ -65,3 +65,20 @@
 .pay-webhook { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
 .pay-test { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; font-size: var(--text-sm); }
 .pay-test-ok { display: inline-flex; align-items: center; gap: 6px; color: var(--status-green-fg); font-weight: 600; }
+
+/* Izin staff */
+.perm-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; font-size: var(--text-sm); }
+.perm-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.perm-list .settings-check { align-items: flex-start; padding: 8px 4px; }
+.perm-list .settings-check span { display: grid; gap: 2px; }
+.perm-list small { color: var(--text-muted); font-size: var(--text-xs); }
+.link-button { padding: 0; border: 0; color: var(--text-link); background: none; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+/* Langganan */
+.sub-features { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+.sub-features li { display: flex; align-items: center; gap: 10px; color: var(--text-primary); }
+.sub-features li svg { flex: none; color: var(--status-green-fg); }
+.sub-features li.is-off { color: var(--text-muted); }
+.sub-features li.is-off svg { color: var(--text-muted); }
+.fin-bars-track span.is-full { background: var(--status-red-fg); }
+.data-table tr.is-selected-row td { background: var(--brand-50); }

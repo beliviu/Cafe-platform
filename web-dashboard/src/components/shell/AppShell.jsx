@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Coffee, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Coffee, LogOut, Menu, PanelLeftClose, PanelLeftOpen, WifiOff } from 'lucide-react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { Drawer, IconButton } from '../ui/index.js'
 import { initials } from '../../lib/format.js'
@@ -15,6 +15,19 @@ function readCollapsed() {
   }
   // Tablet (≤ 1180px): mulai dari mode ikon agar konten lebih lega.
   return window.innerWidth <= 1180
+}
+
+/** Status koneksi perangkat (event online/offline browser). */
+function useOnline() {
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
+  useEffect(() => {
+    const up = () => setOnline(true)
+    const down = () => setOnline(false)
+    window.addEventListener('online', up)
+    window.addEventListener('offline', down)
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
+  }, [])
+  return online
 }
 
 /** Logo + nama kafe. Tanpa logo: ikon kopi di kotak warna brand. */
@@ -98,6 +111,7 @@ export function AppShell({ brand, navigation, account, banner, homeTo = '/', chi
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  const online = useOnline()
 
   useEffect(() => {
     try {
@@ -184,6 +198,11 @@ export function AppShell({ brand, navigation, account, banner, homeTo = '/', chi
       )}
 
       <main className="shell-main" id="konten">
+        {!online && (
+          <div className="shell-banner is-offline" role="status">
+            <span><WifiOff size={16} aria-hidden="true" /> Koneksi internet terputus. Data yang tampil mungkin belum terbaru; perubahan baru bisa disimpan setelah tersambung lagi.</span>
+          </div>
+        )}
         {banner}
         {children}
       </main>

@@ -11,6 +11,7 @@ const TABS = [
   { to: 'payments', label: 'Pembayaran' },
   { to: 'tables', label: 'Meja' },
   { to: 'receipt', label: 'Struk' },
+  { to: 'subscription', label: 'Langganan' },
 ]
 
 /** Kerangka Pengaturan: judul + tab. cafe_settings dimuat sekali dan dibagikan ke semua tab. */

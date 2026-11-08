@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useOutletContext } from 'react-router-dom'
 import {
-  ChevronLeft, ChevronRight, Copy, KeyRound, MoreHorizontal, Pencil, Plus, RefreshCw, UserCheck, UserPlus, UserX,
+  ChevronLeft, ChevronRight, Copy, KeyRound, MoreHorizontal, Pencil, Plus, RefreshCw, ShieldCheck, UserCheck, UserPlus, UserX,
 } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import {
@@ -18,6 +18,7 @@ import {
   addDaysToKey, formatDateTime, formatRelative, formatRupiah, formatTime, initials, jakartaDateKey, startOfJakartaDay,
 } from '../../lib/format.js'
 import { fetchTeam, generatePassword, ROLE_LABELS, setMemberTitle, staffAdmin } from '../../lib/team.js'
+import { PERMISSIONS } from '../../lib/permissions.js'
 
 const TABS = [
   { to: '.', label: 'Anggota', end: true },
@@ -201,10 +202,22 @@ function ResetPasswordDialog({ member, onClose }) {
 }
 
 export function MembersPage() {
-  const { team, profile } = useOutletContext()
+  const { team, profile, cafe, features } = useOutletContext()
   const { supabase } = useAuth()
   const { toast } = useToast()
   const [dialog, setDialog] = useState(null)
+  const [permissions, setPermissions] = useState(null)
+  const [permAttempt, setPermAttempt] = useState(0)
+
+  // Izin per staff (file 10)
+  useEffect(() => {
+    if (!features?.security) return undefined
+    let active = true
+    supabase.rpc('staff_permissions_list', { p_cafe_id: cafe.id }).then(({ data, error }) => {
+      if (active && !error) setPermissions(new Map((data || []).map((row) => [row.user_id, row])))
+    })
+    return () => { active = false }
+  }, [cafe.id, features?.security, permAttempt, supabase])
 
   async function setActive(member, active) {
     await staffAdmin(supabase, { action: active ? 'reactivate' : 'deactivate', user_id: member.id })
@@ -231,7 +244,7 @@ export function MembersPage() {
                 <thead>
                   <tr>
                     <th scope="col">Nama</th><th scope="col">Jabatan</th><th scope="col">Peran</th>
-                    <th scope="col">Status</th><th scope="col">Terakhir masuk</th><th scope="col"><span className="sr-only">Aksi</span></th>
+                    <th scope="col">Status</th>{permissions && <th scope="col">Izin</th>}<th scope="col">Terakhir masuk</th><th scope="col"><span className="sr-only">Aksi</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -249,6 +262,12 @@ export function MembersPage() {
                         <td>{member.job_title || <span className="text-muted">—</span>}</td>
                         <td><Badge tone={member.role === 'owner' ? 'brand' : 'neutral'} dot={false}>{ROLE_LABELS[member.role] || member.role}</Badge></td>
                         <td>{member.is_active ? <Badge tone="green">Aktif</Badge> : <Badge tone="neutral">Nonaktif</Badge>}</td>
+                        {permissions && (
+                          <td>{isStaff ? (permissions.get(member.id)?.all_permissions !== false
+                            ? <span className="text-muted">Semua</span>
+                            : <button type="button" className="link-button" onClick={() => setDialog({ type: 'permissions', member })}>{permissions.get(member.id).permissions.length} dari {PERMISSIONS.length}</button>)
+                            : <span className="text-muted">Pemilik</span>}</td>
+                        )}
                         <td className="text-muted">{member.last_sign_in_at ? formatRelative(member.last_sign_in_at) : 'Belum pernah'}</td>
                         <td className="cell-actions">
                           <Menu
@@ -257,6 +276,7 @@ export function MembersPage() {
                             items={[
                               { label: 'Ubah jabatan', icon: Pencil, onSelect: () => setDialog({ type: 'title', member }) },
                               ...(isStaff ? [
+                                ...(permissions ? [{ label: 'Atur izin', icon: ShieldCheck, onSelect: () => setDialog({ type: 'permissions', member }) }] : []),
                                 { label: 'Reset password', icon: KeyRound, onSelect: () => setDialog({ type: 'reset', member }) },
                                 member.is_active
                                   ? { label: 'Nonaktifkan', icon: UserX, tone: 'danger', onSelect: () => setDialog({ type: 'deactivate', member }) }
@@ -276,6 +296,9 @@ export function MembersPage() {
       {dialog?.type === 'add' && <AddStaffDialog onClose={() => setDialog(null)} onCreated={team.reload} />}
       {dialog?.type === 'title' && <TitleDialog member={dialog.member} onClose={() => setDialog(null)} onSaved={team.reload} />}
       {dialog?.type === 'reset' && <ResetPasswordDialog member={dialog.member} onClose={() => setDialog(null)} />}
+      {dialog?.type === 'permissions' && (
+        <PermissionsDialog member={dialog.member} current={permissions?.get(dialog.member.id)} onClose={() => setDialog(null)} onSaved={() => setPermAttempt((value) => value + 1)} />
+      )}
       {dialog?.type === 'deactivate' && (
         <ConfirmDialog
           title={`Nonaktifkan ${dialog.member.full_name}?`}
@@ -286,6 +309,64 @@ export function MembersPage() {
         />
       )}
     </Card>
+  )
+}
+
+const PERMISSION_PRESETS = [
+  { label: 'Semua', keys: PERMISSIONS.map((item) => item.key) },
+  { label: 'Kasir', keys: ['pos.sell', 'pos.discount', 'payment.manual', 'cash.move', 'refund.request', 'order.cancel'] },
+  { label: 'Barista', keys: ['menu.availability', 'ordering.pause', 'support.reply'] },
+]
+
+function PermissionsDialog({ member, current, onClose, onSaved }) {
+  const { supabase } = useAuth()
+  const { toast } = useToast()
+  const [selected, setSelected] = useState(() => new Set(current?.permissions || PERMISSIONS.map((item) => item.key)))
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  function toggle(key) {
+    setSelected((value) => {
+      const next = new Set(value)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  async function save() {
+    setSaving(true)
+    const { error: rpcError } = await supabase.rpc('staff_set_permissions', { p_user_id: member.id, p_permissions: [...selected] })
+    setSaving(false)
+    if (rpcError) return setError(rpcError.message)
+    toast({ tone: 'success', title: `Izin ${member.full_name} disimpan`, description: 'Berlaku saat staff memuat ulang halaman.' })
+    onSaved()
+    onClose()
+    return undefined
+  }
+
+  return (
+    <Dialog title={`Izin ${member.full_name}`} description="Ditegakkan di server: tombol yang tidak diizinkan disembunyikan dan permintaannya ditolak database."
+      onClose={saving ? undefined : onClose}
+      footer={<><Button variant="ghost" onClick={onClose} disabled={saving}>Batal</Button><Button onClick={save} loading={saving}>Simpan izin</Button></>}>
+      <div className="perm-presets">
+        <span className="text-muted">Cepat:</span>
+        {PERMISSION_PRESETS.map((preset) => (
+          <Button key={preset.label} size="sm" variant="secondary" onClick={() => setSelected(new Set(preset.keys))}>{preset.label}</Button>
+        ))}
+      </div>
+      <ul className="perm-list">
+        {PERMISSIONS.map((item) => (
+          <li key={item.key}>
+            <label className="settings-check">
+              <input type="checkbox" checked={selected.has(item.key)} onChange={() => toggle(item.key)} />
+              <span><strong>{item.label}</strong><small>{item.description}</small></span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {error && <p className="ui-field-error" role="alert">{error}</p>}
+    </Dialog>
   )
 }
 
@@ -492,6 +573,8 @@ const ENTITY_LABELS = {
   staff_shifts: 'shift',
   profiles: 'anggota tim',
   staff_account: 'akun staff',
+  staff_permissions: 'izin staff',
+  cafe_subscriptions: 'langganan',
   ingredients: 'bahan baku',
   suppliers: 'supplier',
   purchase_orders: 'purchase order',

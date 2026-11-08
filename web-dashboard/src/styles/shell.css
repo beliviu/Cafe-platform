@@ -142,3 +142,6 @@
 .page-wide { max-width: 1480px; }
 .page-narrow { max-width: 860px; }
 .shell-main { overflow-x: clip; }
+
+.shell-banner.is-offline { color: var(--status-amber-fg); background: var(--status-amber-bg); }
+.shell-banner.is-offline span { display: inline-flex; align-items: center; gap: 8px; }

@@ -29,7 +29,7 @@ function probeColumns(supabase, table, columns) {
 }
 
 /**
- * { operations, branding, phase3, inventory, pos, finance, customer, payments } — true bila migrasi 02 / 03 / 04 / 05 / 06 / 07 / 08 / 09 sudah diterapkan. Di-cache per klien.
+ * { operations, branding, phase3, inventory, pos, finance, customer, payments, security } — true bila migrasi 02 / 03 / 04 / 05 / 06 / 07 / 08 / 09 / 10 sudah diterapkan. Di-cache per klien.
  * Kolom yang belum ada membuat select gagal, jadi UI memilih kolom berdasarkan hasil ini.
  */
 export function detectDbFeatures(supabase) {
@@ -43,7 +43,8 @@ export function detectDbFeatures(supabase) {
       probeColumns(supabase, 'accounts', 'id'),
       probeColumns(supabase, 'vouchers', 'id'),
       probeColumns(supabase, 'payment_intents', 'id'),
-    ]).then(([operations, branding, phase3, inventory, pos, finance, customer, payments]) => ({ operations, branding, phase3, inventory, pos, finance, customer, payments }))
+      probeColumns(supabase, 'plans', 'code'),
+    ]).then(([operations, branding, phase3, inventory, pos, finance, customer, payments, security]) => ({ operations, branding, phase3, inventory, pos, finance, customer, payments, security }))
     featureCache.set(supabase, probe)
   }
   return featureCache.get(supabase)
@@ -64,6 +65,7 @@ export function cafeColumns(features) {
 }
 
 export const PHASE3_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/04-owner-dashboard.sql dijalankan.'
+export const SECURITY_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/10-izin-langganan-keamanan.sql dijalankan.'
 export const CUSTOMER_REQUIRED = 'Fitur ini aktif setelah file supabase/usulan/08-pelanggan-qr.sql dijalankan.'
 export const FINANCE_REQUIRED = 'Modul keuangan aktif setelah file supabase/usulan/07-akuntansi.sql dijalankan.'
 export const POS_REQUIRED = 'Kasir aktif setelah file supabase/usulan/06-pesanan-v2-pos.sql dijalankan.'

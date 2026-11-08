@@ -94,6 +94,27 @@ export function customerRpc(store, name, args, names) {
     case 'support_close':
       Object.assign(store.support_tickets.find((row) => row.id === args.p_ticket_id), { status: 'closed', closed_at: new Date().toISOString() })
       return ok(null)
+    case 'staff_permissions_list': {
+      store.staff_permissions = store.staff_permissions || {}
+      const all = ['pos.sell', 'pos.discount', 'payment.manual', 'order.cancel', 'refund.request', 'cash.move', 'menu.availability', 'ordering.pause', 'support.reply']
+      return ok(['staff-1', 'staff-2', 'staff-3'].map((id) => ({ user_id: id, permissions: store.staff_permissions[id] || all, all_permissions: !store.staff_permissions[id] })))
+    }
+    case 'staff_set_permissions': {
+      store.staff_permissions = store.staff_permissions || {}
+      store.staff_permissions[args.p_user_id] = args.p_permissions.length === 9 ? null : args.p_permissions
+      return ok(args.p_permissions)
+    }
+    case 'cafe_entitlements':
+      return ok({
+        plan: { code: 'pro', name: 'Pro', description: 'Semua modul operasional & keuangan', price_monthly: 349000 },
+        subscribed_plan: 'pro', status: 'trialing', trial_ends_at: new Date(Date.now() + 18 * 86400000).toISOString(), current_period_end: null,
+        features: ['inventory', 'finance', 'loyalty', 'qr_ordering', 'payment_gateway'], limits: { staff: 15, tables: 50, products: 500 },
+        usage: { staff: 3, tables: store.cafe_tables.length, products: store.products.length },
+        plans: [
+          { code: 'basic', name: 'Basic', description: 'Kasir, pesanan app, menu & tim kecil', price_monthly: 149000, limits: { staff: 3, tables: 10, products: 80 }, features: [] },
+          { code: 'pro', name: 'Pro', description: 'Semua modul operasional & keuangan', price_monthly: 349000, limits: { staff: 15, tables: 50, products: 500 }, features: ['inventory', 'finance', 'loyalty', 'qr_ordering', 'payment_gateway'] },
+        ],
+      })
     default:
       return null
   }

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { resilientFetch } from './resilientFetch.js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
@@ -16,4 +17,5 @@ export const supabase = supabaseConfigError
         detectSessionInUrl: true,
         persistSession: true,
       },
+      global: { fetch: resilientFetch },
     })

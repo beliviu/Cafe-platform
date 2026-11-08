@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Coffee, PackageX } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import { EmptyState, ErrorState, SearchInput, SegmentedControl, SkeletonRows, Switch, useToast } from '../ui/index.js'
+import { useCan } from '../../lib/permissions.js'
 import { DB_UPDATE_REQUIRED, friendlyError } from '../../lib/db.js'
 import { formatRupiah } from '../../lib/format.js'
 import { setProductAvailability } from '../../lib/orderActions.js'
@@ -13,6 +14,7 @@ import { setProductAvailability } from '../../lib/orderActions.js'
 export function AvailabilityPanel({ cafe, features, compact = false, onCountChange }) {
   const { supabase } = useAuth()
   const { toast } = useToast()
+  const allowed = useCan()('menu.availability')
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -112,7 +114,7 @@ export function AvailabilityPanel({ cafe, features, compact = false, onCountChan
                   </span>
                   <Switch
                     checked={product.is_available}
-                    disabled={busyId === product.id}
+                    disabled={busyId === product.id || !allowed}
                     onChange={(next) => toggle(product, next)}
                     label={`${product.name} tersedia`}
                     onLabel="Tersedia"

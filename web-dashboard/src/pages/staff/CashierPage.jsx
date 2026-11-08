@@ -4,6 +4,7 @@
  */
 import { useCallback, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { useCan } from '../../lib/permissions.js'
 import { ArrowDownUp, Banknote, Lock, Wallet } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, PageHeader, SkeletonRows, StatCard } from '../../components/ui/index.js'
@@ -26,6 +27,7 @@ export function CashierPage() {
 }
 
 function CashierContent({ cafe, profile, finance }) {
+  const can = useCan()
   const { supabase, session: authSession } = useAuth()
   const userId = authSession?.user?.id || profile?.id
   const [dialog, setDialog] = useState(null)
@@ -69,7 +71,7 @@ function CashierContent({ cafe, profile, finance }) {
               <CardHeader title="Kas masuk & keluar" description="Uang laci di luar penjualan: setoran, belanja kecil, uang kembalian tambahan."
                 actions={(
                   <>
-                    <Button variant="secondary" icon={ArrowDownUp} onClick={() => setDialog('move')}>Kas masuk/keluar</Button>
+                    {can('cash.move') && <Button variant="secondary" icon={ArrowDownUp} onClick={() => setDialog('move')}>Kas masuk/keluar</Button>}
                     <Button icon={Lock} onClick={() => setDialog('close')}>Tutup kasir</Button>
                   </>
                 )} />
