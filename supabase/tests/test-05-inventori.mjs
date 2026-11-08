@@ -113,7 +113,7 @@ check('porsi tersedia latte 46 (dibatasi susu)', num(latteCost.portions_availabl
 check('croissant tanpa resep', costing.find((row) => row.product_id === croissant).recipe_lines === 0)
 
 // ---------- Pesanan selesai → pemakaian bahan ----------
-async function makeOrder(items, { status = 'pending', createdAt = null } = {}) {
+async function makeOrder(items, { status = 'ready', createdAt = null } = {}) {
   await su()
   const order = (await one(`insert into orders (cafe_id, order_status, total_amount, created_at)
     values ($1, $2, 0, coalesce($3::timestamptz, now())) returning id`, [cafeA, status, createdAt])).id
