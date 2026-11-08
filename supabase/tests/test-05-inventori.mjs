@@ -39,6 +39,7 @@ const num = (value) => Number(value)
 
 const usulan = (name) => fs.readFileSync(new URL(name, ROOT), 'utf8')
 await db.exec(fs.readFileSync(new URL('./base-schema.sql', import.meta.url), 'utf8'))
+await db.exec("set timezone to 'Asia/Jakarta'") // current_date di tes = tanggal WIB (sama dengan kode)
 await db.exec(usulan('04-owner-dashboard.sql'))
 const results = await db.exec(usulan('05-inventori-supplier.sql'))
 const verify = results.at(-1).rows
@@ -205,7 +206,7 @@ await fails('terima melebihi sisa ditolak', 'select purchase_order_receive($1, $
 await fails('terima tanpa baris valid ditolak', 'select purchase_order_receive($1, $2::jsonb)', [po, JSON.stringify([{ item_id: ing.cup, quantity: 1 }])], /Isi jumlah/)
 await fails('batalkan PO yang sudah diterima ditolak', "select purchase_order_transition($1, 'cancel')", [po], /Tutup PO/)
 check('terima sisa → received', (await one('select purchase_order_receive($1, $2::jsonb) s', [po, JSON.stringify([{ item_id: item, quantity: 1 }])])).s === 'received')
-const poDone = await one('select received_amount, due_date, (due_date - current_date) as terms from purchase_orders where id = $1', [po])
+const poDone = await one(`select received_amount, due_date, (due_date - (now() at time zone 'Asia/Jakarta')::date) as terms from purchase_orders where id = $1`, [po])
 check('nilai diterima 360000 & jatuh tempo +14 hari', num(poDone.received_amount) === 360000 && poDone.terms === 14, JSON.stringify(poDone))
 check('katalog supplier diperbarui', num((await one('select last_price from supplier_items where supplier_id = $1 and ingredient_id = $2', [supplier, ing.milk])).last_price) === 180000)
 const pay = (await one("select purchase_order_pay($1, 200000, 'bank_transfer', current_date, 'TRX-1') id", [po])).id

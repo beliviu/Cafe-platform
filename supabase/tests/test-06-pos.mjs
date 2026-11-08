@@ -30,6 +30,7 @@ const J = (value) => JSON.stringify(value)
 
 // ---------- Skema live + 04 + 05; pesanan lama dibuat sebelum 06 ----------
 await db.exec(fs.readFileSync(new URL('./base-schema.sql', import.meta.url), 'utf8'))
+await db.exec("set timezone to 'Asia/Jakarta'") // current_date di tes = tanggal WIB (sama dengan kode)
 await db.exec(usulan('04-owner-dashboard.sql'))
 await db.exec(usulan('05-inventori-supplier.sql'))
 

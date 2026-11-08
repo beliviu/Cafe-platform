@@ -29,6 +29,7 @@ const num = Number
 const J = (value) => JSON.stringify(value)
 
 await db.exec(fs.readFileSync(new URL('./base-schema.sql', import.meta.url), 'utf8'))
+await db.exec("set timezone to 'Asia/Jakarta'") // current_date di tes = tanggal WIB (sama dengan kode)
 for (const file of ['04-owner-dashboard.sql', '05-inventori-supplier.sql', '06-pesanan-v2-pos.sql']) await db.exec(usulan(file))
 const results = await db.exec(usulan('07-akuntansi.sql'))
 check('verifikasi 26 baris', results.at(-1).rows.length === 26, results.at(-1).rows.map((r) => r.name).join(','))
@@ -261,15 +262,13 @@ check('buku besar kas: saldo akhir = saldo akun', Math.abs(num(ledger.at(-1).bal
 // ---------- Periode ----------
 await as(U.ownerB)
 await q("select acc_setup($1, current_date - 40, '[]'::jsonb)", [cafeB])
-const lastMonth = new Date()
-lastMonth.setDate(1)
-lastMonth.setMonth(lastMonth.getMonth() - 1)
-const lastMonthKey = lastMonth.toISOString().slice(0, 10)
+// Bulan lalu menurut tanggal WIB (dihitung database, bukan jam komputer)
+const lastMonthKey = (await one("select (date_trunc('month', current_date) - interval '1 month')::date::text d")).d
 await fails('bulan berjalan tidak bisa ditutup', "select acc_set_period($1, current_date, true)", [cafeB], /berjalan/)
 await q('select acc_set_period($1, $2::date, true)', [cafeB, lastMonthKey])
 const bBank = (await one("select id from accounts where cafe_id = $1 and code = '1-1200'", [cafeB])).id
 const bCash = (await one("select id from accounts where cafe_id = $1 and code = '1-1100'", [cafeB])).id
-const inClosed = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 28).toISOString().slice(0, 10)
+const inClosed = `${lastMonthKey.slice(0, 8)}28`
 const goLiveB = (await one('select accounting_go_live::text d from cafe_settings where cafe_id = $1', [cafeB])).d
 if (inClosed >= goLiveB) {
   await fails('posting ke periode tertutup ditolak', "select acc_manual_journal($1, $2::date, 'Telat', $3::jsonb)", [cafeB, inClosed, J([{ account_id: bBank, debit: 1 }, { account_id: bCash, credit: 1 }])], /ditutup/)

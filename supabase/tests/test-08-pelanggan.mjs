@@ -40,6 +40,7 @@ async function fails(name, sql, params, pattern) {
 }
 
 await db.exec(fs.readFileSync(new URL('./base-schema.sql', import.meta.url), 'utf8'))
+await db.exec("set timezone to 'Asia/Jakarta'") // current_date di tes = tanggal WIB (sama dengan kode)
 for (const file of ['04-owner-dashboard.sql', '05-inventori-supplier.sql', '06-pesanan-v2-pos.sql', '07-akuntansi.sql']) await db.exec(usulan(file))
 const results = await db.exec(usulan('08-pelanggan-qr.sql'))
 check('verifikasi 32 baris', results.at(-1).rows.length === 32, results.at(-1).rows.map((r) => r.name).join(','))
@@ -115,7 +116,13 @@ let row = await order(scheduled)
 check('pesanan terjadwal tersimpan & estimasi = jadwal', row.scheduled_for?.toISOString() === tomorrow10 && row.estimated_ready_at?.toISOString() === tomorrow10)
 await as(U.cust)
 await fails('jadwal < 15 menit ditolak', 'select customer_place_order($1, $2::jsonb, null, null, null, null, null, now() + interval \'5 minutes\')', [cafe, J([{ product_id: latte, quantity: 1 }])], /minimal 15 menit/)
-const todayNoon = new Date(Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate() + 7, 5, 0)).toISOString()
+// Waktu ±7 hari lagi (selalu dalam batas jadwal); hari itu dibuat libur
+const nextWeek = new Date(Date.now() + 7 * 86400000 - 3600000)
+const nextWeekKey = keys[(new Date(nextWeek.getTime() + 7 * 3600000).getUTCDay() + 6) % 7]
+await su()
+await db.query('update cafes set opening_hours = $2::jsonb where id = $1', [cafe, J({ ...allDay, [nextWeekKey]: { closed: true, open: '08:00', close: '22:00' } })])
+await as(U.cust)
+const todayNoon = nextWeek.toISOString()
 await fails('jadwal saat kafe libur ditolak', 'select customer_place_order($1, $2::jsonb, null, null, null, null, null, $3::timestamptz)', [cafe, J([{ product_id: latte, quantity: 1 }]), todayNoon], /tutup pada jam/)
 await su()
 await db.query('update cafes set opening_hours = $2::jsonb where id = $1', [cafe, J(allDay)])
