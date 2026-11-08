@@ -22,7 +22,33 @@
 | 9. **Payment gateway — QRIS dinamis Midtrans** (tagihan QRIS, webhook terverifikasi, rekonsiliasi, refund lewat gateway) — [`supabase/usulan/09-payment-gateway.sql`](supabase/usulan/09-payment-gateway.sql) | 🟢 **siap dijalankan** · diuji 51 skenario end-to-end |
 | 9b. Edge Function `payments` — [`supabase/functions/payments/index.ts`](supabase/functions/payments/index.ts) | 📝 wajib untuk QRIS online (butuh akun Midtrans) |
 | 10. **Izin staff, langganan & pengetatan keamanan** — [`supabase/usulan/10-izin-langganan-keamanan.sql`](supabase/usulan/10-izin-langganan-keamanan.sql) | 🟢 **siap dijalankan** · diuji 60 skenario termasuk penyisiran isolasi lintas kafe |
+| 11. **BI: prediksi penjualan, analitik pelanggan & advisor bisnis** — [`supabase/usulan/11-bi-analitik.sql`](supabase/usulan/11-bi-analitik.sql) | 🟢 **siap dijalankan** · diuji 110 skenario (dengan & tanpa 07/08/10) |
+| 11b. Edge Function `advisor` (Tanya AI, Claude) — [`supabase/functions/advisor/index.ts`](supabase/functions/advisor/index.ts) | 📝 opsional — Jawaban cepat, prediksi & analitik jalan tanpa ini |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 11 — BI: prediksi penjualan, analitik pelanggan & advisor bisnis
+
+Jalankan **setelah file 06** (07, 08, 10 opsional; bagian yang membutuhkannya dilewati otomatis). Bila file 10 dijalankan **setelah** 11, jalankan ulang file 11 agar paket Pro/Enterprise mendapat fitur AI. **Dampak ke data yang sudah ada:**
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| Fungsi analitik | `bi_sales_forecast`, `bi_product_demand`, `bi_customer_analytics`, `bi_advisor_facts` (+ fungsi internal `bi_*`) | **Hanya membaca.** Tidak ada data yang diubah atau dihapus. Hanya owner kafe itu yang bisa memanggil (dicek di database). |
+| Tabel baru | `ai_advisor_logs` (riwayat pertanyaan AI) | Kosong. RLS: hanya owner kafe itu yang bisa membaca; tidak ada yang bisa menulis langsung (lewat fungsi `bi_advisor_log`). |
+| Paket (bila file 10 ada) | Fitur `ai_advisor` + batas `ai_daily` di `plans` | Pro 30 & Enterprise 100 pertanyaan AI/hari. Basic tanpa AI. Kafe lama (Enterprise) otomatis dapat. Prediksi & analitik tersedia di semua paket. |
+| Index | `orders (cafe_id, created_at)` | Hanya mempercepat. |
+
+**Cara menjalankan:**
+1. SQL Editor → tempel **seluruh isi** `supabase/usulan/11-bi-analitik.sql` → **Run**.
+2. Verifikasi harus **7 baris** (1 `table`, 6 `function`).
+3. Error merah = tidak ada yang berubah. Aman dijalankan ulang.
+
+**Tanya AI (opsional) — Edge Function `advisor`:**
+1. Buat API key di console.anthropic.com (penagihan per pemakaian).
+2. Dashboard → Edge Functions → Deploy new function → Via Editor, nama **`advisor`**, tempel `supabase/functions/advisor/index.ts`, Deploy. **Verify JWT: ON.**
+3. Edge Functions → Secrets: `ANTHROPIC_API_KEY`. Opsional `ADVISOR_MODEL` (bawaan `claude-opus-5-5`).
+4. Yang dikirim ke AI hanya angka ringkasan kafe (tanpa nama/kontak pelanggan). Tanpa langkah ini, tombol Tanya AI memberi pesan "belum diaktifkan"; Jawaban cepat tetap jalan.
+
+**Uji ulang lokal:** `cd supabase/tests && npm test` (05–11).
 
 ### File 10 — izin staff, langganan & pengetatan keamanan
 
