@@ -165,6 +165,24 @@ export function createFixtures(now = new Date()) {
         receipt_paper_mm: 58, updated_at: '2026-11-08T00:00:00Z', ...inventory.settings,
         staff_max_discount_pct: 10, print_kitchen_ticket: false, auto_print_receipt: false, accounting_go_live: goLive, ...customer.settings, ...payment.settings,
       }],
+      promotional_banners: [
+        {
+          id: 'banner-1', cafe_id: cafeId, title: 'Ritual pagi, lebih pelan',
+          subtitle: 'Es Kopi Susu Gula Aren untuk memulai hari dengan rasa yang akrab.',
+          image_path: `${cafeId}/banner-pagi.jpg`, cta_label: 'Lihat menu',
+          destination_type: 'product', destination_id: 'p1', destination_path: null,
+          starts_at: null, ends_at: null, is_active: true, sort_order: 0,
+          created_at: new Date(now.getTime() - 3 * 86400000).toISOString(), updated_at: now.toISOString(),
+        },
+        {
+          id: 'banner-2', cafe_id: cafeId, title: 'Jeda ditemani pastry',
+          subtitle: 'Croissant hangat, dibuat untuk menemani kopi sore.',
+          image_path: `${cafeId}/banner-sore.jpg`, cta_label: 'Lihat pastry',
+          destination_type: 'category', destination_id: 'cat-pastry', destination_path: null,
+          starts_at: null, ends_at: null, is_active: true, sort_order: 1,
+          created_at: new Date(now.getTime() - 2 * 86400000).toISOString(), updated_at: now.toISOString(),
+        },
+      ],
       ...finance,
       ...customer.tables,
       ...payment.tables,
@@ -256,6 +274,7 @@ class Query {
   limit(count) { this.window = [0, count - 1]; return this }
   range(from, to) { this.window = [from, to]; return this }
   maybeSingle() { this.single = true; return this }
+  single() { this.single = true; return this }
   update(values) { this.mode = 'update'; this.payload = values; return this }
   insert(values) { this.mode = 'insert'; this.payload = values; return this }
   upsert(values) { this.mode = 'upsert'; this.payload = values; return this }
@@ -300,6 +319,9 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
   const store = fixtures.tables
   store.cafes = [fixtures.cafe]
   store.profiles = [fixtures.profile]
+  for (const [index, banner] of (store.promotional_banners || []).entries()) {
+    uploads.set(`cafe-banners/${banner.image_path}`, swatch(index ? '#B96843' : '#75543D', index ? 'Sore' : 'Pagi'))
+  }
   const listeners = new Set()
   const statusListeners = new Set()
   let extra = 0
@@ -398,7 +420,7 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
       // Simpan file sebagai blob URL agar pratinjau bisa menampilkan gambar yang baru diunggah.
       from: (bucket) => ({
         upload: async (path, file) => { uploads.set(`${bucket}/${path}`, URL.createObjectURL(file)); return { error: null } },
-        remove: async () => ({ error: null }),
+        remove: async (paths = []) => { paths.forEach((path) => uploads.delete(`${bucket}/${path}`)); return { error: null } },
         createSignedUrl: async (path) => ({ data: { signedUrl: uploads.get(`${bucket}/${path}`) || `data:text/plain;charset=utf-8,${encodeURIComponent(`Nota tiruan: ${path}`)}` }, error: null }),
         getPublicUrl: (path) => ({ data: { publicUrl: uploads.get(`${bucket}/${path}`) || `https://example.invalid/storage/v1/object/public/${bucket}/${path}` } }),
       }),

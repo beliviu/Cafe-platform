@@ -7,4 +7,3 @@ dist/
 *.local
 supabase/.temp/
 supabase/.branches/
-mobile-customer/

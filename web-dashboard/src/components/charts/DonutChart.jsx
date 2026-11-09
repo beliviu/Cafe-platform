@@ -49,14 +49,14 @@ export function DonutChart({ segments, centerValue, centerLabel, formatValue, ar
               key={segment.key}
               d={segment.path}
               className={`donut-arc${active && active !== segment.key ? ' is-dimmed' : ''}`}
-              stroke={segment.color}
+              style={{ stroke: segment.color }}
               strokeWidth={STROKE}
               fill="none"
               onPointerEnter={() => setActive(segment.key)}
               onPointerLeave={() => setActive(null)}
             />
           ) : (
-            <circle key={segment.key} cx={SIZE / 2} cy={SIZE / 2} r={(SIZE - STROKE) / 2} stroke={segment.color} strokeWidth={STROKE} fill="none" />
+            <circle key={segment.key} cx={SIZE / 2} cy={SIZE / 2} r={(SIZE - STROKE) / 2} style={{ stroke: segment.color }} strokeWidth={STROKE} fill="none" />
           )))}
         </svg>
         <div className="donut-center">

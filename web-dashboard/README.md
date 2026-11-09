@@ -55,6 +55,9 @@ in order for the project configured in `.env.local`. Do not run `db reset`
 against a remote project.
 
 Owner routes are `/` (overview), `/products`, `/categories`, and `/orders`.
+The owner route `/promotions` manages customer-home banners. Apply
+`20261109070000_create_promotional_banners.sql` first; it creates the
+cafe-scoped banner table and public image bucket with owner-only writes.
 Staff routes are `/staff` (live order board) and `/staff/history`. Staff
 accounts must be provisioned by a trusted server-side process; never expose a
 service-role key in this browser app.

@@ -1,89 +1,15 @@
 /*
- * Design tokens "Warm Luxury" — sumber kebenaran untuk web owner & staff.
- * Palet: Warm Ivory #F2E9DC · Sand #D8C3A9 · Taupe #B69A7D · Walnut #75543D
- *        Espresso #38271E · Terracotta #B96843
- * Nilai yang sama dipakai di aplikasi customer: mobile-customer/src/theme/tokens.js.
- * Ubah keduanya bersamaan.
+ * Design tokens — sumber kebenaran untuk web owner & staff.
  *
- * --brand-* bisa ditimpa warna brand pilihan owner (lib/branding.js → useBrandTheme).
- * Nilai di bawah = bawaan Walnut, dihitung dengan brandScale() di lib/color.js.
+ * WARNA dihasilkan mesin tema (src/lib/theme.js → buildTheme) dari satu warna brand:
+ * rail & panel sidebar, latar, kartu, garis, teks, tombol, status, dan grafik — mode gelap & terang.
+ * Blok warna di bawah = tema bawaan (warna "Espresso" #B0805A) untuk tampilan pertama sebelum JS jalan.
+ * Saat aplikasi berjalan, useBrandTheme() menimpa nilai ini dengan warna pilihan owner & mode aktif.
+ * Jangan ubah manual: ubah buildTheme() lalu jalankan ulang pembuat token.
+ *
+ * Mode dipilih di <html data-theme="dark|light"> (lib/themeMode.js).
  */
 :root {
-  /* Brand (bawaan Walnut) — 600 = tombol utama, teks putih 6.8:1 */
-  --brand-50: #F4EEE6;
-  --brand-100: #E9E0D8;
-  --brand-200: #D3C6BA;
-  --brand-300: #BAA899;
-  --brand-400: #A18978;
-  --brand-500: #886B57;
-  --brand-600: #75543D;
-  --brand-700: #644734;
-  --brand-800: #543C2B;
-  --brand-900: #453123;
-  /* Isian brand: solid (bawaan) atau gradasi bila owner memilih 2 warna */
-  --brand-fill: var(--brand-600);
-
-  /* Palet dasar */
-  --ivory: #F2E9DC;
-  --sand: #D8C3A9;
-  --taupe: #B69A7D;
-  --walnut: #75543D;
-  --espresso: #38271E;
-
-  /* Aksen terracotta — 500 hanya untuk ikon/badge/teks besar (3.4:1), 700 untuk teks (5.4:1) */
-  --accent-100: #F3E0D4;
-  --accent-500: #B96843;
-  --accent-700: #8F4C2D;
-
-  /* Permukaan */
-  --surface-canvas: #F2E9DC;  /* warm ivory — latar utama */
-  --surface-card: #FBF7F0;    /* kartu, sedikit lebih terang dari latar */
-  --surface-sunken: #EADFCF;  /* area cekung, input nonaktif */
-  --surface-hover: #EEE4D5;
-  --surface-sand: #E3D3BE;    /* permukaan sekunder (sand) */
-  --surface-overlay: rgb(56 39 30 / 46%);
-
-  /* Navigasi gelap (espresso) */
-  --nav-bg: #38271E;
-  --nav-text: #F2E9DC;        /* 11.8:1 */
-  --nav-text-muted: #B3A595;  /* 5.9:1 */
-  --nav-hover: rgb(242 233 220 / 8%);
-  --nav-active: rgb(242 233 220 / 13%);
-  --nav-border: rgb(242 233 220 / 12%);
-
-  /* Teks — semua lolos WCAG AA (>= 4.5:1) di atas canvas, card, dan sunken */
-  --text-primary: #38271E;    /* espresso, 11.8:1 */
-  --text-secondary: #5A4638;  /* 7.4:1 */
-  --text-muted: #6F5D4F;      /* 5.2:1 (4.8:1 di sunken) */
-  --text-on-primary: #FFFBF5;
-  --text-link: var(--brand-700);
-
-  /* Garis */
-  --border-subtle: #E4D8C7;
-  --border-default: #D9CAB5;
-  --border-strong: #C4AF94;
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--brand-600) 30%, transparent);
-
-  /* Status — dipakai identik di owner, staff, dan customer */
-  --status-amber-bg: #fbf0dc;
-  --status-amber-fg: #8a5a0b;
-  --status-amber-dot: #d99a2b;
-  --status-blue-bg: #e5eef7;
-  --status-blue-fg: #2f5d8a;
-  --status-blue-dot: #5b8bc0;
-  --status-green-bg: #e3f1e5;
-  --status-green-fg: #2e6b3d;
-  --status-green-dot: #4c9a5f;
-  --status-neutral-bg: #eceae4;
-  --status-neutral-fg: #57524a;
-  --status-neutral-dot: #8f887c;
-  --status-red-bg: #f9e7e3;
-  --status-red-fg: #9b3b2c;
-  --status-red-dot: #d0705f;
-
-  --danger: #a5402f;
-  --danger-hover: #8c3426;
-
   /* Tipografi */
   --font-serif: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
   --font-sans: "Plus Jakarta Sans Variable", "Segoe UI", system-ui, sans-serif;
@@ -98,15 +24,11 @@
   --text-4xl: 36px;
 
   /* Bentuk & kedalaman */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 14px;
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
   --radius-full: 999px;
-  /* Bayangan tipis — kedalaman utamanya dari garis & beda permukaan */
-  --shadow-sm: 0 1px 2px rgb(56 39 30 / 5%);
-  --shadow-md: 0 4px 12px rgb(56 39 30 / 7%);
-  --shadow-lg: 0 16px 40px rgb(56 39 30 / 14%);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -118,6 +40,172 @@
 
   --tap-target: 44px;
   --ease: cubic-bezier(.2, .7, .3, 1);
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--brand-500) 42%, transparent);
+  /* Kilau tipis di tepi atas permukaan (kesan "kaca" yang halus, bukan efek berlebihan) */
+  --edge-light: inset 0 1px 0 color-mix(in srgb, var(--text-primary) 5%, transparent);
+}
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-canvas: #120D0A;
+  --surface-card: #1B1613;
+  --surface-raised: #211C19;
+  --surface-sunken: #16120E;
+  --surface-hover: #241F1C;
+  --surface-sand: #2A2521;
+  --surface-field: #16120E;
+  --surface-overlay: rgb(0 0 0 / 62%);
+  --canvas-glow: rgb(192 143 105 / 7%);
+  --nav-bg: #0B0604;
+  --nav-panel: #15100D;
+  --nav-panel-top: #211A14;
+  --nav-text: #F2EFED;
+  --nav-text-muted: #A8A4A1;
+  --nav-hover: #221D19;
+  --nav-active: #32261C;
+  --nav-border: #26211D;
+  --nav-glow: rgb(192 143 105 / 22%);
+  --nav-accent: #DFC5B1;
+  --on-dark: #F2EFED;
+  --text-primary: #F3EFED;
+  --text-secondary: #C1BDB9;
+  --text-muted: #9C9794;
+  --text-placeholder: #777471;
+  --text-on-primary: #140E0A;
+  --on-brand-muted: rgb(20 14 10 / 76%);
+  --text-link: #D6B7A0;
+  --border-subtle: #26211D;
+  --border-default: #322D29;
+  --border-strong: #494440;
+  --brand-fill: #C08F69;
+  --brand-solid: #C08F69;
+  --accent-100: #302504;
+  --accent-500: #C3A132;
+  --accent-700: #E0C986;
+  --danger: #C44039;
+  --danger-hover: #AC312C;
+  --danger-soft-hover: #4D2622;
+  --skeleton-shine: #2A2521;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 6px 18px rgb(0 0 0 / 38%);
+  --shadow-lg: 0 20px 50px rgb(0 0 0 / 55%);
+  --ivory: #EEEAE7;
+  --sand: #CCBAAC;
+  --taupe: #AA9383;
+  --walnut: #C08F69;
+  --espresso: #16100B;
+  --brand-50: #201811;
+  --brand-100: #2B1F15;
+  --brand-200: #3D2C1F;
+  --brand-300: #5A4230;
+  --brand-400: #816148;
+  --brand-500: #A87F60;
+  --brand-600: #C08F69;
+  --brand-700: #D6B7A0;
+  --brand-800: #E4CCBA;
+  --brand-900: #F1E1D5;
+  --status-amber-bg: #34240C;
+  --status-amber-fg: #F4C582;
+  --status-amber-dot: #D79628;
+  --status-blue-bg: #132A3C;
+  --status-blue-fg: #A2D4FF;
+  --status-blue-dot: #4DACF6;
+  --status-green-bg: #162E1C;
+  --status-green-fg: #9EE1AB;
+  --status-green-dot: #5BBD74;
+  --status-red-bg: #3B1F1B;
+  --status-red-fg: #FFBAB1;
+  --status-red-dot: #EF7F74;
+  --status-neutral-bg: #2A2521;
+  --status-neutral-fg: #CECAC7;
+  --status-neutral-dot: #8B8580;
+  --chart-1: #F7CAA8;
+  --chart-2: #D5AA89;
+  --chart-3: #B58C6B;
+  --chart-4: #956E4F;
+  --chart-5: #7A5435;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --surface-canvas: #F8F1EC;
+  --surface-card: #FEFBF9;
+  --surface-raised: #FFFDFB;
+  --surface-sunken: #EFE8E3;
+  --surface-hover: #F2EBE6;
+  --surface-sand: #E5DED9;
+  --surface-field: #FEFBF9;
+  --surface-overlay: rgb(23 16 11 / 46%);
+  --canvas-glow: rgb(152 106 68 / 9%);
+  --nav-bg: #1D1510;
+  --nav-panel: #261F19;
+  --nav-panel-top: #332922;
+  --nav-text: #F2EFED;
+  --nav-text-muted: #ACA8A5;
+  --nav-hover: #332C27;
+  --nav-active: #49392D;
+  --nav-border: #3A342F;
+  --nav-glow: rgb(152 106 68 / 22%);
+  --nav-accent: #DFC5B1;
+  --on-dark: #F2EFED;
+  --text-primary: #251E18;
+  --text-secondary: #4D4641;
+  --text-muted: #6B6560;
+  --text-placeholder: #908B87;
+  --text-on-primary: #FFFDFB;
+  --on-brand-muted: rgb(255 253 251 / 76%);
+  --text-link: #6B4A30;
+  --border-subtle: #E5DED9;
+  --border-default: #DAD3CE;
+  --border-strong: #C0B9B4;
+  --brand-fill: #986A44;
+  --brand-solid: #986A44;
+  --accent-100: #F2E8CA;
+  --accent-500: #A38200;
+  --accent-700: #6F5800;
+  --danger: #A5402F;
+  --danger-hover: #8C3426;
+  --danger-soft-hover: #F4D9D3;
+  --skeleton-shine: #F9F6F4;
+  --shadow-sm: 0 1px 2px rgb(27 20 15 / 5%);
+  --shadow-md: 0 6px 18px rgb(27 20 15 / 8%);
+  --shadow-lg: 0 20px 50px rgb(27 20 15 / 16%);
+  --ivory: #F2E9E3;
+  --sand: #CCBAAC;
+  --taupe: #AA9383;
+  --walnut: #986A44;
+  --espresso: #16100B;
+  --brand-50: #FBF4F0;
+  --brand-100: #F3E7DE;
+  --brand-200: #E3D0C3;
+  --brand-300: #CBB29F;
+  --brand-400: #AE8E76;
+  --brand-500: #946E51;
+  --brand-600: #986A44;
+  --brand-700: #6B4A30;
+  --brand-800: #533A26;
+  --brand-900: #3B291B;
+  --status-amber-bg: #FBF0DC;
+  --status-amber-fg: #8A5A0B;
+  --status-amber-dot: #D99A2B;
+  --status-blue-bg: #E5EEF7;
+  --status-blue-fg: #2F5D8A;
+  --status-blue-dot: #5B8BC0;
+  --status-green-bg: #E3F1E5;
+  --status-green-fg: #2E6B3D;
+  --status-green-dot: #4C9A5F;
+  --status-red-bg: #F9E7E3;
+  --status-red-fg: #9B3B2C;
+  --status-red-dot: #D0705F;
+  --status-neutral-bg: #ECE5E0;
+  --status-neutral-fg: #4D4641;
+  --status-neutral-dot: #8B8580;
+  --chart-1: #543112;
+  --chart-2: #714C2D;
+  --chart-3: #8F6849;
+  --chart-4: #AF8566;
+  --chart-5: #CBA180;
 }
 
 .tabular, .num { font-variant-numeric: tabular-nums; }

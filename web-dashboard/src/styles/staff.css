@@ -1,19 +1,13 @@
 /* Halaman staff: papan Kanban, tiket pesanan, menu habis — dibaca cepat dari jauh */
 
-/* Header operasional lebih kontras; kontrol tetap mudah dijangkau saat ramai. */
+/* Header operasional tenang; fokus visual tetap pada antrean. */
 .staff-intro {
-  position: relative; isolation: isolate; overflow: hidden; margin-bottom: 18px; padding: 22px 26px;
-  background: var(--nav-bg); border-radius: 20px;
+  margin-bottom: 18px; padding: 2px 0 16px; background: transparent; border-bottom: 1px solid var(--border-default);
 }
-.staff-intro::after {
-  position: absolute; z-index: -1; top: -92px; right: 12%; width: 220px; height: 220px;
-  border: 1px solid rgb(242 233 220 / 15%); border-radius: 50%; box-shadow: 0 0 0 26px rgb(242 233 220 / 3%); content: "";
-}
-.staff-intro .ui-page-header { position: relative; z-index: 1; align-items: flex-start; margin: 0; }
-.staff-intro .ui-page-eyebrow { color: var(--accent-100); }
-.staff-intro .ui-page-title { color: var(--surface-card); font-size: clamp(28px, 2.5vw, 34px); }
-.staff-intro .ui-page-description { color: var(--nav-text-muted); }
-.staff-intro .ui-page-actions { position: relative; z-index: 1; }
+.staff-intro .ui-page-header { align-items: flex-start; margin: 0; }
+.staff-intro .ui-page-eyebrow { color: var(--brand-700); }
+.staff-intro .ui-page-title { color: var(--text-primary); font-size: clamp(28px, 2.5vw, 34px); }
+.staff-intro .ui-page-description { color: var(--text-muted); }
 
 /* ---------- Indikator & strip ---------- */
 .live-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border-radius: var(--radius-full); font-size: var(--text-xs); font-weight: 800; letter-spacing: .06em; }
@@ -58,7 +52,7 @@
   .board-col-body { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-items: start; }
 }
 @media (max-width: 767px) {
-  .staff-intro { padding: 18px; border-radius: 16px; }
+  .staff-intro { padding: 2px 0 14px; }
   .staff-intro .ui-page-header-text { flex-basis: 100%; }
   .staff-intro .ui-page-actions { gap: 7px; }
 }

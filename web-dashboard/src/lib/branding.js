@@ -5,7 +5,8 @@
  */
 import { useEffect, useState } from 'react'
 import { PLATFORM_NAME, TENANT_CAFE_ID } from '../config/platform.js'
-import { brandFill, brandScale, isHexColor } from './color.js'
+import { buildTheme } from './theme.js'
+import { useThemeMode } from './themeMode.js'
 import { BRANDING_CAFE_COLUMNS, friendlyError } from './db.js'
 
 const BUCKET = 'cafe-assets'
@@ -58,26 +59,20 @@ function setFavicon(href) {
 }
 
 /**
- * Warna brand owner → CSS variable --brand-50 … --brand-900 di <html>.
- * Tanpa warna kustom: nilai bawaan dari tokens.css (Walnut) yang berlaku.
+ * Warna brand owner + mode (gelap/terang) → seluruh token warna di <html> (lib/theme.js).
+ * Tanpa warna kustom: tema bawaan "Espresso". Saat dilepas, kembali ke nilai statis tokens.css.
  */
 export function useBrandTheme(color, color2) {
+  const { mode } = useThemeMode()
   useEffect(() => {
-    const custom = isHexColor(color)
-    const gradient = isHexColor(color2)
-    if (!custom && !gradient) return undefined
     const root = document.documentElement
-    const scale = custom ? brandScale(color) : null
-    if (scale) {
-      for (const [step, value] of Object.entries(scale)) root.style.setProperty(`--brand-${step}`, value)
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', scale[600])
-    }
-    root.style.setProperty('--brand-fill', brandFill(color, color2))
+    const { vars, primary } = buildTheme({ color, color2, mode })
+    for (const [key, value] of Object.entries(vars)) root.style.setProperty(key, value)
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', vars['--nav-bg'] || primary)
     return () => {
-      if (scale) for (const step of Object.keys(scale)) root.style.removeProperty(`--brand-${step}`)
-      root.style.removeProperty('--brand-fill')
+      for (const key of Object.keys(vars)) root.style.removeProperty(key)
     }
-  }, [color, color2])
+  }, [color, color2, mode])
 }
 
 /** Pasang judul tab, favicon, dan warna brand. `section` mis. "Owner" atau "Staff". */
@@ -138,15 +133,20 @@ export function cafeAssetPath(url) {
 }
 
 /** Unggah logo (sudah di-crop persegi). Mengembalikan URL publik. */
-export async function uploadCafeLogo(supabase, cafeId, file) {
+export function uploadCafeLogo(supabase, cafeId, file) {
+  return uploadCafeAsset(supabase, cafeId, file, 'logo')
+}
+
+/** Unggah gambar kafe (logo, QRIS, ...) ke cafe-assets/<cafe_id>/<prefix>-<uuid>. */
+export async function uploadCafeAsset(supabase, cafeId, file, prefix) {
   const extension = file.type === 'image/webp' ? 'webp' : file.type === 'image/png' ? 'png' : 'jpg'
-  const path = `${cafeId}/logo-${crypto.randomUUID()}.${extension}`
+  const path = `${cafeId}/${prefix}-${crypto.randomUUID()}.${extension}`
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: '31536000',
     contentType: file.type,
     upsert: false,
   })
-  if (error) throw new Error(`Logo gagal diunggah: ${friendlyError(error)}`)
+  if (error) throw new Error(`Gambar gagal diunggah: ${friendlyError(error)}`)
   return { path, url: supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl }
 }
 

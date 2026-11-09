@@ -2,6 +2,14 @@
  * Pembayaran QRIS online (file SQL 09 + Edge Function "payments").
  * Web tidak pernah menandai lunas sendiri: status lunas hanya datang dari gateway.
  */
+export const QRIS_REQUIRED = 'QRIS kafe aktif setelah file supabase/usulan/12-qris-statis.sql dijalankan.'
+
+/** Gambar QRIS statis kafe (file 12), null bila belum dipasang / kolom belum ada. */
+export async function fetchStaticQris(supabase, cafeId) {
+  const { data, error } = await supabase.from('cafe_settings').select('qris_image_url').eq('cafe_id', cafeId).maybeSingle()
+  return error ? null : data?.qris_image_url || null
+}
+
 export const PAYMENTS_REQUIRED = 'Pembayaran QRIS online aktif setelah file supabase/usulan/09-payment-gateway.sql dijalankan dan Edge Function "payments" di-deploy.'
 
 export async function callPayments(supabase, body) {

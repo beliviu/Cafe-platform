@@ -65,6 +65,13 @@ cannot inflate paid-revenue analytics. This RPC is not connected to a payment
 processor; production payment confirmation must come from a trusted
 payment-provider webhook.
 
+The `20261109070000_create_promotional_banners.sql` migration adds cafe-owned
+home-screen promotions, scheduled public reads, owner-only management, and the
+public `cafe-banners` image bucket. Banner management remains isolated by
+`cafe_id`; upload, update, and delete access is limited to owners writing
+inside their own cafe folder. Apply it before using the owner `/promotions`
+page or displaying banners in the customer app.
+
 ## Tenant and role model
 
 Each owner or staff profile belongs to one cafe through `profiles.cafe_id`.

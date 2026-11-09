@@ -1,18 +1,20 @@
 /*
- * Warna kategori untuk metode pembayaran. Urutan TETAP (warna mengikuti metode, bukan peringkat).
- * Versi lebih dalam dari palet referensi agar menyatu dengan latar hangat (#FBF7F0).
- * Divalidasi (validate_palette.js, light): lightness, chroma, kontras >= 3:1, normal-vision PASS;
- * CVD pasangan ujung-ke-awal donut 6,6 (deutan) → wajib pengodean sekunder: legenda + nilai + jarak 2px (sudah ada).
+ * Warna kategori metode pembayaran. Urutan TETAP (warna mengikuti metode, bukan peringkat).
+ * Satu keluarga warna brand (--chart-1…5 dari lib/theme.js): lightness berjenjang, hue sama,
+ * jadi grafik serasi dengan tema owner di mode gelap & terang.
+ * Divalidasi (dataviz validate_palette.js --ordinal, beberapa warna brand, gelap & terang): lightness monoton,
+ * jarak antar-langkah >= 0.06, ujung terpudar >= 2:1 terhadap kartu. Karena identitas hanya dari lightness,
+ * donut WAJIB memakai pengodean sekunder: legenda + nilai + jarak 2px antar-segmen (sudah ada).
  * Bukan warna status — warna status hanya untuk Menunggu/Diproses/Siap/Selesai/Dibatalkan.
  */
 export const PAYMENT_METHOD_ORDER = ['cash', 'bank_transfer', 'qris', 'ewallet', 'other']
 
 export const PAYMENT_METHOD_COLORS = {
-  cash: '#17946B',
-  bank_transfer: '#D45F2C',
-  qris: '#2A6CC0',
-  ewallet: '#CC6A92',
-  other: '#8F7F70',
+  cash: 'var(--chart-1)',
+  bank_transfer: 'var(--chart-2)',
+  qris: 'var(--chart-3)',
+  ewallet: 'var(--chart-4)',
+  other: 'var(--chart-5)',
 }
 
 export function paymentMethodSlot(method) {

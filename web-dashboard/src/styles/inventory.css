@@ -116,8 +116,8 @@
   color: var(--nav-text-muted); background: var(--nav-bg); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); font-size: var(--text-sm);
 }
 .inv-count-bar strong { color: var(--nav-text); }
-.inv-count-bar .inv-qty.is-out { color: #f0a493; }
-.inv-count-bar .inv-qty { color: #a8d8b3; }
+.inv-count-bar .inv-qty.is-out { color: var(--status-red-dot); }
+.inv-count-bar .inv-qty { color: var(--status-green-dot); }
 .inv-count-note { flex: 1 1 200px; margin-left: auto; }
 
 /* Perkiraan */

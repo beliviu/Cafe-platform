@@ -22,7 +22,7 @@
 .login-brand .shell-brand-mark:not(.has-logo), .shell-sidebar .shell-brand-mark:not(.has-logo) { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%); }
 .login-brand-name { overflow: hidden; font: 650 22px/1.15 var(--font-serif); letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
 .login-intro-copy { position: relative; z-index: 1; display: grid; gap: 16px; max-width: 460px; }
-.login-eyebrow { color: var(--accent-100); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.login-eyebrow { color: var(--nav-accent); font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .login-intro-copy h1 { margin: 0; font: 500 clamp(30px, 3.4vw, 44px)/1.12 var(--font-serif); letter-spacing: -.025em; }
 .login-intro-copy p { margin: 0; color: var(--nav-text-muted); font-size: var(--text-md); line-height: 1.65; }
 .login-intro-foot { position: relative; z-index: 1; color: var(--nav-text-muted); font-size: var(--text-xs); }

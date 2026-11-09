@@ -82,3 +82,21 @@
 .sub-features li.is-off svg { color: var(--text-muted); }
 .fin-bars-track span.is-full { background: var(--status-red-fg); }
 .data-table tr.is-selected-row td { background: var(--brand-50); }
+
+/* QRIS statis kafe (Pengaturan → Pembayaran, kasir) */
+.qris-static { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; align-items: start; }
+.qris-static-image {
+  display: grid; place-items: center; width: 220px; aspect-ratio: 3 / 4; overflow: hidden; padding: 0;
+  color: var(--text-muted); background: var(--surface-sunken); border: 1.5px dashed var(--border-strong); border-radius: var(--radius-lg);
+}
+.qris-static-image.has-image { background: #fff; border-style: solid; border-color: var(--border-default); }
+.qris-static-image img { width: 100%; height: 100%; object-fit: contain; }
+.qris-static-image span { display: grid; justify-items: center; gap: 6px; padding: 16px; }
+.qris-static-image strong { color: var(--text-primary); font-size: var(--text-sm); }
+.qris-static-image small { font-size: var(--text-xs); }
+.qris-static-info { display: grid; gap: 12px; }
+.qris-static-info ul { display: grid; gap: 8px; margin: 0; padding-left: 18px; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.55; }
+.pos-static-qris { display: grid; justify-items: center; gap: 8px; margin-top: 12px; padding: 14px; background: var(--surface-sunken); border-radius: var(--radius-lg); text-align: center; }
+.pos-static-qris img { width: min(240px, 100%); aspect-ratio: 3 / 4; object-fit: contain; background: #fff; border-radius: var(--radius-md); }
+.pos-static-qris p { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; }
+@media (max-width: 640px) { .qris-static { grid-template-columns: 1fr; } .qris-static-image { width: 100%; max-width: 260px; } }

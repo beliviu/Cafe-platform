@@ -31,6 +31,9 @@ const ProductsPage = lazy(() =>
 const CategoriesPage = lazy(() =>
   import('./pages/CategoriesPage.jsx').then((module) => ({ default: module.CategoriesPage })),
 )
+const PromotionsPage = lazy(() =>
+  import('./pages/PromotionsPage.jsx').then((module) => ({ default: module.PromotionsPage })),
+)
 const OrdersPage = lazy(() =>
   import('./pages/OrdersPage.jsx').then((module) => ({ default: module.OrdersPage })),
 )
@@ -106,6 +109,7 @@ function ownerRoutes() {
       </Route>
       <Route path="expenses" element={<ExpensesPage />} />
       <Route path="loyalty" element={<LoyaltyPage />} />
+      <Route path="promotions" element={<PromotionsPage />} />
       <Route path="reviews" element={<ReviewsPage />} />
       <Route path="support" element={<SupportPage />} />
       <Route path="advisor" element={<AdvisorPage />} />

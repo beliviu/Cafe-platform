@@ -71,7 +71,7 @@
 .cohort-l0 { background: var(--surface-sunken); color: var(--text-secondary); }
 .cohort-l1 { background: var(--brand-100); color: var(--text-primary); }
 .cohort-l2 { background: var(--brand-200); color: var(--text-primary); }
-.cohort-l3 { background: var(--brand-400); color: var(--text-on-primary); }
+.cohort-l3 { background: var(--brand-300); color: var(--text-primary); }
 .cohort-l4 { background: var(--brand-600); color: var(--text-on-primary); }
 
 .bi-foot { display: flex; align-items: center; gap: 6px; padding: 12px 20px 16px; border-top: 1px solid var(--border-subtle); }

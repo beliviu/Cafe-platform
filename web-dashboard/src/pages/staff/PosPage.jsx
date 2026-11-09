@@ -89,10 +89,10 @@ function Pos({ context }) {
 
   if (error && !data) return <div className="page"><Card><ErrorState message={error} onRetry={reload} /></Card></div>
   if (!data) return <div className="page page-wide"><Card padding="none"><SkeletonRows rows={8} label="Memuat kasir" /></Card></div>
-  return <PosScreen cafe={cafe} profile={profile} features={features} data={data} reload={reload} loading={loading} supabase={supabase} toast={toast} />
+  return <PosScreen permissions={context.permissions} cafe={cafe} profile={profile} features={features} data={data} reload={reload} loading={loading} supabase={supabase} toast={toast} />
 }
 
-function PosScreen({ cafe, profile, features, data, reload, loading, supabase, toast }) {
+function PosScreen({ cafe, profile, features, permissions, data, reload, loading, supabase, toast }) {
   const [cart, setCartState] = useState(() => readCart(cafe.id) || emptyCart(data.settings))
   const [placedOrder, setPlaced] = useState(null)
   const [query, setQuery] = useState('')
@@ -103,7 +103,7 @@ function PosScreen({ cafe, profile, features, data, reload, loading, supabase, t
   const settings = data.settings
   const totals = cartTotals(cart, settings)
   const isOwner = profile?.role === 'owner'
-  const discountLimit = isOwner ? 100 : canDo(context.permissions, 'pos.discount') ? Number(settings.staff_max_discount_pct) || 0 : 0
+  const discountLimit = isOwner ? 100 : canDo(permissions, 'pos.discount') ? Number(settings.staff_max_discount_pct) || 0 : 0
 
   const setCart = useCallback((updater) => {
     setCartState((current) => {

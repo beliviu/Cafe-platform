@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Banknote, Landmark, Plus, QrCode, ScanLine, Trash2, Wallet } from 'lucide-react'
 import { GatewayQris } from './GatewayQris.jsx'
 import { useCan } from '../../lib/permissions.js'
-import { fetchGatewaySettings } from '../../lib/payments.js'
+import { fetchStaticQris } from '../../lib/payments.js'
 import { Button, Dialog, IconButton, RupiahInput, Select, TextField } from '../ui/index.js'
 import { cafePaymentMethods } from '../../lib/db.js'
 import { formatRupiah } from '../../lib/format.js'
@@ -26,13 +26,14 @@ export function PaymentDialog({ cafe, total, session, ensureOrder, onClose, onPa
   const [rows, setRows] = useState([{ method: firstMethod, amount: total, tendered: '', reference: '' }])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [gateway, setGateway] = useState(false)
+  const gateway = false // QRIS otomatis (Midtrans) tidak dipakai
   const [gatewayOrder, setGatewayOrder] = useState(null)
+  const [staticQris, setStaticQris] = useState(null)
   const split = rows.length > 1
   const tiles = gateway ? [...methods, 'qris_auto'] : methods
 
   useEffect(() => {
-    fetchGatewaySettings(supabase, cafe.id).then((settings) => setGateway(Boolean(settings?.payment_gateway_enabled)))
+    fetchStaticQris(supabase, cafe.id).then(setStaticQris)
   }, [cafe.id, supabase])
 
   const finishGateway = useCallback(async () => {
@@ -162,8 +163,16 @@ export function PaymentDialog({ cafe, total, session, ensureOrder, onClose, onPa
             ) : row.method === 'qris_auto' ? (
               <p className="text-muted pos-gateway-hint">QR dinamis sesuai total pesanan. Lunas otomatis setelah pelanggan membayar — tanpa cek manual.</p>
             ) : (
-              <TextField label="No. referensi (opsional)" hideLabel={split} value={row.reference} maxLength={60}
-                placeholder="4 digit terakhir / ID transaksi" onChange={(event) => update(index, { reference: event.target.value })} />
+              <>
+                {row.method === 'qris' && staticQris && !split && (
+                  <div className="pos-static-qris">
+                    <img src={staticQris} alt="QRIS kafe untuk dipindai pelanggan" />
+                    <p>Minta pelanggan scan & ketik <strong className="tabular">{formatRupiah(Number(row.amount) || 0)}</strong>. Simpan hanya setelah uang terlihat masuk di aplikasi bank/merchant.</p>
+                  </div>
+                )}
+                <TextField label="No. referensi (opsional)" hideLabel={split} value={row.reference} maxLength={60}
+                  placeholder="4 digit terakhir / ID transaksi" onChange={(event) => update(index, { reference: event.target.value })} />
+              </>
             )}
             {split && rows.length > 1 && <IconButton icon={Trash2} size="sm" variant="danger" label="Hapus baris" onClick={() => setRows((current) => current.filter((_, position) => position !== index))} />}
           </div>

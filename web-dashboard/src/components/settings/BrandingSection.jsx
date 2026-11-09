@@ -7,13 +7,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, ImageUp, Palette, RefreshCw, Smartphone, Trash2 } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
-import { Badge, Button, Card, CardHeader, EmptyState, TextField, useToast } from '../ui/index.js'
+import { Badge, Button, Card, CardHeader, EmptyState, SegmentedControl, TextField, useToast } from '../ui/index.js'
 import { BrandMark } from '../shell/AppShell.jsx'
 import { ImageCropDialog } from '../products/ImageCropDialog.jsx'
 import { brandOf, removeCafeAsset, uploadCafeLogo } from '../../lib/branding.js'
-import {
-  BRAND_COLOR_PRESETS, BRAND_GRADIENT_PRESETS, DEFAULT_BRAND_COLOR, brandFill, brandScale, describeBrandColor, isHexColor,
-} from '../../lib/color.js'
+import { DEFAULT_THEME_COLOR, THEME_GRADIENTS, THEME_PRESETS, buildTheme, isHex as isHexColor } from '../../lib/theme.js'
+import { THEME_PREFERENCES, useThemeMode } from '../../lib/themeMode.js'
 import { LOGO_IMAGE_SIZE } from '../../lib/imageCrop.js'
 import { saveCafe } from '../../lib/cafe.js'
 import { SectionFooter } from './SettingsShared.jsx'
@@ -30,9 +29,35 @@ function initialForm(cafe) {
   }
 }
 
-function PhonePreview({ brand }) {
+const gradientOf = (from, to) => `linear-gradient(135deg, ${from} 0%, ${to} 100%)`
+
+/** Mini dashboard dengan tema hasil buildTheme() — warna persis seperti yang akan dipakai. */
+function ThemePreview({ brand, color, color2, mode }) {
+  const theme = buildTheme({ color, color2, mode })
+  const heights = [62, 86, 48, 74, 36]
   return (
-    <div className="brand-phone" aria-hidden="true">
+    <figure className="tp" style={theme.vars} aria-hidden="true">
+      <div className="tp-frame">
+        <div className="tp-rail"><BrandMark brand={brand} size={20} /><i className="is-active" /><i /><i /><i /></div>
+        <div className="tp-panel">
+          <b>{brand.name}</b>
+          <span className="is-active">Dashboard</span><span>Transaksi</span><span>Produk</span>
+        </div>
+        <div className="tp-main">
+          <div className="tp-kpis"><span className="is-hero"><small>Pendapatan</small><b>Rp2,4 jt</b></span><span><small>Pesanan</small><b>86</b></span></div>
+          <div className="tp-chart">{theme.chart.map((tone, index) => <i key={tone} style={{ height: `${heights[index]}%`, background: tone }} />)}</div>
+          <span className="tp-button">Simpan</span>
+        </div>
+      </div>
+      <figcaption>{mode === 'dark' ? 'Mode gelap' : 'Mode terang'}</figcaption>
+    </figure>
+  )
+}
+
+function PhonePreview({ brand, color, color2 }) {
+  const theme = buildTheme({ color, color2, mode: 'dark' })
+  return (
+    <div className="brand-phone" aria-hidden="true" style={theme.vars}>
       <div className="brand-phone-notch" />
       <div className="brand-phone-header">
         <BrandMark brand={brand} size={34} />
@@ -50,6 +75,18 @@ function PhonePreview({ brand }) {
         <span className="brand-phone-lines"><i /><i /></span>
       </div>
       <span className="brand-phone-button">Tambah ke keranjang</span>
+    </div>
+  )
+}
+
+/** Mode tampilan per perangkat (tidak disimpan ke database). */
+function ThemeModeField() {
+  const { preference, setPreference } = useThemeMode()
+  return (
+    <div className="ui-field">
+      <span className="ui-field-label">Mode tampilan di perangkat ini</span>
+      <SegmentedControl label="Mode tampilan" value={preference} onChange={setPreference} options={THEME_PREFERENCES} />
+      <p className="ui-field-hint">Berlaku langsung untuk browser ini. Bisa juga diganti dari tombol matahari/bulan di sidebar.</p>
     </div>
   )
 }
@@ -85,13 +122,9 @@ export function BrandingSection({ cafe, features, onSaved }) {
   }
 
   const dirty = Boolean(logoFile) || removeLogo || Object.keys(initial).some((key) => form[key] !== initial[key])
-  const colorInfo = describeBrandColor(form.brand_color)
-  const scale = brandScale(isHexColor(form.brand_color) ? form.brand_color : DEFAULT_BRAND_COLOR)
   const gradientMode = Boolean(form.brand_color_2)
-  const previewStyle = {
-    ...Object.fromEntries(Object.entries(scale).map(([step, value]) => [`--brand-${step}`, value])),
-    '--brand-fill': brandFill(form.brand_color, form.brand_color_2),
-  }
+  const darkTheme = buildTheme({ color: form.brand_color, color2: form.brand_color_2, mode: 'dark' })
+  const lightTheme = buildTheme({ color: form.brand_color, color2: form.brand_color_2, mode: 'light' })
   const currentLogo = removeLogo ? null : logoPreview || cafe.logo_url || null
   const previewBrand = brandOf({ ...cafe, app_name: form.app_name, tagline: form.tagline, logo_url: currentLogo })
 
@@ -140,7 +173,7 @@ export function BrandingSection({ cafe, features, onSaved }) {
     if (features?.phase3) {
       values.brand_color_2 = form.brand_color_2 ? form.brand_color_2.toUpperCase() : null
       // Gradasi butuh warna awal: pakai bawaan bila owner belum memilih
-      if (values.brand_color_2 && !values.brand_color) values.brand_color = DEFAULT_BRAND_COLOR
+      if (values.brand_color_2 && !values.brand_color) values.brand_color = DEFAULT_THEME_COLOR
     }
     const nextErrors = {}
     if (values.app_name && values.app_name.length < 2) nextErrors.app_name = 'Nama tampilan minimal 2 karakter.'
@@ -237,30 +270,21 @@ export function BrandingSection({ cafe, features, onSaved }) {
           />
 
           <fieldset className="brand-colors">
-            <legend className="ui-field-label">Warna brand</legend>
+            <legend className="ui-field-label">Palet warna</legend>
+            <p className="ui-field-hint">Satu warna menghasilkan seluruh palet: sidebar, latar, kartu, garis, tombol, dan grafik — mode gelap & terang.</p>
             <div className="brand-mode" role="radiogroup" aria-label="Gaya warna">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={!gradientMode}
-                className={`brand-mode-option${!gradientMode ? ' is-selected' : ''}`}
-                onClick={() => setField('brand_color_2', '')}
-              >
-                <span className="brand-mode-sample" style={{ background: scale[600] }} />
+              <button type="button" role="radio" aria-checked={!gradientMode} className={`brand-mode-option${!gradientMode ? ' is-selected' : ''}`}
+                onClick={() => setField('brand_color_2', '')}>
+                <span className="brand-mode-sample" style={{ background: darkTheme.primary }} />
                 Solid
               </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={gradientMode}
-                disabled={!features?.phase3}
+              <button type="button" role="radio" aria-checked={gradientMode} disabled={!features?.phase3}
                 className={`brand-mode-option${gradientMode ? ' is-selected' : ''}`}
                 onClick={() => {
-                  const preset = BRAND_GRADIENT_PRESETS[0]
+                  const preset = THEME_GRADIENTS[0]
                   setForm((current) => ({ ...current, brand_color: current.brand_color || preset.from, brand_color_2: preset.to }))
-                }}
-              >
-                <span className="brand-mode-sample" style={{ background: brandFill(form.brand_color || BRAND_GRADIENT_PRESETS[0].from, form.brand_color_2 || BRAND_GRADIENT_PRESETS[0].to) }} />
+                }}>
+                <span className="brand-mode-sample" style={{ background: gradientOf(form.brand_color || THEME_GRADIENTS[0].from, form.brand_color_2 || THEME_GRADIENTS[0].to) }} />
                 Gradasi
               </button>
             </div>
@@ -269,17 +293,12 @@ export function BrandingSection({ cafe, features, onSaved }) {
             {gradientMode ? (
               <>
                 <div className="brand-swatches">
-                  {BRAND_GRADIENT_PRESETS.map((preset) => {
+                  {THEME_GRADIENTS.map((preset) => {
                     const selected = form.brand_color.toUpperCase() === preset.from && form.brand_color_2.toUpperCase() === preset.to
                     return (
-                      <button
-                        key={preset.label}
-                        type="button"
-                        className={`brand-swatch${selected ? ' is-selected' : ''}`}
-                        onClick={() => setForm((current) => ({ ...current, brand_color: preset.from, brand_color_2: preset.to }))}
-                        aria-pressed={selected}
-                      >
-                        <span style={{ background: brandFill(preset.from, preset.to) }}>{selected && <Check size={14} aria-hidden="true" />}</span>
+                      <button key={preset.label} type="button" className={`brand-swatch${selected ? ' is-selected' : ''}`} aria-pressed={selected}
+                        onClick={() => setForm((current) => ({ ...current, brand_color: preset.from, brand_color_2: preset.to }))}>
+                        <span style={{ background: gradientOf(preset.from, preset.to) }}>{selected && <Check size={14} aria-hidden="true" />}</span>
                         {preset.label}
                       </button>
                     )
@@ -287,85 +306,54 @@ export function BrandingSection({ cafe, features, onSaved }) {
                 </div>
                 <div className="brand-gradient-custom">
                   <label className="brand-color-input">
-                    <input
-                      type="color"
-                      value={isHexColor(form.brand_color) ? form.brand_color : DEFAULT_BRAND_COLOR}
-                      onChange={(event) => setField('brand_color', event.target.value.toUpperCase())}
-                    />
-                    <span><small>Warna awal</small><code>{(form.brand_color || DEFAULT_BRAND_COLOR).toUpperCase()}</code></span>
+                    <input type="color" value={isHexColor(form.brand_color) ? form.brand_color : DEFAULT_THEME_COLOR}
+                      onChange={(event) => setField('brand_color', event.target.value.toUpperCase())} />
+                    <span><small>Warna awal</small><code>{(form.brand_color || DEFAULT_THEME_COLOR).toUpperCase()}</code></span>
                   </label>
                   <span className="brand-gradient-arrow" aria-hidden="true">→</span>
                   <label className="brand-color-input">
-                    <input
-                      type="color"
-                      value={isHexColor(form.brand_color_2) ? form.brand_color_2 : DEFAULT_BRAND_COLOR}
-                      onChange={(event) => setField('brand_color_2', event.target.value.toUpperCase())}
-                    />
+                    <input type="color" value={isHexColor(form.brand_color_2) ? form.brand_color_2 : DEFAULT_THEME_COLOR}
+                      onChange={(event) => setField('brand_color_2', event.target.value.toUpperCase())} />
                     <span><small>Warna akhir</small><code>{form.brand_color_2.toUpperCase()}</code></span>
                   </label>
                 </div>
-                <p className="ui-field-hint">Gradasi dipakai di tombol utama, tanda brand, dan sorotan ringkasan. Teks & tabel tetap memakai warna awal agar mudah dibaca.</p>
+                <p className="ui-field-hint">Gradasi hanya untuk aksen: tombol utama, tanda brand, indikator menu, dan sorotan ringkasan. Latar & teks memakai warna awal.</p>
               </>
             ) : (
               <div className="brand-swatches">
-                <button
-                  type="button"
-                  className={`brand-swatch is-default${!form.brand_color ? ' is-selected' : ''}`}
-                  onClick={() => setField('brand_color', '')}
-                  aria-pressed={!form.brand_color}
-                >
-                  <span style={{ background: DEFAULT_BRAND_COLOR }}>{!form.brand_color && <Check size={14} aria-hidden="true" />}</span>
-                  Bawaan
-                </button>
-                {BRAND_COLOR_PRESETS.filter((preset) => preset.value !== DEFAULT_BRAND_COLOR).map((preset) => {
-                  const selected = form.brand_color.toUpperCase() === preset.value
+                {THEME_PRESETS.map((preset, index) => {
+                  const value = index === 0 ? '' : preset.color
+                  const selected = index === 0 ? !form.brand_color : form.brand_color.toUpperCase() === preset.color
                   return (
-                    <button
-                      key={preset.value}
-                      type="button"
-                      className={`brand-swatch${selected ? ' is-selected' : ''}`}
-                      onClick={() => setField('brand_color', preset.value)}
-                      aria-pressed={selected}
-                    >
-                      <span style={{ background: preset.value }}>{selected && <Check size={14} aria-hidden="true" />}</span>
-                      {preset.label}
+                    <button key={preset.color} type="button" className={`brand-swatch${selected ? ' is-selected' : ''}`} aria-pressed={selected}
+                      onClick={() => setField('brand_color', value)}>
+                      <span style={{ background: preset.color }}>{selected && <Check size={14} aria-hidden="true" />}</span>
+                      {index === 0 ? `${preset.label} (bawaan)` : preset.label}
                     </button>
                   )
                 })}
-                <label className="brand-swatch brand-swatch-custom">
-                  <input
-                    type="color"
-                    value={isHexColor(form.brand_color) ? form.brand_color : DEFAULT_BRAND_COLOR}
-                    onChange={(event) => setField('brand_color', event.target.value.toUpperCase())}
-                    aria-label="Pilih warna sendiri"
-                  />
-                  Pilih sendiri
+                <label className={`brand-swatch brand-swatch-custom${form.brand_color && !THEME_PRESETS.some((preset) => preset.color === form.brand_color.toUpperCase()) ? ' is-selected' : ''}`}>
+                  <input type="color" value={isHexColor(form.brand_color) ? form.brand_color : DEFAULT_THEME_COLOR}
+                    onChange={(event) => setField('brand_color', event.target.value.toUpperCase())} aria-label="Pilih warna sendiri" />
+                  Warna sendiri
                 </label>
               </div>
             )}
             {errors.brand_color && <p className="ui-field-error" role="alert">{errors.brand_color}</p>}
-            {colorInfo?.changed && (
-              <p className="ui-field-hint">
-                Warna ini terlalu terang untuk teks putih, jadi otomatis digelapkan menjadi <code>{colorInfo.adjusted}</code> agar tetap terbaca.
-              </p>
-            )}
+            <p className="ui-field-hint brand-effective">
+              Warna tombol: <i style={{ background: darkTheme.primary }} /> <code>{darkTheme.primary}</code> di mode gelap ·{' '}
+              <i style={{ background: lightTheme.primary }} /> <code>{lightTheme.primary}</code> di mode terang. Disesuaikan otomatis agar tulisan tetap terbaca.
+            </p>
           </fieldset>
+
+          <ThemeModeField />
         </div>
 
-        <aside className="brand-preview" aria-label="Pratinjau brand" style={previewStyle}>
+        <aside className="brand-preview" aria-label="Pratinjau brand">
           <span className="brand-preview-label">Pratinjau</span>
-          <div className="brand-preview-sidebar">
-            <div className="brand-preview-web">
-              <BrandMark brand={previewBrand} size={32} />
-              <span className="brand-preview-name">{previewBrand.name}</span>
-            </div>
-            <div className="brand-preview-nav">
-              <span className="is-active">Dashboard</span>
-              <span>Produk</span>
-            </div>
-          </div>
-          <span className="brand-preview-button">Simpan</span>
-          <PhonePreview brand={previewBrand} />
+          <ThemePreview brand={previewBrand} color={form.brand_color} color2={form.brand_color_2} mode="dark" />
+          <ThemePreview brand={previewBrand} color={form.brand_color} color2={form.brand_color_2} mode="light" />
+          <PhonePreview brand={previewBrand} color={form.brand_color} color2={form.brand_color_2} />
           <Badge tone="neutral" dot={false} className="brand-preview-note"><Smartphone size={12} aria-hidden="true" /> Ikon app di layar HP berubah saat rilis versi berikutnya</Badge>
         </aside>
       </div>
