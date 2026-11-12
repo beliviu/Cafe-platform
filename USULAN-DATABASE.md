@@ -27,7 +27,22 @@
 | 12. **QRIS statis kafe** (owner unggah gambar QRIS, pelanggan scan & staff konfirmasi) — [`supabase/usulan/12-qris-statis.sql`](supabase/usulan/12-qris-statis.sql) | 🟢 **siap dijalankan** · diuji 11 skenario |
 | 13. **Pesan tanpa login lewat QR meja (tamu)** — [`supabase/usulan/13-tamu-qr-meja.sql`](supabase/usulan/13-tamu-qr-meja.sql) + nyalakan *Allow anonymous sign-ins* | 🟢 **siap dijalankan** · diuji 11 skenario |
 | 14. **Dashboard platform, suspend kafe, tagihan & langganan otomatis** — [`supabase/usulan/14-platform-admin.sql`](supabase/usulan/14-platform-admin.sql) + Edge Function `platform-admin` & `subscription-billing` | 🟢 **siap dijalankan** · diuji 256 pemeriksaan · panduan lengkap: [`platform-admin/README.md`](platform-admin/README.md) |
+| 15. **Notifikasi platform & owner, Perlu tindakan, WA manual, pengaturan & tema platform, pengecekan harian** — [`supabase/usulan/15-notifikasi-platform.sql`](supabase/usulan/15-notifikasi-platform.sql) + Edge Function `notify` | 🟢 **siap dijalankan** · diuji 169 pemeriksaan · panduan: [`platform-admin/README.md`](platform-admin/README.md) langkah 5–9 |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 15 — Notifikasi platform, WhatsApp manual, pengaturan & tema
+
+Jalankan **setelah file 14**. Panduan lengkap: [`platform-admin/README.md`](platform-admin/README.md) langkah 5–9.
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| Tabel baru `platform_settings` (1 baris), `platform_notifications`, `cafe_notifications`, `notification_outbox`, `platform_announcements` | RLS menyala. Notifikasi admin hanya bisa dibaca admin 2FA; notifikasi owner hanya oleh owner kafe itu; antrean email tertutup dari browser. | Tabel baru. |
+| Kolom `cafes.owner_whatsapp` | Format `62…`. Diubah lewat fungsi (owner sendiri atau admin), bukan update langsung. | Kosong untuk semua kafe. |
+| `pa_overview()` diganti | Isi lama tetap ada, ditambah daftar kafe tanpa harga, riwayat pendapatan 12 bulan, dan jumlah perlu tindakan. | Tidak mengubah data. |
+| Trigger `pa_audit_notify` | Notifikasi otomatis saat kafe dibuat dan saat tagihan lunas atau batal. | Tidak mengubah data. |
+| `pa_daily_check()` | Menggantikan jadwal harian file 14 (sudah memanggil `pa_billing_run()`). | Hanya berjalan bila dijadwalkan. |
+
+Verifikasi: **6 baris** (5 tabel + trigger `pa_audit_notify`) dan **tidak ada** baris `tanpa_rls`.
 
 ### File 14 — Dashboard platform (admin SaaS) & langganan otomatis
 

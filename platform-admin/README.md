@@ -9,6 +9,13 @@ Dashboard khusus **pemilik SaaS Dailybrew** (bukan owner kafe). Fungsinya mengga
 - **Tagihan:** status menunggu, telat, lunas, dan batal; tombol **Tandai lunas** untuk transfer bank. Pembayaran Midtrans lunas otomatis.
 - **Log audit:** siapa, kapan, aksi apa, di kafe mana, dan nilai sebelum dan sesudah.
 - **Login email + password**, ditambah **2FA TOTP wajib** (Supabase Auth MFA, sesi `aal2`).
+- **Versi 2 (file 15):**
+  - satu sidebar yang bisa diciutkan jadi rail ikon, breadcrumb di bar atas, satu tombol cari (Ctrl K),
+  - **lonceng notifikasi realtime**,
+  - **warna tema bebas** (preset, color picker, gradasi, mode gelap/terang) di **Pengaturan**,
+  - kartu **Perlu tindakan**, grafik 12 bulan, **harga kustom** untuk paket tanpa harga (Enterprise) yang ikut dihitung di MRR,
+  - tombol **Chat WA** dengan template (manual lewat wa.me, gratis),
+  - **Pengumuman** ke owner, **notifikasi & email** otomatis harian.
 
 Pengguna yang sama juga mendapat dua hal di `web-dashboard`:
 - Banner "kafe dinonaktifkan" dan "langganan lewat jatuh tempo".
@@ -29,7 +36,7 @@ Pengguna yang sama juga mendapat dua hal di `web-dashboard`:
 Tes otomatis (`supabase/tests/test-14-platform-admin.mjs`, 256 pemeriksaan) membuktikan bahwa anon, customer, staff, owner, admin tanpa 2FA, dan admin nonaktif **ditolak** di setiap fungsi admin.
 
 ### Kenapa komponen UI disalin, bukan dibagi?
-Token warna, font, `AppShell`, dan komponen `ui/` **disalin** dari `web-dashboard`. Tiap file salinan punya baris pertama `Salinan dari web-dashboard/…`. Alasannya:
+Token warna, mesin tema (`lib/theme.js`), font, dan komponen `ui/` **disalin** dari `web-dashboard`. Kerangka (sidebar, bar atas, lonceng) di `components/shell/AdminShell.jsx` ditulis khusus untuk admin. Tiap file salinan punya baris pertama `Salinan dari web-dashboard/…`. Alasannya:
 1. Komponen `web-dashboard` bergantung pada `lib/` miliknya (status pesanan, mesin tema white-label per kafe). Mengekstraknya ke folder bersama berarti merefaktor aplikasi produksi, dan risikonya lebih besar daripada manfaatnya.
 2. Dua proyek di-deploy terpisah dengan *Root Directory* masing-masing. Kode di luar folder itu membuat build Vercel/Cloudflare lebih rumit.
 3. Admin memakai satu palet tetap (Espresso, gelap/terang) tanpa white-label.
@@ -45,6 +52,7 @@ cd platform-admin
 cp .env.example .env.local    # isi VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY (sama dengan web-dashboard)
 npm install
 npm run dev                   # http://localhost:5174
+VITE_MOCK=1 npm run dev       # pratinjau tampilan dengan data contoh (tanpa database; tidak aktif di build produksi)
 npm run lint
 npm run build
 ```
@@ -103,17 +111,70 @@ Tambahkan **Secrets** di Edge Functions → Secrets:
 - Midtrans tidak memungut biaya bulanan, hanya potongan per transaksi yang berhasil. Daftar dan sandbox gratis. Untuk mode production, akun Midtrans harus sudah lolos verifikasi.
 - Kalau fungsi ini belum di-deploy, owner tetap melihat tagihannya dan diminta transfer manual. Admin lalu menandai lunas dari dashboard.
 
-### 5. Jadwalkan penagihan otomatis (pg_cron)
-Dashboard → **Database → Extensions** → aktifkan **pg_cron**, lalu jalankan di SQL Editor:
-```sql
-select cron.schedule('dailybrew-tagihan-harian', '0 1 * * *', $$select public.pa_billing_run()$$);
-```
-Jadwal ini berjalan setiap hari pukul 08.00 WIB:
-- Tagihan 1 bulan dibuat otomatis **H-7** sebelum masa coba atau periode berakhir (hanya untuk paket berbayar dan kafe yang aktif).
-- Langganan yang lewat jatuh tempo ditandai `past_due`. Fitur tetap jalan selama **tenggang 7 hari**, lalu turun ke paket Basic sampai tagihan dibayar.
-- Snapshot MRR bulanan disimpan untuk perbandingan dengan bulan lalu.
+### 5. Jalankan file SQL 15 (notifikasi, WA, pengaturan & tema)
+SQL Editor → tempel isi `supabase/usulan/15-notifikasi-platform.sql` → **Run**.
+- Wajib sudah menjalankan file **14**.
+- Hasil verifikasi harus **6 baris** (5 tabel + trigger `pa_audit_notify`), dan **tidak boleh** ada baris `tanpa_rls`.
+- Aman dijalankan ulang. Data lama tidak diubah.
 
-Cek jadwal: `select * from cron.job;` · Hapus jadwal: `select cron.unschedule('dailybrew-tagihan-harian');`
+### 6. Jadwalkan pengecekan harian (pg_cron)
+1. Dashboard → **Database → Extensions** → cari **pg_cron** → aktifkan (Enable).
+2. Di SQL Editor jalankan **satu** jadwal ini. Ia menggantikan jadwal `dailybrew-tagihan-harian` dari file 14, karena `pa_daily_check()` sudah memanggil `pa_billing_run()`:
+   ```sql
+   select cron.unschedule('dailybrew-tagihan-harian') where exists (select 1 from cron.job where jobname = 'dailybrew-tagihan-harian');
+   select cron.schedule('dailybrew-harian', '0 1 * * *', $$select public.pa_daily_check()$$);  -- 01.00 UTC = 08.00 WIB
+   ```
+
+Setiap hari pukul 08.00 WIB, jadwal ini:
+- membuat tagihan **H-7** sebelum masa coba atau periode habis, dan menandai `past_due`;
+- membuat notifikasi owner untuk **tagihan H-7, H-1, telat**, dan **masa coba habis ≤3 hari**;
+- membuat notifikasi admin untuk **tagihan telat, masa coba habis, kafe tanpa pesanan 7 hari**, dan **webhook pembayaran gagal**;
+- memasukkan email ke antrean sesuai pilihan di Pengaturan;
+- mencegah duplikat: notifikasi yang sama untuk kafe yang sama tidak dibuat ulang selama masih berlaku.
+
+Notifikasi **kafe baru** dan **tagihan lunas** dibuat langsung saat kejadian, tidak menunggu jadwal. Cek jadwal: `select * from cron.job;` · Uji manual: `select public.pa_daily_check();`
+
+### 7. Isi nomor WhatsApp Dailybrew & warna
+Buka dashboard platform → **Pengaturan**:
+- **WhatsApp Dailybrew** (format bebas, mis. `0812…`): dipakai tombol **"Hubungi Dailybrew via WhatsApp"** di web owner (halaman Langganan, layar kafe nonaktif, menu Bantuan, dan kartu WhatsApp di Pengaturan). Selama nomor ini kosong, tombol tersebut tidak tampil.
+- **Tampilan:** pilih warna atau gradasi, lalu **Simpan warna** agar berlaku untuk semua admin. Mode gelap/terang dipilih per perangkat.
+- **Email:** pilih jenis notifikasi yang juga dikirim lewat email ke admin dan ke owner.
+
+WhatsApp **tetap manual**: tombol **Chat WA** membuka `wa.me` dengan pesan template (pengingat tagihan, bantuan setup, tawaran upgrade, pesan bebas), lalu kamu yang menekan kirim. Setiap klik tercatat di Log audit. Nomor WA owner bisa diisi admin (form Kafe baru / detail kafe) atau oleh owner sendiri di Pengaturan web owner.
+
+### 8. Email otomatis: Edge Function `notify` + Database Webhook
+1. **Siapkan Resend** (gratis 3.000 email/bulan): daftar di resend.com → **Domains** → tambahkan domain kamu dan pasang record DNS-nya sampai *Verified* → **API Keys** → buat key.
+2. **Deploy fungsi:** Edge Functions → Deploy a new function → Via Editor → nama `notify` → tempel `supabase/functions/notify/index.ts` → Deploy. **Verify JWT: OFF**, karena fungsi ini memeriksa header rahasia sendiri.
+3. **Secrets** (Edge Functions → Secrets):
+
+   | Secret | Isi |
+   |---|---|
+   | `NOTIFY_WEBHOOK_SECRET` | Teks acak panjang (mis. 40 karakter) |
+   | `EMAIL_API_KEY` | API key Resend |
+   | `EMAIL_FROM` | mis. `Dailybrew <notifikasi@domainkamu.id>` (domain harus sudah terverifikasi) |
+   | `EMAIL_PROVIDER` | opsional, bawaan `resend`. Penyedia lain ditambahkan di objek `PROVIDERS` di kode fungsi. |
+   | `APP_URL_OWNER` | alamat web owner, mis. `https://dashboard.domainkamu.id` (untuk tombol di email) |
+   | `APP_URL_ADMIN` | alamat dashboard platform, mis. `https://admin.domainkamu.id` |
+
+4. **Database Webhook:** Database → **Webhooks** → Create a new hook:
+   - Name: `notify-outbox` · Table: `notification_outbox` · Events: **Insert**
+   - Type: **Supabase Edge Functions** → pilih `notify` · Method: POST
+   - HTTP Headers: tambah `x-notify-secret` = nilai `NOTIFY_WEBHOOK_SECRET`
+5. **Uji email:** di SQL Editor jalankan (butuh ekstensi **pg_net**, aktifkan di Database → Extensions bila belum; ganti URL project, secret, dan email):
+   ```sql
+   select net.http_post(
+     url := 'https://<kode-project>.supabase.co/functions/v1/notify',
+     headers := '{"Content-Type":"application/json","x-notify-secret":"<NOTIFY_WEBHOOK_SECRET>"}'::jsonb,
+     body := '{"test_to":"emailkamu@gmail.com"}'::jsonb
+   );
+   ```
+   Email "Uji email Dailybrew" harus masuk dalam ±1 menit. Kalau tidak masuk, cek Edge Functions → `notify` → **Logs**.
+6. **(Opsional) kirim ulang yang gagal:** tambahkan jadwal yang memanggil fungsi dengan body `{}`. Email berstatus `pending` atau `failed` dari 2 hari terakhir dikirim ulang, maksimal 3 percobaan.
+
+Status kirim (Antre / Terkirim / Gagal + alasan) tampil di **detail kafe → Status email**. Baris WhatsApp di antrean selalu berstatus `skipped`. Kolom `channel` sudah disiapkan agar WhatsApp Business API bisa ditambahkan nanti tanpa mengubah tabel.
+
+### 9. Notifikasi realtime di lonceng
+File 15 otomatis mendaftarkan tabel `platform_notifications` ke Supabase Realtime. Kalau lonceng tidak langsung bertambah saat ada kejadian baru, cek **Database → Publications → supabase_realtime** dan pastikan `platform_notifications` tercentang. Lonceng tetap memuat ulang saat halaman dibuka.
 
 ---
 
@@ -146,9 +207,14 @@ Dashboard memasang `noindex`, jadi tidak muncul di mesin pencari. Lapisan keaman
 | Kasih bonus atau kompensasi | Detail kafe → **Perpanjang** (tanpa tagihan) atau **Beri masa coba** |
 | Harga khusus | Detail kafe → **Ganti paket** → isi *Harga khusus / bulan* |
 | Kafe tidak bayar | Biarkan sistem: setelah tenggang 7 hari, kafe otomatis turun ke Basic. Untuk menghentikan total: Detail kafe → **Nonaktifkan** (pesanan baru ditolak, data tetap aman). |
+| Ingatkan owner lewat WA | Ringkasan → **Perlu tindakan** → **Chat WA** (template sudah berisi nominal & jatuh tempo), atau dari detail kafe |
+| Enterprise / harga khusus | Detail kafe → **Ganti paket** → isi **Harga kustom / bulan**, lalu harga itu ikut dihitung di MRR |
+| Kabari semua kafe | **Pengumuman** → tulis → semua kafe / kafe tertentu (opsional + email) |
+| Ganti warna dashboard | **Pengaturan → Tampilan** |
 
 ## Belum termasuk versi ini
-- Email atau WhatsApp pengingat tagihan.
-- Refund otomatis untuk pembayaran yang masuk setelah tagihan dibatalkan. Kasus ini tercatat di log audit sebagai `invoice.paid_after_void` untuk ditangani manual.
+- **WhatsApp otomatis.** Masih manual lewat wa.me karena WhatsApp Business API berbayar. Antrean sudah punya kolom `channel` untuk menambahkannya nanti.
+- Notifikasi push ke HP admin, dan email ringkasan harian.
+- Refund otomatis untuk pembayaran yang masuk setelah tagihan dibatalkan. Kasus ini tercatat sebagai `invoice.paid_after_void` dan muncul di Perlu tindakan.
 - Prorata saat ganti paket di tengah periode. Paket baru berlaku mulai dibayar.
 - Peran admin bertingkat. Semua admin punya hak penuh.
