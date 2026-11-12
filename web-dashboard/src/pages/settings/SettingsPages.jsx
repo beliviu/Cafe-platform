@@ -9,6 +9,7 @@ import { BrandingSection } from '../../components/settings/BrandingSection.jsx'
 import {
   CafeInfoSection, OpeningHoursSection, PaymentMethodsSection, ProfileSection,
 } from '../../components/settings/CafeSections.jsx'
+import { DailybrewContactCard } from '../../components/settings/DailybrewContactCard.jsx'
 import { SectionFooter } from '../../components/settings/SettingsShared.jsx'
 import {
   Button, Card, CardHeader, EmptyState, ErrorState, RupiahInput, SegmentedControl, SkeletonRows, Switch, TextField, useToast,
@@ -34,6 +35,7 @@ export function GeneralSettings() {
       <div className="settings-grid">
         <CafeInfoSection key={`info-${cafe.name}-${cafe.address}-${cafe.phone}-${cafe.description}`} cafe={cafe} features={features} onSaved={updateCafe} />
         <ProfileSection key={`profile-${profile.full_name}-${profile.phone}`} profile={profile} onSaved={updateProfile} />
+        <DailybrewContactCard cafe={cafe} />
       </div>
     </div>
   )

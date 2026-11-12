@@ -12,6 +12,7 @@ import { formatDateTime, formatQueueNumber, formatRelative } from '../../lib/for
 import { useLoader } from '../../lib/inventory.js'
 import { rpc } from '../../lib/pos.js'
 import { useCan } from '../../lib/permissions.js'
+import { ContactDailybrew } from '../../components/platform/ContactDailybrew.jsx'
 
 const TICKET_STATUS = {
   open: { label: 'Perlu dibalas', tone: 'amber' },
@@ -23,7 +24,8 @@ export function SupportPage() {
   const { cafe, features } = useOutletContext()
   return (
     <div className="page page-wide">
-      <PageHeader eyebrow="Pelanggan" title="Bantuan" description="Pertanyaan & keluhan dari aplikasi pelanggan. Balas di sini — pelanggan mendapat notifikasi." />
+      <PageHeader eyebrow="Pelanggan" title="Bantuan" description="Pertanyaan & keluhan dari aplikasi pelanggan. Balas di sini — pelanggan mendapat notifikasi."
+        actions={<ContactDailybrew cafe={cafe} topic="Saya butuh bantuan memakai dashboard Dailybrew." label="Bantuan dari Dailybrew" />} />
       {features?.customer ? <SupportInbox cafe={cafe} /> : <Card><EmptyState title="Belum tersedia" description={CUSTOMER_REQUIRED} /></Card>}
     </div>
   )

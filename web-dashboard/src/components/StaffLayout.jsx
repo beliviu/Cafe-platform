@@ -101,7 +101,7 @@ export function StaffLayout() {
       account={{ title: staffData.profile.full_name || staffData.cafe.name, subtitle: `Staff · ${staffData.cafe.name}`, onSignOut: handleSignOut }}
       banner={(
         <>
-          <PlatformBanner supabase={supabase} cafeId={staffData.cafe.id} isOwner={false} />
+          <PlatformBanner supabase={supabase} cafeId={staffData.cafe.id} cafeName={staffData.cafe.name} isOwner={false} />
           {signOutError && (
             <div className="shell-banner" role="alert">
               <span>{signOutError}</span>

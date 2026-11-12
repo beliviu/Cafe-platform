@@ -113,3 +113,5 @@
 @media (max-width: 699px) {
   .billing-choose { grid-template-columns: 1fr; }
 }
+
+.settings-contact-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }

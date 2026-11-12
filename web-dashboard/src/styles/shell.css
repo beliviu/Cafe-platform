@@ -202,6 +202,10 @@
 .shell-banner.is-offline span { display: inline-flex; align-items: center; gap: 8px; }
 .shell-banner.is-warning { color: var(--status-amber-fg); background: var(--status-amber-bg); }
 .shell-banner a { flex: none; font-weight: 700; text-decoration: underline; }
+.shell-banner.is-info { color: var(--status-blue-fg); background: var(--status-blue-bg); }
+.shell-banner-actions { display: inline-flex; flex: none; align-items: center; gap: 4px; }
+.shell-banner-actions button { display: grid; place-items: center; width: 36px; min-height: 36px; padding: 0; }
+.shell-banner .ui-btn { flex: none; }
 
 /* ---------- Palet perintah ---------- */
 .shell-palette {

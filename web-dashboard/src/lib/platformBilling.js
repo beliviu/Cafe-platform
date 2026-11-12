@@ -57,3 +57,65 @@ export const INVOICE_STATE = {
   overdue: { label: 'Lewat jatuh tempo', tone: 'amber' },
   paid: { label: 'Lunas', tone: 'green' },
 }
+
+/* ---------- File 15: kontak WhatsApp Dailybrew & notifikasi owner ---------- */
+
+/** { support_whatsapp, owner_whatsapp } atau null (file 15 belum dijalankan). */
+export function usePlatformContact(supabase, cafeId) {
+  const [contact, setContact] = useState(null)
+  const [attempt, setAttempt] = useState(0)
+  useEffect(() => {
+    if (!supabase || !cafeId) return undefined
+    let active = true
+    supabase.rpc('platform_contact', { p_cafe_id: cafeId }).then(({ data, error }) => {
+      if (active) setContact(error ? null : data)
+    })
+    return () => { active = false }
+  }, [attempt, cafeId, supabase])
+  return { contact, reload: () => setAttempt((value) => value + 1) }
+}
+
+/** Link wa.me ke Dailybrew dengan pesan berisi nama & ID kafe. */
+export function dailybrewWaLink(supportWhatsapp, cafe, topic = '') {
+  const text = [
+    'Halo Dailybrew,',
+    '',
+    `${topic || 'Saya butuh bantuan.'}`,
+    '',
+    `Kafe: ${cafe?.name || '-'}`,
+    `ID kafe: ${cafe?.id || '-'}`,
+  ].join('\n')
+  return `https://wa.me/${String(supportWhatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(text)}`
+}
+
+export async function saveOwnerWhatsapp(supabase, cafeId, value) {
+  const { data, error } = await supabase.rpc('owner_set_whatsapp', { p_cafe_id: cafeId, p_whatsapp: value })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+/** Notifikasi owner yang masih berlaku (null bila file 15 belum dijalankan). */
+export function useOwnerNotifications(supabase, cafeId, enabled) {
+  const [items, setItems] = useState(null)
+  const [attempt, setAttempt] = useState(0)
+  useEffect(() => {
+    if (!supabase || !cafeId || !enabled) return undefined
+    let active = true
+    supabase.rpc('owner_notifications', { p_cafe_id: cafeId }).then(({ data, error }) => {
+      if (active) setItems(error ? null : data)
+    })
+    return () => { active = false }
+  }, [attempt, cafeId, enabled, supabase])
+  async function dismiss(id) {
+    setItems((current) => (current || []).filter((item) => item.id !== id))
+    await supabase.rpc('owner_notification_dismiss', { p_id: id })
+  }
+  return { items, dismiss, reload: () => setAttempt((value) => value + 1) }
+}
+
+export function formatWa(phone) {
+  const digits = String(phone || '').replace(/\D/g, '')
+  if (!digits) return ''
+  const local = digits.replace(/^62/, '')
+  return `+62 ${local.slice(0, 3)}-${local.slice(3, 7)}-${local.slice(7)}`.replace(/-$/, '')
+}

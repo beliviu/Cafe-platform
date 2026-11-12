@@ -9,10 +9,11 @@ import { useSearchParams } from 'react-router-dom'
 import { Badge, Button, Card, CardHeader, Select, useToast } from '../ui/index.js'
 import { formatDate, formatRupiah } from '../../lib/format.js'
 import { callBilling, fetchOwnerInvoices, INVOICE_STATE, requestInvoice } from '../../lib/platformBilling.js'
+import { ContactDailybrew } from '../platform/ContactDailybrew.jsx'
 
 const MONTHS = [1, 3, 6, 12].map((value) => ({ value: String(value), label: `${value} bulan` }))
 
-export function BillingCard({ supabase, cafeId, plans, currentPlan, onPaid }) {
+export function BillingCard({ supabase, cafeId, cafeName, plans, currentPlan, onPaid }) {
   const { toast } = useToast()
   const [params, setParams] = useSearchParams()
   const [invoices, setInvoices] = useState(undefined)
@@ -124,6 +125,7 @@ export function BillingCard({ supabase, cafeId, plans, currentPlan, onPaid }) {
         </div>
       )}
       <p className="ui-field-hint">Paket aktif begitu pembayaran terkonfirmasi. Transfer bank manual? Hubungi Dailybrew dan sebutkan nomor tagihan.</p>
+      <div><ContactDailybrew cafe={{ id: cafeId, name: cafeName }} topic={open[0] ? `Soal tagihan ${open[0].number}.` : 'Saya ada pertanyaan soal langganan.'} size="sm" /></div>
       {error && <p className="ui-field-error" role="alert">{error}</p>}
 
       {history.length > 0 && (

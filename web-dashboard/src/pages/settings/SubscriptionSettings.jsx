@@ -61,7 +61,7 @@ export function SubscriptionSettings() {
         {trialOver && <p className="ui-field-error">Masa coba berakhir: fitur paket Pro dikunci sampai langganan diaktifkan. Data tetap aman.</p>}
       </Card>
 
-      <BillingCard supabase={supabase} cafeId={cafe.id} plans={data.plans} currentPlan={data.subscribed_plan} onPaid={reload} />
+      <BillingCard supabase={supabase} cafeId={cafe.id} cafeName={cafe.name} plans={data.plans} currentPlan={data.subscribed_plan} onPaid={reload} />
 
       <div className="fin-grid">
         <Card className="settings-card">
