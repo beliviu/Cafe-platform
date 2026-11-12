@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Uji SQL usulan di Postgres dalam memori (PGlite). Tidak terhubung ke Supabase.",
   "scripts": {
-    "test": "node test-05-inventori.mjs && node test-06-pos.mjs && node test-07-akuntansi.mjs && node test-08-pelanggan.mjs && node --experimental-strip-types --no-warnings test-09-payment.mjs && node test-10-keamanan.mjs && node --experimental-strip-types --no-warnings test-11-bi.mjs && node test-12-promotions.mjs && node test-12-qris-statis.mjs && node test-13-tamu.mjs && node test-14-platform-admin.mjs"
+    "test": "node test-05-inventori.mjs && node test-06-pos.mjs && node test-07-akuntansi.mjs && node test-08-pelanggan.mjs && node --experimental-strip-types --no-warnings test-09-payment.mjs && node test-10-keamanan.mjs && node --experimental-strip-types --no-warnings test-11-bi.mjs && node test-12-promotions.mjs && node test-12-qris-statis.mjs && node test-13-tamu.mjs && node test-14-platform-admin.mjs && node test-15-notifikasi.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14"
