@@ -1,0 +1,82 @@
+/*
+ * Gaya khusus dashboard platform. Aturan bertanda "dari web-dashboard/…" diambil dari file itu
+ * (bukan seluruh file, karena isinya kebanyakan untuk modul kafe).
+ */
+
+/* dari web-dashboard/src/styles/business.css */
+.table-card-head { padding: 18px 20px 0; }
+.table-card-head .ui-card-header { align-items: center; }
+.data-table .num { text-align: right; white-space: nowrap; }
+.data-table .cell-actions { width: 1%; text-align: right; white-space: nowrap; }
+.settings-check { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text-primary); font-size: var(--text-sm); font-weight: 550; cursor: pointer; }
+.settings-check input { width: 18px; height: 18px; accent-color: var(--brand-600); }
+.dialog-form { display: grid; gap: 14px; }
+.dialog-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.credential-box { display: grid; gap: 10px; margin: 0; padding: 14px 16px; background: var(--surface-sunken); border-radius: var(--radius-md); }
+.credential-box > div { display: flex; justify-content: space-between; gap: 16px; }
+.credential-box dt { color: var(--text-muted); font-size: var(--text-sm); }
+.credential-box dd { margin: 0; overflow-wrap: anywhere; font-weight: 650; text-align: right; }
+.credential-box code { font-size: 15px; }
+
+/* dari web-dashboard/src/styles/finance.css */
+.fin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.fin-position { display: grid; gap: 0; margin: 0; }
+.fin-position > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }
+.fin-position > div:last-child { border-bottom: 0; }
+.fin-position dt { color: var(--text-secondary); font-size: var(--text-sm); }
+.fin-position dd { margin: 0; color: var(--text-primary); font-weight: 650; text-align: right; overflow-wrap: anywhere; }
+.fin-bars { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.fin-bars li { display: grid; gap: 5px; }
+.fin-bars-label { display: flex; justify-content: space-between; gap: 12px; color: var(--text-primary); font-size: var(--text-sm); font-weight: 600; }
+.fin-bars-track { display: block; height: 8px; overflow: hidden; border-radius: var(--radius-full); background: var(--surface-sunken); }
+.fin-bars-track span { display: block; height: 100%; border-radius: var(--radius-full); background: var(--brand-600); }
+.fin-bars-track span.is-full { background: var(--status-red-fg); }
+
+/* dari web-dashboard/src/styles/customers.css */
+.link-button { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; color: var(--text-link); background: none; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.sub-features { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+.sub-features li { display: flex; align-items: center; gap: 10px; color: var(--text-primary); }
+.sub-features li svg { flex: none; color: var(--status-green-fg); }
+.sub-features li.is-off { color: var(--text-muted); }
+.sub-features li.is-off svg { color: var(--text-muted); }
+
+/* ---------- Khusus admin ---------- */
+.pa-stack { display: grid; gap: 18px; }
+.pa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.pa-card-body { padding: 0 20px 18px; }
+.pa-row-link { cursor: pointer; }
+.pa-row-link:hover td { background: var(--surface-hover); }
+.pa-row-link:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+.pa-cell-main { display: grid; gap: 2px; min-width: 0; }
+.pa-cell-main strong { overflow: hidden; color: var(--text-primary); font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.pa-cell-main small { overflow: hidden; color: var(--text-muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
+.pa-muted { color: var(--text-muted); }
+.pa-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pa-card-actions { margin-top: 14px; }
+.pa-note { margin: 12px 0 0; font-size: var(--text-sm); }
+.pa-fieldset { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.toolbar.is-tight { margin-bottom: 0; }
+.pa-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 16px; color: var(--status-red-fg); background: var(--status-red-bg); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.pa-plan-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.pa-plan-list li { display: flex; justify-content: space-between; gap: 12px; font-size: var(--text-sm); }
+.pa-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.pa-diff { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: var(--text-xs); }
+.pa-diff li { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: baseline; }
+.pa-diff b { color: var(--text-secondary); font-weight: 650; }
+.pa-diff del { color: var(--text-muted); }
+.pa-diff ins { color: var(--text-primary); text-decoration: none; }
+.pa-json { max-height: 260px; margin: 6px 0 0; padding: 10px; overflow: auto; color: var(--text-secondary); background: var(--surface-sunken); border-radius: var(--radius-sm); font-size: 11px; white-space: pre-wrap; }
+.pa-details summary { color: var(--text-muted); font-size: var(--text-xs); cursor: pointer; }
+
+.mfa-enroll { display: grid; justify-items: center; gap: 10px; padding: 16px; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); text-align: center; }
+.mfa-enroll img { padding: 8px; background: #fff; border-radius: var(--radius-md); }
+.mfa-enroll p { margin: 0; color: var(--text-muted); font-size: var(--text-sm); }
+.mfa-secret { max-width: 100%; padding: 6px 10px; overflow-wrap: anywhere; color: var(--text-primary); background: var(--surface-sunken); border-radius: var(--radius-sm); font-size: 13px; letter-spacing: .06em; }
+.login-intro-foot { display: inline-flex; align-items: center; gap: 6px; }
+
+@media (max-width: 899px) {
+  .fin-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 599px) {
+  .dialog-row, .pa-features { grid-template-columns: 1fr; }
+}
