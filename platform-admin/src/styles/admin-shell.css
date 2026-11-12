@@ -1,0 +1,127 @@
+/*
+ * Kerangka dashboard platform (AdminShell): satu sidebar yang bisa diciutkan, bar atas, lonceng.
+ * Semua warna dari token tema (lib/theme.js) — ikut warna pilihan admin & mode gelap/terang.
+ */
+.ps { --ps-sidebar: 248px; display: grid; grid-template-columns: var(--ps-sidebar) minmax(0, 1fr); min-height: 100vh; background: var(--surface-canvas); }
+.ps.is-collapsed { --ps-sidebar: 72px; }
+
+/* ---------- Sidebar ---------- */
+.ps-sidebar {
+  position: sticky; top: 0; display: flex; flex-direction: column; gap: 6px; height: 100vh; padding: 16px 12px 12px;
+  color: var(--nav-text); background: linear-gradient(180deg, var(--nav-panel-top, var(--nav-panel)) 0%, var(--nav-bg) 100%);
+  border-right: 1px solid var(--nav-border);
+}
+.ps-brand { display: flex; align-items: center; gap: 11px; min-height: 44px; padding: 2px 6px 10px; border-radius: var(--radius-md); }
+.ps-brand-text { display: grid; line-height: 1.15; min-width: 0; }
+.ps-brand-text strong { font: 650 18px/1.15 var(--font-serif); letter-spacing: -.02em; }
+.ps-brand-text span { color: var(--nav-text-muted); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.ps-mark { display: grid; flex: none; place-items: center; color: var(--text-on-primary); background: var(--brand-fill); border-radius: 11px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%), 0 6px 16px var(--nav-glow); }
+
+.ps-sidebar-scroll { flex: 1; min-height: 0; margin: 0 -4px; padding: 0 4px; overflow-y: auto; scrollbar-width: thin; }
+.ps-nav { display: grid; gap: 14px; }
+.ps-nav-section ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.ps-nav-label { display: block; padding: 4px 10px 6px; color: var(--nav-text-muted); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.ps-link {
+  position: relative; display: flex; align-items: center; gap: 11px; min-height: 40px; padding: 0 10px;
+  color: var(--nav-text-muted); border-radius: var(--radius-md); font-size: var(--text-sm); font-weight: 600; transition: color .15s, background .15s;
+}
+.ps-link:hover { color: var(--nav-text); background: var(--nav-hover); }
+.ps-link.is-active { color: var(--nav-text); background: var(--nav-active); }
+.ps-link.is-active::before { position: absolute; top: 9px; bottom: 9px; left: -12px; width: 3px; content: ""; background: var(--nav-accent); border-radius: 0 3px 3px 0; }
+.ps-link svg { flex: none; }
+.ps-link-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ps-link-badge { min-width: 20px; padding: 1px 6px; color: var(--text-on-primary); background: var(--brand-solid); border-radius: var(--radius-full); font-size: 11px; font-weight: 700; text-align: center; }
+.ps-link:focus-visible, .ps-brand:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.ps.is-collapsed .ps-sidebar { align-items: center; padding-inline: 10px; }
+.ps.is-collapsed .ps-brand { padding: 2px 0 10px; }
+.ps.is-collapsed .ps-link { justify-content: center; width: 44px; padding: 0; }
+.ps.is-collapsed .ps-link.is-active::before { left: -10px; }
+.ps.is-collapsed .ps-link-badge { position: absolute; top: 3px; right: 3px; min-width: 8px; height: 8px; padding: 0; overflow: hidden; font-size: 0; }
+.ps.is-collapsed .ps-link[data-tip]:hover::after, .ps.is-collapsed .ps-link[data-tip]:focus-visible::after {
+  position: absolute; left: calc(100% + 12px); z-index: 30; padding: 6px 10px; content: attr(data-tip); color: var(--text-primary);
+  background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); box-shadow: var(--shadow-md);
+  font-size: var(--text-xs); font-weight: 600; white-space: nowrap; pointer-events: none;
+}
+.ps-collapse { align-self: flex-start; color: var(--nav-text-muted); }
+.ps.is-collapsed .ps-collapse { align-self: center; }
+.ps-sidebar .ui-icon-btn { color: var(--nav-text-muted); }
+.ps-sidebar .ui-icon-btn:hover { color: var(--nav-text); background: var(--nav-hover); }
+
+.ps-account { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px; background: var(--nav-hover); border: 1px solid var(--nav-border); border-radius: var(--radius-lg); }
+.ps-account.is-collapsed { flex-direction: column; padding: 8px 4px; background: none; border: 0; }
+.ps-avatar { display: grid; flex: none; place-items: center; width: 34px; height: 34px; color: var(--text-on-primary); background: var(--brand-fill); border-radius: 50%; font-size: 12px; font-weight: 750; }
+.ps-account-text { display: grid; flex: 1; min-width: 0; line-height: 1.25; }
+.ps-account-text strong { overflow: hidden; color: var(--nav-text); font-size: var(--text-sm); text-overflow: ellipsis; white-space: nowrap; }
+.ps-account-text span { overflow: hidden; color: var(--nav-text-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.ps-account-tools { display: flex; flex: none; gap: 2px; }
+.ps-account.is-collapsed .ps-account-tools { flex-direction: column; }
+
+/* ---------- Bar atas ---------- */
+.ps-main { display: flex; flex-direction: column; min-width: 0; }
+.ps-topbar {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 28px;
+  background: color-mix(in srgb, var(--surface-canvas) 86%, transparent); border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.ps-menu-btn { display: none; }
+.ps-crumbs { display: flex; flex: 1; align-items: center; gap: 6px; min-width: 0; overflow: hidden; color: var(--text-muted); font-size: var(--text-sm); white-space: nowrap; }
+.ps-crumbs-root { color: var(--text-muted); font-weight: 600; }
+.ps-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.ps-crumb a { color: var(--text-secondary); font-weight: 600; }
+.ps-crumb a:hover { color: var(--text-primary); text-decoration: underline; }
+.ps-crumb > span { overflow: hidden; color: var(--text-primary); font-weight: 650; text-overflow: ellipsis; }
+.ps-search {
+  display: inline-flex; align-items: center; gap: 10px; width: min(300px, 32vw); min-height: 40px; padding: 0 8px 0 12px;
+  color: var(--text-muted); background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: var(--text-sm);
+}
+.ps-search:hover { border-color: var(--border-strong); color: var(--text-secondary); }
+.ps-search:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.ps-search-text { flex: 1; text-align: left; }
+.ps-search kbd { padding: 2px 6px; color: var(--text-muted); background: var(--surface-sunken); border: 1px solid var(--border-subtle); border-radius: 6px; font: 600 11px var(--font-sans); }
+.ps-content { flex: 1; padding: 28px 28px 48px; }
+
+/* ---------- Lonceng ---------- */
+.ps-bell { position: relative; }
+.ps-bell-btn { position: relative; display: grid; place-items: center; width: 40px; height: 40px; color: var(--text-secondary); background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+.ps-bell-btn:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.ps-bell-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.ps-bell-badge { position: absolute; top: -6px; right: -6px; min-width: 19px; height: 19px; padding: 0 5px; color: var(--text-on-primary); background: var(--danger); border: 2px solid var(--surface-canvas); border-radius: var(--radius-full); font-size: 10px; font-weight: 750; line-height: 15px; text-align: center; }
+.ps-bell-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; width: min(380px, calc(100vw - 24px)); max-height: min(520px, 75vh); overflow: hidden;
+  display: flex; flex-direction: column; background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+}
+.ps-bell-panel header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 10px 16px; border-bottom: 1px solid var(--border-subtle); }
+.ps-bell-panel ul { margin: 0; padding: 6px; overflow-y: auto; list-style: none; }
+.ps-bell-empty { margin: 0; padding: 24px 18px; color: var(--text-muted); font-size: var(--text-sm); line-height: 1.55; text-align: center; }
+.ps-note { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 10px; color: var(--text-secondary); background: none; border: 0; border-radius: var(--radius-md); text-align: left; }
+.ps-note:hover { background: var(--surface-hover); }
+.ps-note-dot { flex: none; width: 8px; height: 8px; margin-top: 6px; background: var(--border-strong); border-radius: 50%; }
+.ps-note.is-unread .ps-note-dot { background: var(--brand-solid); }
+.ps-note.is-unread.is-danger .ps-note-dot { background: var(--status-red-dot, var(--danger)); }
+.ps-note.is-unread.is-warning .ps-note-dot { background: var(--status-amber-dot, var(--status-amber-fg)); }
+.ps-note.is-unread.is-success .ps-note-dot { background: var(--status-green-dot, var(--status-green-fg)); }
+.ps-note-text { display: grid; gap: 2px; min-width: 0; font-size: var(--text-sm); line-height: 1.45; }
+.ps-note-text strong { color: var(--text-primary); font-weight: 650; }
+.ps-note:not(.is-unread) .ps-note-text strong { font-weight: 550; }
+.ps-note-text small { color: var(--text-muted); font-size: var(--text-xs); }
+
+@media (max-width: 899px) {
+  .ps, .ps.is-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .ps-sidebar { display: none; }
+  .ps-menu-btn { display: inline-grid; }
+  .ps-topbar { padding: 8px 16px; }
+  .ps-crumbs-root { display: none; }
+  .ps-crumbs-root + .ps-crumb > svg { display: none; }
+  .ps-search { width: 40px; padding: 0; justify-content: center; }
+  .ps-search-text, .ps-search kbd { display: none; }
+  .ps-content { padding: 20px 16px 40px; }
+}
+.ps-drawer .ps-nav-label { color: var(--text-muted); }
+.ps-drawer .ps-link { color: var(--text-secondary); }
+.ps-drawer .ps-link:hover, .ps-drawer .ps-link.is-active { color: var(--text-primary); background: var(--surface-hover); }
+.ps-drawer .ps-link.is-active::before { left: -4px; }
+.ps-drawer .ps-account { margin-top: 16px; background: var(--surface-sunken); border-color: var(--border-subtle); }
+.ps-drawer .ps-account-text strong { color: var(--text-primary); }
+.ps-drawer .ps-account-text span { color: var(--text-muted); }
+.ps-drawer .ps-nav { gap: 16px; }

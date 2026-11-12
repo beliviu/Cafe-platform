@@ -11,7 +11,7 @@ export function friendlyError(error) {
   const hint = error?.hint || ''
   if (hint === 'mfa_required' || /2FA/.test(message)) return 'Sesi belum terverifikasi 2FA. Masuk ulang.'
   if (hint === 'platform_admin_only') return 'Akun ini bukan admin platform.'
-  if (/could not find the function|schema cache/i.test(message)) return 'Fungsi database belum ada. Jalankan file SQL 14 di Supabase.'
+  if (/could not find the function|schema cache/i.test(message)) return 'Fungsi database belum ada. Jalankan file SQL 14 & 15 di Supabase.'
   if (/failed to fetch|network|load failed/i.test(message)) return 'Koneksi terputus. Periksa internet lalu coba lagi.'
   return message || 'Terjadi kesalahan. Coba lagi.'
 }
@@ -106,6 +106,10 @@ export const ACTION_LABELS = {
   'invoice.underpaid': 'Pembayaran kurang',
   'invoice.paid_after_void': 'Dibayar setelah batal',
   'account.reset_password': 'Password direset',
+  'cafe.owner_whatsapp': 'WA owner diubah',
+  'whatsapp.open': 'Chat WA dibuka',
+  'settings.update': 'Pengaturan diubah',
+  'announcement.create': 'Pengumuman dikirim',
 }
 
 /** Persen perubahan (null bila pembanding kosong/0). */

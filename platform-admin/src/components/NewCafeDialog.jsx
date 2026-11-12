@@ -15,7 +15,7 @@ export function NewCafeDialog({ plans, onClose, onCreated }) {
   const { toast } = useToast()
   const choosable = plans.filter((plan) => !plan.is_archived)
   const [form, setForm] = useState({
-    cafe_name: '', owner_name: '', email: '', password: randomPassword(),
+    cafe_name: '', owner_name: '', email: '', owner_whatsapp: '', password: randomPassword(),
     plan: choosable.find((plan) => plan.code === 'pro')?.code || choosable[0]?.code || '', trial_days: '14',
   })
   const [busy, setBusy] = useState(false)
@@ -70,6 +70,8 @@ export function NewCafeDialog({ plans, onClose, onCreated }) {
           <TextField label="Nama owner" required maxLength={80} value={form.owner_name} onChange={set('owner_name')} />
           <TextField label="Email owner" type="email" required autoComplete="off" value={form.email} onChange={set('email')} />
         </div>
+        <TextField label="WhatsApp owner (opsional)" inputMode="tel" placeholder="0812 3456 7890" value={form.owner_whatsapp} onChange={set('owner_whatsapp')}
+          hint="Untuk tombol Chat WA & pengingat manual. Bisa diisi nanti." />
         <TextField label="Password sementara" required minLength={8} maxLength={72} autoComplete="new-password" value={form.password} onChange={set('password')}
           hint="Minimal 8 karakter. Owner bisa menggantinya nanti."
           suffix={<button type="button" className="login-password-toggle" aria-label="Buat password acak" onClick={() => setForm((current) => ({ ...current, password: randomPassword() }))}><KeyRound size={18} aria-hidden="true" /></button>} />

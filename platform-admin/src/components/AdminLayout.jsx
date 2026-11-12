@@ -1,15 +1,23 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { Coffee, FileClock, LayoutDashboard, Package, Receipt, Store } from 'lucide-react'
+import { Coffee, FileClock, LayoutDashboard, Megaphone, Package, Receipt, Settings, Store } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
-import { AppShell } from './shell/AppShell.jsx'
+import { AdminShell } from './shell/AdminShell.jsx'
 import { Button } from './ui/index.js'
 
-const NAVIGATION = [
-  { label: 'Ringkasan', icon: LayoutDashboard, items: [{ to: '/', label: 'Ringkasan', icon: LayoutDashboard, end: true }] },
-  { label: 'Kafe', icon: Store, items: [{ to: '/kafe', label: 'Kafe', icon: Store }] },
-  { label: 'Tagihan', icon: Receipt, items: [{ to: '/tagihan', label: 'Tagihan', icon: Receipt }] },
-  { label: 'Paket', icon: Package, items: [{ to: '/paket', label: 'Paket', icon: Package }] },
-  { label: 'Log audit', icon: FileClock, items: [{ to: '/audit', label: 'Log audit', icon: FileClock }] },
+const SECTIONS = [
+  { label: 'Utama', items: [
+    { to: '/', label: 'Ringkasan', icon: LayoutDashboard, end: true },
+    { to: '/kafe', label: 'Kafe', icon: Store },
+    { to: '/tagihan', label: 'Tagihan', icon: Receipt },
+  ] },
+  { label: 'Kelola', items: [
+    { to: '/paket', label: 'Paket', icon: Package },
+    { to: '/pengumuman', label: 'Pengumuman', icon: Megaphone },
+  ] },
+  { label: 'Sistem', items: [
+    { to: '/audit', label: 'Log audit', icon: FileClock },
+    { to: '/pengaturan', label: 'Pengaturan', icon: Settings },
+  ] },
 ]
 
 export function LoadingScreen({ label = 'Memuat…' }) {
@@ -48,12 +56,8 @@ export function AdminLayout() {
   if (aal !== 'aal2') return <Navigate to="/mfa" replace />
 
   return (
-    <AppShell
-      brand={{ name: 'Dailybrew', tagline: 'Platform admin' }}
-      navigation={NAVIGATION}
-      account={{ title: admin.full_name || session.user.email, subtitle: session.user.email, onSignOut: signOut }}
-    >
+    <AdminShell sections={SECTIONS} account={{ name: admin.full_name, email: session.user.email, onSignOut: signOut }}>
       <Outlet />
-    </AppShell>
+    </AdminShell>
   )
 }

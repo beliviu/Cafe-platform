@@ -88,7 +88,7 @@ export function CafesPage() {
                             <td>{row.plan_name || '—'}</td>
                             <td><Badge tone={meta.tone}>{meta.label}</Badge></td>
                             <td className="tabular">{endsAt(row)}</td>
-                            <td className="num tabular">{Number(row.monthly_price) ? formatRupiah(row.monthly_price) : '—'}{row.price_override != null && <small className="pa-muted"> · khusus</small>}</td>
+                            <td className="num tabular">{Number(row.monthly_price) ? formatRupiah(row.monthly_price) : '—'}{row.price_override != null && <small className="pa-muted"> · kustom</small>}</td>
                             <td className="tabular">{formatDate(row.created_at)}</td>
                           </tr>
                         )

@@ -13,6 +13,8 @@ const CafeDetailPage = page(() => import('./pages/CafeDetailPage.jsx'), 'CafeDet
 const PlansPage = page(() => import('./pages/PlansPage.jsx'), 'PlansPage')
 const InvoicesPage = page(() => import('./pages/InvoicesPage.jsx'), 'InvoicesPage')
 const AuditPage = page(() => import('./pages/AuditPage.jsx'), 'AuditPage')
+const AnnouncementsPage = page(() => import('./pages/AnnouncementsPage.jsx'), 'AnnouncementsPage')
+const SettingsPage = page(() => import('./pages/SettingsPage.jsx'), 'SettingsPage')
 
 export default function App() {
   return (
@@ -30,6 +32,8 @@ export default function App() {
                 <Route path="paket" element={<PlansPage />} />
                 <Route path="tagihan" element={<InvoicesPage />} />
                 <Route path="audit" element={<AuditPage />} />
+                <Route path="pengumuman" element={<AnnouncementsPage />} />
+                <Route path="pengaturan" element={<SettingsPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

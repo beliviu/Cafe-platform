@@ -1,5 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { resilientFetch } from './resilientFetch.js'
+import { createMockSupabase } from '../dev/mockSupabase.js'
+
+// Pratinjau tampilan dengan data contoh: VITE_MOCK=1 npm run dev (tidak pernah aktif di build produksi)
+const MOCK = import.meta.env.DEV && import.meta.env.VITE_MOCK === '1'
 
 /*
  * Rapikan isi VITE_SUPABASE_URL yang sering salah tempel:
@@ -23,12 +27,12 @@ export const supabaseUrl = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_UR
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim().replace(/^["']|["']$/g, '')
 
 export const supabaseConfigError =
-  !supabaseUrl || !supabaseKey
+  !MOCK && (!supabaseUrl || !supabaseKey)
     ? 'Konfigurasi Supabase belum lengkap. Isi VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY (lokal: platform-admin/.env.local · Vercel: Settings → Environment Variables, lalu Redeploy).'
     : null
 
 // Hanya kunci publik (anon/publishable). Aksi yang butuh service-role lewat Edge Function platform-admin.
-export const supabase = supabaseConfigError
+export const supabase = MOCK ? createMockSupabase() : supabaseConfigError
   ? null
   : createClient(supabaseUrl, supabaseKey, {
       auth: {

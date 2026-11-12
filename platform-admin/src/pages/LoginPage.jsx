@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowRight, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
-import { BrandMark } from '../components/shell/AppShell.jsx'
+import { BrandMark } from '../components/shell/AdminShell.jsx'
 import { Button, TextField } from '../components/ui/index.js'
 import { supabaseUrl } from '../lib/supabase.js'
 
@@ -24,7 +24,7 @@ export function LoginShell({ title, description, children }) {
     <main className="login-page">
       <section className="login-intro" aria-label="Tentang Dailybrew Platform">
         <div className="login-brand">
-          <BrandMark brand={BRAND} size={44} />
+          <BrandMark size={44} />
           <span className="login-brand-name">{BRAND.name}</span>
         </div>
         <div className="login-intro-copy">
@@ -38,7 +38,7 @@ export function LoginShell({ title, description, children }) {
       </section>
       <section className="login-panel">
         <div className="login-form-wrap">
-          <div className="login-mobile-brand"><BrandMark brand={BRAND} size={36} /><span className="login-brand-name">{BRAND.name}</span></div>
+          <div className="login-mobile-brand"><BrandMark size={36} /><span className="login-brand-name">{BRAND.name}</span></div>
           <div className="login-heading">
             <h2>{title}</h2>
             <p>{description}</p>

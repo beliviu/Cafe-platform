@@ -50,7 +50,7 @@ export function ChangePlanDialog({ cafe, subscription, plans, onClose, onDone })
         onDone()
       }}>
       <Select label="Paket" value={plan} onChange={(event) => setPlan(event.target.value)} options={planOptions(plans, subscription?.plan_code)} />
-      <RupiahInput label="Harga khusus / bulan (opsional)" value={price} onChange={setPrice} hint="Kosongkan untuk memakai harga paket." />
+      <RupiahInput label="Harga kustom / bulan (opsional)" value={price} onChange={setPrice} hint="Untuk paket tanpa harga (mis. Enterprise) atau diskon. Ikut dihitung di MRR. Kosongkan = harga paket." />
       <TextField label="Catatan (opsional)" value={note} maxLength={300} onChange={(event) => setNote(event.target.value)} />
       <p className="ui-field-hint">Status & masa berlaku tidak berubah. Untuk menagih, buat tagihan.</p>
     </ActionDialog>
@@ -165,6 +165,22 @@ export function ResetPasswordDialog({ cafe, member, onClose, onDone }) {
       }}>
       <TextField label="Password baru" required minLength={8} maxLength={72} autoComplete="new-password" value={password}
         onChange={(event) => setPassword(event.target.value)} hint="Minimal 8 karakter." />
+    </ActionDialog>
+  )
+}
+
+export function OwnerWhatsAppDialog({ cafe, onClose, onDone }) {
+  const { toast } = useToast()
+  const [phone, setPhone] = useState(cafe.owner_whatsapp || '')
+  return (
+    <ActionDialog title="WhatsApp owner" description={`${cafe.name} · untuk tombol Chat WA & pengingat manual`} submitLabel="Simpan nomor" onClose={onClose}
+      onSubmit={async () => {
+        await rpc('pa_cafe_set_owner_whatsapp', { p_cafe: cafe.id, p_whatsapp: phone })
+        toast({ title: phone.trim() ? 'Nomor WhatsApp disimpan' : 'Nomor WhatsApp dihapus' })
+        onDone()
+      }}>
+      <TextField label="Nomor WhatsApp" inputMode="tel" placeholder="0812 3456 7890" value={phone} onChange={(event) => setPhone(event.target.value)}
+        hint="Boleh 08…, +62…, atau 62…; disimpan sebagai 62…. Kosongkan untuk menghapus." />
     </ActionDialog>
   )
 }

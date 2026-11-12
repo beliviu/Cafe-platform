@@ -5,7 +5,7 @@ import { Card, EmptyState, ErrorState, PageHeader, Pagination, Select, SkeletonR
 import { rpc, useLoader } from '../lib/api.js'
 
 const PAGE_SIZE = 50
-const GROUPS = { cafe: 'Kafe', plan: 'Paket', subscription: 'Langganan', invoice: 'Tagihan', account: 'Akun' }
+const GROUPS = { cafe: 'Kafe', plan: 'Paket', subscription: 'Langganan', invoice: 'Tagihan', account: 'Akun', whatsapp: 'WhatsApp', settings: 'Pengaturan', announcement: 'Pengumuman' }
 
 export function AuditPage() {
   const [params, setParams] = useSearchParams()
