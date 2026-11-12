@@ -24,7 +24,39 @@
 | 10. **Izin staff, langganan & pengetatan keamanan** — [`supabase/usulan/10-izin-langganan-keamanan.sql`](supabase/usulan/10-izin-langganan-keamanan.sql) | 🟢 **siap dijalankan** · diuji 60 skenario termasuk penyisiran isolasi lintas kafe |
 | 11. **BI: prediksi penjualan, analitik pelanggan & advisor bisnis** — [`supabase/usulan/11-bi-analitik.sql`](supabase/usulan/11-bi-analitik.sql) | 🟢 **siap dijalankan** · diuji 110 skenario (dengan & tanpa 07/08/10) |
 | 11b. Edge Function `advisor` (Tanya AI, Claude) — [`supabase/functions/advisor/index.ts`](supabase/functions/advisor/index.ts) | 📝 opsional — Jawaban cepat, prediksi & analitik jalan tanpa ini |
+| 12. **QRIS statis kafe** (owner unggah gambar QRIS, pelanggan scan & staff konfirmasi) — [`supabase/usulan/12-qris-statis.sql`](supabase/usulan/12-qris-statis.sql) | 🟢 **siap dijalankan** · diuji 11 skenario |
+| 13. **Pesan tanpa login lewat QR meja (tamu)** — [`supabase/usulan/13-tamu-qr-meja.sql`](supabase/usulan/13-tamu-qr-meja.sql) + nyalakan *Allow anonymous sign-ins* | 🟢 **siap dijalankan** · diuji 11 skenario |
+| 14. **Dashboard platform, suspend kafe, tagihan & langganan otomatis** — [`supabase/usulan/14-platform-admin.sql`](supabase/usulan/14-platform-admin.sql) + Edge Function `platform-admin` & `subscription-billing` | 🟢 **siap dijalankan** · diuji 256 pemeriksaan · panduan lengkap: [`platform-admin/README.md`](platform-admin/README.md) |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
+
+### File 14 — Dashboard platform (admin SaaS) & langganan otomatis
+
+Jalankan **setelah file 10** (dan 04). Panduan langkah demi langkah ada di [`platform-admin/README.md`](platform-admin/README.md).
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| Tabel baru `platform_admins`, `platform_audit_logs`, `subscription_invoices`, `platform_mrr_snapshots` | RLS menyala, **tanpa** akses langsung dari browser; hanya lewat fungsi `pa_*` yang wajib admin aktif + sesi 2FA (aal2). | Tabel baru, kosong. |
+| Kolom baru `cafes.suspended_at/suspended_reason`, `cafe_subscriptions.price_override`, `plans.is_archived` | Tidak diberi grant update ke owner. | Semua kosong/`false` → tidak ada kafe yang berubah. |
+| Trigger `orders_block_suspended` | Kafe nonaktif tidak bisa menerima pesanan baru (semua jalur). | Tidak ada kafe nonaktif saat file dijalankan. |
+| `cafe_plan()` diganti | Kini mengecek `current_period_end` + **tenggang 7 hari**, lalu turun ke Basic; kafe nonaktif → Basic. | Kafe dengan `current_period_end` kosong (kafe lama Enterprise) **tetap berlaku tanpa batas**. |
+| `pa_billing_run()` + pg_cron | Tagihan otomatis H-7, tandai `past_due`. | Hanya berjalan bila dijadwalkan. |
+
+**Cara menjalankan:** SQL Editor → tempel isi file → Run. Verifikasi: **6 baris** (5 tabel + 1 trigger) dan **tidak ada** baris `tanpa_rls`. Lalu ikuti README: admin pertama, deploy 2 Edge Function, jadwal pg_cron.
+
+### File 13 — Pesan tanpa login lewat QR meja (tamu)
+
+Jalankan **setelah file 08 & 12**. Pelanggan yang scan QR meja bisa memesan tanpa daftar/login: app otomatis membuat **sesi tamu** (Supabase Anonymous Sign-in). Sesi tamu tetap punya `auth.uid()`, jadi semua RLS tetap berlaku (tamu hanya melihat pesanannya sendiri).
+
+| Bagian | Yang berubah | Dampak ke data lama |
+|---|---|---|
+| Trigger `orders_guest_table_only` | `before insert` pada `orders`: akun tamu **hanya** boleh membuat pesanan yang punya `table_id` (pesanan meja). | Tidak mengubah data. Pesanan staff/POS dan pelanggan login tidak terpengaruh. |
+
+**Cara menjalankan:**
+1. Jalankan `supabase/usulan/13-tamu-qr-meja.sql` di SQL Editor. Hasil verifikasi: **1 baris** `orders_guest_table_only`.
+2. Supabase Dashboard → **Authentication → Sign In / Providers** → nyalakan **Allow anonymous sign-ins** → Save.
+3. (Disarankan) **Authentication → Rate Limits**: naikkan batas *anonymous sign-ins* (bawaan ±30/jam per IP) bila banyak pelanggan memakai Wi-Fi kafe yang sama.
+
+Tanpa langkah 2, app menampilkan "Pesan tanpa login belum diaktifkan kafe" dan pelanggan tetap bisa masuk/daftar seperti biasa.
 
 ### File 11 — BI: prediksi penjualan, analitik pelanggan & advisor bisnis
 
