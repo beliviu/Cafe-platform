@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { BrandMark } from '../components/shell/AppShell.jsx'
 import { Button, TextField } from '../components/ui/index.js'
+import { supabaseUrl } from '../lib/supabase.js'
 
 const BRAND = { name: 'Dailybrew Platform' }
 
@@ -12,6 +13,9 @@ function loginErrorMessage(error) {
   if (/invalid login credentials/i.test(message)) return 'Email atau password salah.'
   if (/email not confirmed/i.test(message)) return 'Email belum dikonfirmasi.'
   if (/failed to fetch|network/i.test(message)) return 'Koneksi terputus. Periksa internet lalu coba lagi.'
+  if (/invalid path|invalid api key|no api key/i.test(message)) {
+    return `Alamat atau kunci Supabase salah. Sekarang terpakai: ${supabaseUrl || '(kosong)'} — harus https://<kode-project>.supabase.co dan kunci sb_publishable_… Perbaiki di Vercel → Settings → Environment Variables, lalu Redeploy.`
+  }
   return `Gagal masuk: ${message}`
 }
 
