@@ -2,7 +2,7 @@
 // Edge Function: platform-admin — aksi admin platform Dailybrew yang butuh service-role (file SQL 14)
 //
 // Aksi (POST JSON, header Authorization: Bearer <token admin platform>):
-//   { action: 'create_cafe', cafe_name, owner_name, email, password, plan, trial_days }
+//   { action: 'create_cafe', cafe_name, owner_name, email, password, plan, trial_days, owner_whatsapp? }
 //   { action: 'reset_owner_password', cafe_id, user_id, password }
 //
 // Aturan keamanan:
@@ -17,7 +17,7 @@
 //         hapus SEMUA contoh kode, tempel isi file ini, Deploy.
 //         Verify JWT: OFF (fungsi ini memeriksa token, 2FA, & admin sendiri; wajib OFF bila
 //         project memakai kunci API baru publishable/secret).
-// Requires: file SQL 14.
+// Requires: file SQL 14 (owner_whatsapp butuh file 15; tanpa itu nomor WA diabaikan).
 // =====================================================================
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1'
 
@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
       const email = cleanText(body.email, 254).toLowerCase()
       const plan = cleanText(body.plan, 30)
       const trialDays = Number(body.trial_days)
+      const ownerWhatsapp = cleanText(body.owner_whatsapp, 30)
       if (cafeName.length < 2) return fail('Nama kafe minimal 2 karakter')
       if (ownerName.length < 2) return fail('Nama owner minimal 2 karakter')
       if (!EMAIL_PATTERN.test(email)) return fail('Email tidak valid')
@@ -126,14 +127,19 @@ Deno.serve(async (req) => {
       }
 
       const ownerId = created.user.id
-      const { data: result, error: rpcError } = await admin.rpc('pa_cafe_create_for_owner', {
+      const args: Record<string, unknown> = {
         p_actor: actorId,
         p_owner_id: ownerId,
         p_cafe_name: cafeName,
         p_owner_name: ownerName,
         p_plan: plan,
         p_trial_days: trialDays,
-      })
+      }
+      // Versi file 15 menerima nomor WA owner (dinormalisasi & divalidasi di database)
+      let { data: result, error: rpcError } = await admin.rpc('pa_cafe_create_for_owner', { ...args, p_owner_whatsapp: ownerWhatsapp || null })
+      if (rpcError && /could not find the function|schema cache/i.test(rpcError.message)) {
+        ({ data: result, error: rpcError } = await admin.rpc('pa_cafe_create_for_owner', args))
+      }
       if (rpcError) {
         // Jangan tinggalkan akun setengah jadi
         await admin.auth.admin.deleteUser(ownerId)
