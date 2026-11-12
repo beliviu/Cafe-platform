@@ -1,12 +1,13 @@
 /*
  * Pengaturan → Langganan (file 10): paket, status, fitur, pemakaian vs batas.
- * Perubahan paket dilakukan pengelola platform (belum ada penagihan otomatis).
+ * Bayar & ganti paket sendiri lewat BillingCard (file 14 + Edge Function subscription-billing).
  */
 import { useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { Check, Minus } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import { Badge, Card, CardHeader, EmptyState, ErrorState, SkeletonRows } from '../../components/ui/index.js'
+import { BillingCard } from '../../components/settings/BillingCard.jsx'
 import { friendlyError, SECURITY_REQUIRED } from '../../lib/db.js'
 import { formatDate, formatNumber, formatRupiah } from '../../lib/format.js'
 import { useLoader } from '../../lib/inventory.js'
@@ -60,6 +61,8 @@ export function SubscriptionSettings() {
         {trialOver && <p className="ui-field-error">Masa coba berakhir: fitur paket Pro dikunci sampai langganan diaktifkan. Data tetap aman.</p>}
       </Card>
 
+      <BillingCard supabase={supabase} cafeId={cafe.id} plans={data.plans} currentPlan={data.subscribed_plan} onPaid={reload} />
+
       <div className="fin-grid">
         <Card className="settings-card">
           <CardHeader title="Pemakaian" description="Batas sesuai paket" />
@@ -97,7 +100,7 @@ export function SubscriptionSettings() {
 
       {data.plans?.length > 0 && (
         <Card className="settings-card" padding="none">
-          <div className="table-card-head"><CardHeader title="Pilihan paket" description="Hubungi pengelola platform untuk mengganti paket." /></div>
+          <div className="table-card-head"><CardHeader title="Pilihan paket" description="Ganti paket lewat kartu Tagihan & pembayaran di atas." /></div>
           <div className="table-scroll">
             <table className="data-table">
               <thead><tr><th scope="col">Paket</th><th scope="col" className="num">Biaya / bulan</th>{LIMITS.map((item) => <th key={item.key} scope="col" className="num">{item.label}</th>)}<th scope="col">Fitur</th></tr></thead>

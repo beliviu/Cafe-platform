@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth.js'
 import { LoadingScreen } from './LoadingScreen.jsx'
 import { AccessState } from './shell/AccessState.jsx'
 import { AppShell } from './shell/AppShell.jsx'
+import { PlatformBanner } from './shell/PlatformBanner.jsx'
 import { staffNavigation } from '../config/staffNavigation.js'
 import { cafeColumns, detectDbFeatures } from '../lib/db.js'
 import { fetchOwnPermissions } from '../lib/permissions.js'
@@ -98,11 +99,16 @@ export function StaffLayout() {
       homeTo="/staff"
       navigation={staffNavigation(pendingCount)}
       account={{ title: staffData.profile.full_name || staffData.cafe.name, subtitle: `Staff · ${staffData.cafe.name}`, onSignOut: handleSignOut }}
-      banner={signOutError && (
-        <div className="shell-banner" role="alert">
-          <span>{signOutError}</span>
-          <button type="button" onClick={() => setSignOutError('')}>Tutup</button>
-        </div>
+      banner={(
+        <>
+          <PlatformBanner supabase={supabase} cafeId={staffData.cafe.id} isOwner={false} />
+          {signOutError && (
+            <div className="shell-banner" role="alert">
+              <span>{signOutError}</span>
+              <button type="button" onClick={() => setSignOutError('')}>Tutup</button>
+            </div>
+          )}
+        </>
       )}
     >
       <Outlet context={{ ...staffData, setPendingCount }} />

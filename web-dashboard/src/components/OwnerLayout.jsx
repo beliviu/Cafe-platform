@@ -5,6 +5,7 @@ import { OWNER_NAVIGATION } from '../config/ownerNavigation.js'
 import { LoadingScreen } from './LoadingScreen.jsx'
 import { AccessState } from './shell/AccessState.jsx'
 import { AppShell } from './shell/AppShell.jsx'
+import { PlatformBanner } from './shell/PlatformBanner.jsx'
 import { cafeColumns, detectDbFeatures } from '../lib/db.js'
 import { brandOf, cacheBrand, useDocumentBranding } from '../lib/branding.js'
 
@@ -123,11 +124,16 @@ export function OwnerLayout() {
       brand={brand}
       navigation={OWNER_NAVIGATION}
       account={{ title: ownerData.profile.full_name || ownerData.cafe.name, subtitle: `Owner · ${ownerData.cafe.name}`, onSignOut: handleSignOut }}
-      banner={signOutError && (
-        <div className="shell-banner" role="alert">
-          <span>{signOutError}</span>
-          <button type="button" onClick={() => setSignOutError('')}>Tutup</button>
-        </div>
+      banner={(
+        <>
+          <PlatformBanner supabase={supabase} cafeId={ownerData.cafe.id} isOwner={true} />
+          {signOutError && (
+            <div className="shell-banner" role="alert">
+              <span>{signOutError}</span>
+              <button type="button" onClick={() => setSignOutError('')}>Tutup</button>
+            </div>
+          )}
+        </>
       )}
     >
       <Outlet context={{ ...ownerData, updateCafe, updateProfile }} />

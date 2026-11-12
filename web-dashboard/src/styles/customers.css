@@ -100,3 +100,16 @@
 .pos-static-qris img { width: min(240px, 100%); aspect-ratio: 3 / 4; object-fit: contain; background: #fff; border-radius: var(--radius-md); }
 .pos-static-qris p { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; }
 @media (max-width: 640px) { .qris-static { grid-template-columns: 1fr; } .qris-static-image { width: 100%; max-width: 260px; } }
+
+/* Pengaturan → Langganan: tagihan & pembayaran (file 14) */
+.billing-list { display: grid; gap: 0; margin: 8px 0 12px; padding: 0; list-style: none; }
+.billing-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 0; border-bottom: 1px solid var(--border-subtle); }
+.billing-list li:last-child { border-bottom: 0; }
+.billing-main { display: grid; flex: 1 1 220px; gap: 2px; min-width: 0; }
+.billing-main strong { color: var(--text-primary); font-size: var(--text-sm); font-weight: 650; }
+.billing-main small { color: var(--text-muted); font-size: var(--text-xs); }
+.billing-list.is-history li { padding: 8px 0; }
+.billing-choose { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; align-items: end; gap: 12px; margin: 8px 0; }
+@media (max-width: 699px) {
+  .billing-choose { grid-template-columns: 1fr; }
+}

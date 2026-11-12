@@ -200,6 +200,8 @@
 .shell-banner button { min-height: 36px; padding: 0 10px; color: inherit; background: none; border: 0; font-weight: 700; }
 .shell-banner.is-offline { color: var(--status-amber-fg); background: var(--status-amber-bg); }
 .shell-banner.is-offline span { display: inline-flex; align-items: center; gap: 8px; }
+.shell-banner.is-warning { color: var(--status-amber-fg); background: var(--status-amber-bg); }
+.shell-banner a { flex: none; font-weight: 700; text-decoration: underline; }
 
 /* ---------- Palet perintah ---------- */
 .shell-palette {
