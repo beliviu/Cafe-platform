@@ -124,7 +124,14 @@
 .app-main { min-height: 100vh; margin-left: calc(var(--sb-width) + var(--sb-gap)); transition: margin-left var(--dur-3) var(--ease-out); }
 .app-topbar {
   position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px clamp(16px, 3vw, 40px);
-  background: color-mix(in srgb, var(--bg) 35%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+}
+/* Latar kaca header membentang sampai tepi kiri layar (di belakang sidebar mengambang) dan memudar di bawah — tanpa garis potong */
+.app-topbar::before {
+  content: ""; position: absolute; z-index: -1; inset: 0 0 -12px calc(-1 * (var(--sb-width) + var(--sb-gap)));
+  background: color-mix(in srgb, var(--bg) 35%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent); mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  pointer-events: none;
 }
 .app-menu-btn, .app-topbar-brand { display: none; }
 .app-crumbs { display: flex; flex: 1; align-items: center; gap: 6px; min-width: 0; color: var(--text-3); font-size: var(--text-sm); }
@@ -197,6 +204,7 @@
   .sb { display: none; }
   .app-main { margin-left: 0; }
   .app-topbar { gap: 4px; min-height: 60px; padding: 8px 12px; background: color-mix(in srgb, var(--sidebar) 92%, transparent); border-bottom: 1px solid var(--line); }
+  .app-topbar::before { display: none; }
   .app-menu-btn { display: inline-grid; }
   .app-topbar-brand { display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; color: var(--text); }
   .app-topbar-brand > span:last-child { overflow: hidden; font: 600 var(--text-md)/1.1 var(--font-serif); text-overflow: ellipsis; white-space: nowrap; }
