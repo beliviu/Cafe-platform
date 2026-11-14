@@ -11,6 +11,7 @@ const TABS = [
   { to: 'payments', label: 'Pembayaran' },
   { to: 'tables', label: 'Meja' },
   { to: 'receipt', label: 'Struk' },
+  { to: 'appearance', label: 'Tampilan' },
   { to: 'subscription', label: 'Langganan' },
 ]
 

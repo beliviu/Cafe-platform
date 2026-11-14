@@ -1,1 +1,1 @@
-export { PageHeader } from './ui/PageHeader.jsx'
+export { PageHeader } from '@dailybrew/ui'

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Badge, Button, ConfirmDialog, Dialog, IconButton, TextField, useToast } from './ui/index.js'
+import { Badge, Button, CheckMark, ConfirmDialog, Dialog, IconButton, TextField, motionEnabled, useToast } from './ui/index.js'
 import { INVOICE_META, rpc } from '../lib/api.js'
 import { formatDate, formatRupiah, jakartaDateKey } from '../lib/format.js'
 
@@ -14,6 +14,7 @@ function MarkPaidDialog({ invoice, onClose, onDone }) {
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
 
   async function submit(event) {
     event.preventDefault()
@@ -28,7 +29,11 @@ function MarkPaidDialog({ invoice, onClose, onDone }) {
         p_note: note || null,
       })
       toast({ title: 'Tagihan lunas', description: `${invoice.cafe_name}: langganan diperpanjang sampai ${formatDate(invoice.period_end)}.` })
-      onDone()
+      // Centang tergambar sebentar sebelum dialog menutup (langsung menutup bila animasi dimatikan)
+      if (motionEnabled()) {
+        setDone(true)
+        window.setTimeout(onDone, 1000)
+      } else onDone()
     } catch (caught) {
       setError(caught.message)
       setBusy(false)
@@ -37,8 +42,16 @@ function MarkPaidDialog({ invoice, onClose, onDone }) {
 
   return (
     <Dialog title={`Tandai lunas ${invoice.number}`} description={`${invoice.cafe_name} · ${formatRupiah(invoice.amount)}`} size="sm" onClose={busy ? undefined : onClose}
-      footer={<><Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button><Button type="submit" form="mark-paid" loading={busy} icon={CheckCircle2}>Tandai lunas</Button></>}>
-      <form id="mark-paid" className="dialog-form" onSubmit={submit}>
+      dismissible={!busy}
+      footer={done ? null : <><Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button><Button type="submit" form="mark-paid" loading={busy} icon={CheckCircle2}>Tandai lunas</Button></>}>
+      {done && (
+        <div className="ui-success" role="status">
+          <CheckMark size={56} label="Berhasil" />
+          <strong>Tagihan lunas</strong>
+          <span>Langganan aktif sampai {formatDate(invoice.period_end)}</span>
+        </div>
+      )}
+      <form id="mark-paid" className="dialog-form" onSubmit={submit} hidden={done}>
         <TextField label="Tanggal bayar" type="date" value={paidOn} max={jakartaDateKey()} onChange={(event) => setPaidOn(event.target.value)} />
         <TextField label="Referensi transfer" placeholder="mis. BCA 12/11 a.n. Budi" value={reference} maxLength={120} onChange={(event) => setReference(event.target.value)} />
         <TextField label="Catatan (opsional)" value={note} maxLength={300} onChange={(event) => setNote(event.target.value)} />

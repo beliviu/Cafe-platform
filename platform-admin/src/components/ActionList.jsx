@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarClock, CircleDollarSign, Moon } from 'lucide-react'
+import { AlertTriangle, CalendarClock, CircleDollarSign, Moon, TrendingUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { WhatsAppButton } from './WhatsAppButton.jsx'
 
@@ -7,6 +7,7 @@ const KIND = {
   payment_failed: { icon: AlertTriangle, tone: 'red', label: 'Pembayaran gagal', template: 'bebas' },
   trial_ending: { icon: CalendarClock, tone: 'amber', label: 'Masa coba', template: 'upgrade' },
   idle_cafe: { icon: Moon, tone: 'blue', label: 'Kafe sepi', template: 'setup' },
+  upgrade_signal: { icon: TrendingUp, tone: 'green', label: 'Peluang upgrade', template: 'upgrade' },
 }
 
 /** Daftar "Perlu tindakan" (pa_action_items), sudah urut dari yang paling mendesak. */
@@ -26,7 +27,7 @@ export function ActionList({ items, limit }) {
             </span>
             <span className="pa-action-buttons">
               <WhatsAppButton size="sm" variant="ghost" defaultTemplate={meta.template}
-                ctx={{ cafeId: item.cafe_id, cafeName: item.cafe_name, ownerName: item.owner_name, phone: item.owner_whatsapp, amount: item.amount, dueAt: item.due_at }} />
+                ctx={{ cafeId: item.cafe_id, cafeName: item.cafe_name, ownerName: item.owner_name, phone: item.owner_whatsapp, amount: item.amount, dueAt: item.due_at, upgradeReason: item.kind === 'upgrade_signal' ? item.reason : undefined }} />
               <Link to={`/kafe/${item.cafe_id}`} className="ui-btn ui-btn-secondary ui-btn-sm"><span>Buka kafe</span></Link>
             </span>
           </li>

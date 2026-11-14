@@ -133,9 +133,25 @@ export function customerLabel(order) {
 }
 
 /** Pesan error yang ramah untuk ditampilkan. */
+/*
+ * Sinyal upgrade (file 16): saat database menolak karena batas/fitur paket (hint plan_limit / plan_feature),
+ * catat kejadiannya lewat owner_log_plan_block. Dipasang oleh OwnerLayout/StaffLayout; tanpa pemasang → diam.
+ */
+let planBlockReporter = null
+export function setPlanBlockReporter(reporter) {
+  planBlockReporter = reporter
+}
+function reportPlanBlock(error, message) {
+  if (!planBlockReporter || (error.hint !== 'plan_limit' && error.hint !== 'plan_feature')) return
+  const kind = error.hint === 'plan_limit' ? 'limit' : 'feature'
+  const detail = kind === 'limit' ? message.match(/\(\d+ ([^)]+)\)/)?.[1] : (typeof window !== 'undefined' ? window.location.pathname.split('/').filter(Boolean).pop() : null)
+  try { planBlockReporter(kind, detail || null) } catch { /* hanya sinyal, jangan ganggu alur */ }
+}
+
 export function friendlyError(error, fallback = 'Terjadi kesalahan. Coba lagi.') {
   if (!error) return ''
   const message = String(error.message || '')
+  reportPlanBlock(error, message)
   if (error.code === 'PGRST202' || error.code === '42883') return DB_UPDATE_REQUIRED
   if (error.code === '42501' || /permission denied|row-level security/i.test(message)) return 'Akses ditolak untuk aksi ini.'
   if (/failed to fetch|network/i.test(message)) return 'Koneksi terputus. Periksa internet lalu coba lagi.'

@@ -74,3 +74,8 @@ the database. Staff can update only `orders.order_status`.
 npm run lint
 npm run build
 ```
+
+
+## Design system & hosting
+
+Komponen UI, tema, dan grafik berasal dari `shared/ui/` di root repo (alias `@dailybrew/ui`, aturan di `DESIGN.md`). Karena folder itu di luar `web-dashboard/`, build di hosting harus bisa membaca root repo: di Vercel centang **Include files outside the Root Directory in the Build Step**; di Cloudflare Pages kosongkan Root directory dan pakai build command `cd web-dashboard && npm ci && npm run build` dengan output `web-dashboard/dist`.

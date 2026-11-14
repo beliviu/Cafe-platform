@@ -38,7 +38,14 @@ export function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState(() => (ORDER_STATUS[searchParams.get('status')] ? searchParams.get('status') : 'all'))
   const [paymentFilter, setPaymentFilter] = useState(() => (['paid', 'unpaid'].includes(searchParams.get('payment')) ? searchParams.get('payment') : 'all'))
   const [sourceFilter, setSourceFilter] = useState('all')
-  const [query, setQuery] = useState('')
+  // ?q=… dari palet perintah (Ctrl/Cmd+K) mengisi kotak cari; berubah lagi bila palet dipakai saat halaman ini terbuka
+  const urlQuery = searchParams.get('q') || ''
+  const [query, setQuery] = useState(urlQuery)
+  const [seenUrlQuery, setSeenUrlQuery] = useState(urlQuery)
+  if (urlQuery !== seenUrlQuery) {
+    setSeenUrlQuery(urlQuery)
+    setQuery(urlQuery)
+  }
   const [page, setPage] = useState(1)
   const [orders, setOrders] = useState([])
   const [itemsByOrder, setItemsByOrder] = useState(new Map())

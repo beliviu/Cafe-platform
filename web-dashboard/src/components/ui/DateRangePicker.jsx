@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { CalendarDays, Check, ChevronDown } from 'lucide-react'
 import { MAX_RANGE_DAYS, RANGE_PRESETS, resolveRange } from '../../lib/dateRange.js'
 import { addDaysToKey } from '../../lib/format.js'
-import { Button } from './Button.jsx'
+import { Button } from '@dailybrew/ui'
 
 /**
  * Satu kontrol untuk rentang tanggal: preset (Hari ini, 7 hari, 30 hari, Bulan ini)

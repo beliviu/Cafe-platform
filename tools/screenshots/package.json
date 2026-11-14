@@ -1,0 +1,8 @@
+{
+  "name": "dailybrew-screenshots",
+  "private": true,
+  "type": "module",
+  "description": "Screenshot sebelum/sesudah (Playwright) untuk QA tampilan. Tidak ikut build aplikasi.",
+  "scripts": { "shot": "node shot.mjs" },
+  "devDependencies": { "playwright": "^1.65.0" }
+}

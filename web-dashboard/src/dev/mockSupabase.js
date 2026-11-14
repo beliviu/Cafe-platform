@@ -9,6 +9,7 @@ import { createFinanceFixtures, financeRpc } from './mockFinance.js'
 import { createCustomerFixtures, customerRpc } from './mockCustomer.js'
 import { createPaymentFixtures, paymentInvoke, paymentRpc, payLatestIntent } from './mockPayments.js'
 import { advisorInvoke, biRpc } from './mockBi.js'
+import { createSupportFixtures, supportRpc } from './mockPlatformSupport.js'
 
 function seeded(seed) {
   let value = seed
@@ -413,6 +414,12 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
       if (inventoryResult) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
         return inventoryResult
+      }
+      fixtures.support ||= createSupportFixtures(fixtures.cafe.id)
+      const supportResult = supportRpc(fixtures.support, name, args)
+      if (supportResult) {
+        await new Promise((resolve) => window.setTimeout(resolve, 150))
+        return supportResult
       }
       return { data: null, error: { message: `RPC ${name} tidak ada di mock` } }
     },

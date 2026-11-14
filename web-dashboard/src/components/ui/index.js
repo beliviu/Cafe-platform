@@ -1,18 +1,7 @@
-export { Button, IconButton } from './Button.jsx'
-export { Badge, OrderStatusBadge, PaymentBadge } from './Badge.jsx'
-export { Card, CardHeader } from './Card.jsx'
-export { StatCard } from './StatCard.jsx'
-export { Sparkline } from './Sparkline.jsx'
-export { Skeleton, SkeletonRows, SkeletonText } from './Skeleton.jsx'
-export { EmptyState, ErrorState } from './EmptyState.jsx'
-export { Dialog, Drawer } from './Dialog.jsx'
-export { ConfirmDialog } from './ConfirmDialog.jsx'
-export { ToastProvider } from './ToastProvider.jsx'
-export { useToast } from './useToast.js'
-export { SearchInput, Select, Switch, TextField } from './Fields.jsx'
-export { SegmentedControl } from './SegmentedControl.jsx'
-export { PageHeader } from './PageHeader.jsx'
+/*
+ * Komponen UI web owner & staff. Semua komponen dasar berasal dari design system bersama
+ * (shared/ui → "@dailybrew/ui"); di sini hanya tambahan yang bergantung pada logika web-dashboard.
+ */
+export * from '@dailybrew/ui'
+export { OrderStatusBadge, PaymentBadge } from './Badge.jsx'
 export { DateRangePicker } from './DateRangePicker.jsx'
-export { RupiahInput } from './RupiahInput.jsx'
-export { Menu } from './Menu.jsx'
-export { Pagination } from './Pagination.jsx'

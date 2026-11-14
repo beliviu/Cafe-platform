@@ -6,7 +6,7 @@ import { AccessState } from './shell/AccessState.jsx'
 import { AppShell } from './shell/AppShell.jsx'
 import { PlatformBanner } from './shell/PlatformBanner.jsx'
 import { staffNavigation } from '../config/staffNavigation.js'
-import { cafeColumns, detectDbFeatures } from '../lib/db.js'
+import { cafeColumns, detectDbFeatures, setPlanBlockReporter } from '../lib/db.js'
 import { fetchOwnPermissions } from '../lib/permissions.js'
 import { brandOf, cacheBrand, useDocumentBranding } from '../lib/branding.js'
 
@@ -87,6 +87,17 @@ export function StaffLayout() {
     if (brandKey) cacheBrand(JSON.parse(brandKey))
   }, [brandKey])
 
+
+  // Sinyal upgrade untuk admin platform saat terbentur batas/fitur paket (file 16; diam bila belum ada)
+  const cafeIdForSignal = staffData?.cafe?.id
+  useEffect(() => {
+    if (!supabase || !cafeIdForSignal) return undefined
+    setPlanBlockReporter((kind, detail) => {
+      supabase.rpc('owner_log_plan_block', { p_cafe: cafeIdForSignal, p_kind: kind, p_detail: detail }).then(() => {}, () => {})
+    })
+    return () => setPlanBlockReporter(null)
+  }, [cafeIdForSignal, supabase])
+
   if (loading) return <LoadingScreen label="Memeriksa akses staff..." />
   if (loadError) {
     return <AccessState title="Halaman staff belum tersedia" message={loadError} onRetry={() => setAttempt((value) => value + 1)} />
@@ -97,6 +108,9 @@ export function StaffLayout() {
     <AppShell
       brand={brand}
       homeTo="/staff"
+      grouped={false}
+      mobileNav="bottom"
+      className="is-staff" storageKey="dailybrew.staff.sidebar" defaultCollapsed
       navigation={staffNavigation(pendingCount)}
       account={{ title: staffData.profile.full_name || staffData.cafe.name, subtitle: `Staff · ${staffData.cafe.name}`, onSignOut: handleSignOut }}
       banner={(

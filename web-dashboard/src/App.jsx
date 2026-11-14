@@ -43,6 +43,7 @@ const SettingsLayout = lazy(() =>
 const GeneralSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.GeneralSettings })))
 const OperationsSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.OperationsSettings })))
 const ChargesSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.ChargesSettings })))
+const AppearanceSettings = lazy(() => import('./pages/settings/AppearanceSettings.jsx').then((module) => ({ default: module.AppearanceSettings })))
 const ReceiptSettings = lazy(() => import('./pages/settings/SettingsPages.jsx').then((module) => ({ default: module.ReceiptSettings })))
 const OrderingSettings = lazy(() => import('./pages/settings/OrderingSettings.jsx').then((module) => ({ default: module.OrderingSettings })))
 const LoyaltyPage = lazy(() => import('./pages/customers/LoyaltyPage.jsx').then((module) => ({ default: module.LoyaltyPage })))
@@ -76,6 +77,8 @@ const ExpensesPage = lazy(() => import('./pages/ExpensesPage.jsx').then((module)
 const AdvisorPage = lazy(() => import('./pages/analytics/AdvisorPage.jsx').then((module) => ({ default: module.AdvisorPage })))
 const SalesForecastPage = lazy(() => import('./pages/analytics/SalesForecastPage.jsx').then((module) => ({ default: module.SalesForecastPage })))
 const CustomerAnalyticsPage = lazy(() => import('./pages/analytics/CustomerAnalyticsPage.jsx').then((module) => ({ default: module.CustomerAnalyticsPage })))
+const DailybrewHelpPage = lazy(() => import('./pages/help/DailybrewHelpPages.jsx').then((module) => ({ default: module.DailybrewHelpPage })))
+const DailybrewTicketPage = lazy(() => import('./pages/help/DailybrewHelpPages.jsx').then((module) => ({ default: module.DailybrewTicketPage })))
 const SuppliersPage = lazy(() => import('./pages/purchases/SuppliersPage.jsx').then((module) => ({ default: module.SuppliersPage })))
 
 /** Rute owner — dipakai aplikasi asli dan pratinjau dev. */
@@ -112,6 +115,8 @@ function ownerRoutes() {
       <Route path="promotions" element={<PromotionsPage />} />
       <Route path="reviews" element={<ReviewsPage />} />
       <Route path="support" element={<SupportPage />} />
+      <Route path="bantuan" element={<DailybrewHelpPage />} />
+      <Route path="bantuan/:ticketId" element={<DailybrewTicketPage />} />
       <Route path="advisor" element={<AdvisorPage />} />
       <Route path="sales-forecast" element={<SalesForecastPage />} />
       <Route path="customer-analytics" element={<CustomerAnalyticsPage />} />
@@ -129,6 +134,7 @@ function ownerRoutes() {
         <Route path="subscription" element={<SubscriptionSettings />} />
         <Route path="tables" element={<TablesSettings />} />
         <Route path="receipt" element={<ReceiptSettings />} />
+        <Route path="appearance" element={<AppearanceSettings />} />
       </Route>
     </>
   )

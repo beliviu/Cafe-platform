@@ -3,7 +3,8 @@ import { Plus } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { NewCafeDialog } from '../components/NewCafeDialog.jsx'
 import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, Pagination, SearchInput, Select, SkeletonRows } from '../components/ui/index.js'
-import { rpc, STATE_META, useLoader } from '../lib/api.js'
+import { HealthBadge } from '../components/Health.jsx'
+import { optional, rpc, STATE_META, useLoader } from '../lib/api.js'
 import { formatDate, formatRupiah } from '../lib/format.js'
 
 const PAGE_SIZE = 25
@@ -44,9 +45,10 @@ export function CafesPage() {
   const load = useCallback(() => Promise.all([
     rpc('pa_cafes_list', { p_search: query || null, p_state: state || null, p_plan: plan || null, p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE }),
     rpc('pa_plans_list'),
+    optional(rpc('pa_health_map')), // null sebelum file 16
   ]), [page, plan, query, state])
   const { data, error, loading, reload } = useLoader(load)
-  const [list, plans] = data || []
+  const [list, plans, health] = data || []
 
   return (
     <div className="page">
@@ -72,6 +74,7 @@ export function CafesPage() {
                         <th scope="col">Kafe</th>
                         <th scope="col">Paket</th>
                         <th scope="col">Status</th>
+                        {health && <th scope="col">Kesehatan</th>}
                         <th scope="col">Berlaku</th>
                         <th scope="col" className="num">Biaya / bln</th>
                         <th scope="col">Terdaftar</th>
@@ -87,6 +90,7 @@ export function CafesPage() {
                             <td><span className="pa-cell-main"><strong>{row.name}</strong><small>{row.owner_name || 'Tanpa owner'}{row.owner_email ? ` · ${row.owner_email}` : ''}</small></span></td>
                             <td>{row.plan_name || '—'}</td>
                             <td><Badge tone={meta.tone}>{meta.label}</Badge></td>
+                            {health && <td>{health[row.cafe_id] ? <HealthBadge score={health[row.cafe_id].score} label={health[row.cafe_id].label} size="sm" /> : <span className="pa-muted">—</span>}</td>}
                             <td className="tabular">{endsAt(row)}</td>
                             <td className="num tabular">{Number(row.monthly_price) ? formatRupiah(row.monthly_price) : '—'}{row.price_override != null && <small className="pa-muted"> · kustom</small>}</td>
                             <td className="tabular">{formatDate(row.created_at)}</td>

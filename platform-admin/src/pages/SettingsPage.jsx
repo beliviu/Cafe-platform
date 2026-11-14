@@ -3,12 +3,10 @@
  * Warna berlaku untuk semua admin; mode gelap/terang dipilih per perangkat.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Check, Palette, Save } from 'lucide-react'
+import { Save } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
-import { Button, Card, CardHeader, ErrorState, PageHeader, SegmentedControl, SkeletonRows, TextField, useToast } from '../components/ui/index.js'
+import { AppearancePanel, Button, Card, CardHeader, ErrorState, PageHeader, SkeletonRows, TextField, useToast } from '../components/ui/index.js'
 import { rpc, useLoader } from '../lib/api.js'
-import { DEFAULT_THEME_COLOR, isHex, THEME_GRADIENTS, THEME_PRESETS } from '../lib/theme.js'
-import { THEME_PREFERENCES, useThemeMode } from '../lib/themeMode.js'
 import { formatWa } from '../lib/whatsapp.js'
 
 const KINDS = [
@@ -22,41 +20,26 @@ const KINDS = [
   { key: 'invoice_due_1', label: 'Tagihan H-1', owner: true },
 ]
 
-function Swatch({ color, color2, label, selected, onClick }) {
-  return (
-    <button type="button" className={`pa-swatch${selected ? ' is-selected' : ''}`} onClick={onClick} aria-pressed={selected} title={label}
-      style={{ background: color2 ? `linear-gradient(135deg, ${color}, ${color2})` : color }}>
-      {selected && <Check size={16} aria-hidden="true" />}
-      <span className="sr-only">{label}</span>
-    </button>
-  )
-}
-
 function AppearanceCard({ initial }) {
   const { theme, setTheme } = useAuth()
-  const { preference, setPreference } = useThemeMode()
   const { toast } = useToast()
-  const [saved, setSaved] = useState({ color: initial.theme_color, color2: initial.theme_color2 })
+  const [saved, setSaved] = useState({ color: initial.theme_color, color2: null })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const dirty = theme.color !== saved.color || (theme.color2 || null) !== (saved.color2 || null)
+  const dirty = theme.color !== saved.color
 
   // Keluar halaman tanpa menyimpan → kembali ke warna tersimpan terakhir
   const savedRef = useRef(saved)
   useEffect(() => { savedRef.current = saved }, [saved])
   useEffect(() => () => setTheme(savedRef.current), [setTheme])
 
-  function preview(color, color2 = null) {
-    setTheme({ color, color2 })
-  }
-
   async function save() {
     setBusy(true)
     setError('')
     try {
-      const result = await rpc('pa_settings_update', { p_patch: { theme_color: theme.color, theme_color2: theme.color2 || '' } })
-      setSaved({ color: result.theme_color, color2: result.theme_color2 })
-      toast({ title: 'Warna disimpan', description: 'Berlaku untuk semua admin platform.' })
+      const result = await rpc('pa_settings_update', { p_patch: { theme_color: theme.color, theme_color2: '' } })
+      setSaved({ color: result.theme_color, color2: null })
+      toast({ title: 'Warna aksen disimpan', description: 'Berlaku untuk semua admin platform.' })
     } catch (caught) {
       setError(caught.message)
     } finally {
@@ -66,48 +49,15 @@ function AppearanceCard({ initial }) {
 
   return (
     <Card>
-      <CardHeader title="Tampilan" description="Warna dashboard platform. Semua warna lain (sidebar, tombol, grafik, status) dihitung otomatis dari pilihan ini."
-        actions={dirty && <span className="pa-dirty">Belum disimpan</span>} />
-      <div className="pa-settings-block">
-        <span className="ui-field-label">Warna utama</span>
-        <div className="pa-swatches">
-          {THEME_PRESETS.map((preset) => (
-            <Swatch key={preset.color} color={preset.color} label={preset.label} selected={!theme.color2 && theme.color === preset.color} onClick={() => preview(preset.color)} />
-          ))}
-          <label className={`pa-swatch pa-swatch-custom${!theme.color2 && !THEME_PRESETS.some((preset) => preset.color === theme.color) ? ' is-selected' : ''}`} title="Warna bebas">
-            <Palette size={16} aria-hidden="true" />
-            <span className="sr-only">Pilih warna bebas</span>
-            <input type="color" value={isHex(theme.color) ? theme.color : DEFAULT_THEME_COLOR} onChange={(event) => preview(event.target.value.toUpperCase(), theme.color2)} />
-          </label>
+      <CardHeader title="Tampilan" description="Mode, sudut kartu, dan animasi tersimpan di perangkat ini. Warna aksen berlaku untuk semua admin." />
+      <AppearancePanel accent={theme.color} onAccentChange={(color) => setTheme({ color, color2: null })}>
+        <div className="appearance-save">
+          <Button icon={Save} loading={busy} disabled={!dirty} onClick={save}>Simpan warna aksen</Button>
+          {dirty && <Button variant="ghost" disabled={busy} onClick={() => setTheme(saved)}>Batalkan</Button>}
+          {dirty && <span className="appearance-dirty">Belum disimpan</span>}
         </div>
-      </div>
-      <div className="pa-settings-block">
-        <span className="ui-field-label">Gradasi (opsional)</span>
-        <div className="pa-swatches">
-          {THEME_GRADIENTS.map((gradient) => (
-            <Swatch key={gradient.label} color={gradient.from} color2={gradient.to} label={gradient.label}
-              selected={theme.color === gradient.from && theme.color2 === gradient.to} onClick={() => preview(gradient.from, gradient.to)} />
-          ))}
-          {theme.color2 && <Button size="sm" variant="ghost" onClick={() => preview(theme.color, null)}>Tanpa gradasi</Button>}
-        </div>
-      </div>
-      <div className="pa-settings-block">
-        <span className="ui-field-label">Mode</span>
-        <SegmentedControl label="Mode tampilan" options={THEME_PREFERENCES} value={preference} onChange={setPreference} />
-        <p className="ui-field-hint">Mode dipilih per perangkat dan langsung tersimpan.</p>
-      </div>
-      <div className="pa-preview" aria-hidden="true">
-        <span className="pa-preview-rail"><span /><span /><span /></span>
-        <span className="pa-preview-body">
-          <span className="pa-preview-hero">MRR · Rp 4.200.000</span>
-          <span className="pa-preview-row"><span className="ui-btn ui-btn-primary ui-btn-sm"><span>Tombol utama</span></span><span className="ui-badge ui-badge-green ui-badge-sm">Aktif</span><span className="ui-badge ui-badge-amber ui-badge-sm">Telat</span></span>
-        </span>
-      </div>
-      <div className="pa-actions pa-card-actions">
-        <Button icon={Save} loading={busy} disabled={!dirty} onClick={save}>Simpan warna</Button>
-        {dirty && <Button variant="ghost" onClick={() => setTheme(saved)}>Batalkan</Button>}
-      </div>
-      {error && <p className="ui-field-error" role="alert">{error}</p>}
+        {error && <p className="ui-field-error" role="alert">{error}</p>}
+      </AppearancePanel>
     </Card>
   )
 }

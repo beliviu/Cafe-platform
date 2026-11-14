@@ -27,7 +27,7 @@ export function StaffPreview() {
 
   return (
     <AuthContext.Provider value={auth}>
-      <AppShell brand={brandOf(fixtures.cafe)} homeTo={PREFIX} navigation={navigation} account={{ title: 'Nadia Barista', subtitle: `Staff · ${fixtures.cafe.name}`, onSignOut: () => {} }}>
+      <AppShell brand={brandOf(fixtures.cafe)} homeTo={PREFIX} grouped={false} mobileNav="bottom" className="is-staff" storageKey="dailybrew.staff.sidebar" defaultCollapsed navigation={navigation} account={{ title: 'Nadia Barista', subtitle: `Staff · ${fixtures.cafe.name}`, onSignOut: () => {} }}>
         <Outlet
           context={{
             cafe: fixtures.cafe,

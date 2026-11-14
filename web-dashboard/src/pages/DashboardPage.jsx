@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import {
-  AlertTriangle, ArrowRight, BarChart3, Boxes, CalendarClock, CircleCheck, CircleDollarSign, Clock3, Coffee, CreditCard, EyeOff,
-  Flame, PackageOpen, ReceiptText, ShoppingBag, TriangleAlert, Wallet,
+  ArrowRight, BarChart3, Boxes, CalendarClock, CircleCheck, Clock3, Coffee, CreditCard, EyeOff,
+  Flame, PackageOpen, ShoppingBag, TriangleAlert, Wallet,
 } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
 import { ColumnChart } from '../components/charts/ColumnChart.jsx'
@@ -10,7 +10,7 @@ import { DonutChart } from '../components/charts/DonutChart.jsx'
 import { HourHeatmap } from '../components/charts/HourHeatmap.jsx'
 import {
   Card, CardHeader, DateRangePicker, EmptyState, ErrorState, OrderStatusBadge, PageHeader, PaymentBadge,
-  SegmentedControl, Skeleton, StatCard,
+  Badge, KpiCard, SegmentedControl, Skeleton,
 } from '../components/ui/index.js'
 import { computeDashboard, visibleHours } from '../lib/analytics.js'
 import { PAYMENT_METHOD_COLORS, PAYMENT_METHOD_ORDER, paymentMethodSlot } from '../lib/chartColors.js'
@@ -48,7 +48,6 @@ function TrendCard({ data, range }) {
   return (
     <Card className="dash-trend">
       <CardHeader
-        icon={BarChart3}
         title={hourly ? 'Tren per jam' : 'Tren harian'}
         description={isRevenue ? 'Pendapatan dari pesanan lunas' : 'Pesanan yang tidak dibatalkan'}
         actions={(
@@ -152,23 +151,34 @@ function AttentionCard({ attention, features }) {
     },
   ].filter(Boolean)
 
+  const TONE_WORD = { red: 'Mendesak', amber: 'Perlu dicek', neutral: 'Info' }
   return (
-    <Card className="dash-attention">
-      <CardHeader icon={AlertTriangle} title="Perlu perhatian" description="Hal yang sebaiknya ditindaklanjuti" />
+    <Card className="dash-attention" aria-label="Perlu perhatian">
+      <CardHeader
+        title="Perlu perhatian"
+        description={items.length ? 'Hal yang sebaiknya diurus dulu hari ini' : undefined}
+        actions={items.length ? <Badge tone="amber" dot={false}>{formatNumber(items.length)} hal</Badge> : null}
+      />
       {items.length ? (
         <ul className="attention-list">
           {items.map(({ key, tone, icon: Icon, title, detail, to }) => (
             <li key={key}>
               <Link to={to} className="attention-item">
                 <span className={`attention-icon attention-${tone}`}><Icon size={17} aria-hidden="true" /></span>
-                <span className="attention-text"><strong>{title}</strong><small>{detail}</small></span>
-                <ArrowRight size={16} aria-hidden="true" className="attention-arrow" />
+                <span className="attention-text">
+                  <strong>{title}</strong>
+                  <small>{detail}</small>
+                </span>
+                <span className="attention-side">
+                  <Badge tone={tone} size="sm">{TONE_WORD[tone]}</Badge>
+                  <ArrowRight size={16} aria-hidden="true" className="attention-arrow" />
+                </span>
               </Link>
             </li>
           ))}
         </ul>
       ) : (
-        <EmptyState compact icon={CircleCheck} title="Semua beres" description="Tidak ada pesanan tertahan, semua pesanan selesai sudah lunas, dan semua produk aktif." />
+        <EmptyState compact tone="green" icon={CircleCheck} title="Semua beres" description="Tidak ada pesanan tertahan, semua pesanan selesai sudah lunas, dan semua produk aktif." />
       )}
     </Card>
   )
@@ -194,7 +204,7 @@ function PaymentCard({ methods }) {
 
   return (
     <Card className="dash-payments">
-      <CardHeader icon={CreditCard} title="Metode pembayaran" description="Porsi pendapatan lunas" />
+      <CardHeader title="Metode pembayaran" description="Porsi pendapatan lunas" />
       {segments.length ? (
         <DonutChart
           segments={segments}
@@ -216,7 +226,6 @@ function PeakHoursCard({ data }) {
   return (
     <Card className="dash-heatmap">
       <CardHeader
-        icon={Flame}
         title="Jam ramai"
         description={empty ? 'Jumlah pesanan per hari dan jam (WIB)' : `Tersibuk ${hourLabel(busiest.hour)}–${hourLabel(busiest.hour + 1)} · ${formatNumber(busiest.orders)} pesanan pada rentang ini`}
       />
@@ -233,7 +242,7 @@ function PopularCard({ popular }) {
   const top = popular.slice(0, 5)
   return (
     <Card className="dash-popular">
-      <CardHeader icon={Coffee} title="Produk populer" description="Peringkat jumlah terjual · bar = kontribusi pendapatan" />
+      <CardHeader title="Produk populer" description="Peringkat jumlah terjual · bar = kontribusi pendapatan" />
       {top.length ? (
         <ol className="popular-v3">
           {top.map((product, index) => (
@@ -266,7 +275,6 @@ function RecentCard({ recent }) {
   return (
     <Card className="dash-recent">
       <CardHeader
-        icon={ReceiptText}
         title="Transaksi terbaru"
         description="5 pesanan terakhir pada rentang ini"
         actions={<Link to="/orders" className="ui-link-button">Lihat semua <ArrowRight size={15} aria-hidden="true" /></Link>}
@@ -298,14 +306,13 @@ function RecentCard({ recent }) {
 function DashboardSkeleton() {
   return (
     <div className="dash" role="status" aria-label="Memuat statistik dashboard">
-      <div className="dash-stats">
-        {[0, 1, 2, 3].map((index) => <StatCard key={index} loading label="Memuat…" />)}
+      <Skeleton height={132} radius={20} />
+      <div className="ui-kpi-grid">
+        {[0, 1, 2, 3].map((index) => <KpiCard key={index} loading hero={index === 0} label="Memuat…" />)}
       </div>
       <div className="dash-grid">
-        <Skeleton className="dash-trend" height={320} radius={18} />
-        <Skeleton className="dash-attention" height={320} radius={18} />
-        <Skeleton className="dash-heatmap" height={280} radius={18} />
-        <Skeleton className="dash-payments" height={280} radius={18} />
+        <Skeleton className="dash-trend" height={320} radius={20} />
+        <Skeleton className="dash-payments" height={320} radius={20} />
       </div>
     </div>
   )
@@ -387,6 +394,7 @@ export function DashboardPage() {
     <div className="page">
       <div className="dash-intro">
         <PageHeader
+          hero
           eyebrow={`Ringkasan · ${cafe.name}`}
           title={`${greetingForNow()}${ownerFirstName ? `, ${ownerFirstName}` : ''}`}
           description={`Performa ${cafe.name} untuk ${range.label.replace('Hari ini, ', 'hari ini, ')} (WIB).`}
@@ -400,40 +408,39 @@ export function DashboardPage() {
         <DashboardSkeleton />
       ) : (
         <div className={`dash${loading ? ' is-refreshing' : ''}`} aria-busy={loading}>
-          <section className="dash-stats" aria-label="Ringkasan performa">
-            <StatCard
-              icon={CircleDollarSign}
+          <AttentionCard attention={data.attention} features={features} />
+
+          <section className="ui-kpi-grid" aria-label="Ringkasan performa">
+            <KpiCard
+              hero
               label="Pendapatan lunas"
-              value={formatRupiah(summary.revenue)}
+              value={Number(summary.revenue) || 0}
+              format={formatRupiah}
               delta={data.deltas.revenue}
               deltaLabel={compareLabel}
               trend={data.byDay.length > 1 ? data.byDay.map((day) => day.revenue) : undefined}
               caption={`${formatNumber(summary.paidOrders)} pesanan lunas`}
             />
-            <StatCard
-              icon={ShoppingBag}
-              tone="blue"
+            <KpiCard
               label="Jumlah pesanan"
-              value={formatNumber(summary.orders)}
+              value={Number(summary.orders) || 0}
               delta={data.deltas.orders}
               deltaLabel={compareLabel}
               trend={data.byDay.length > 1 ? data.byDay.map((day) => day.orders) : undefined}
               caption="Tidak termasuk yang dibatalkan"
             />
-            <StatCard
-              icon={ReceiptText}
-              tone="neutral"
+            <KpiCard
               label="Rata-rata per pesanan"
-              value={formatRupiah(summary.averageOrder)}
+              value={Number(summary.averageOrder) || 0}
+              format={formatRupiah}
               delta={summary.paidOrders ? data.deltas.averageOrder : null}
               deltaLabel={compareLabel}
               caption="Dari pesanan lunas"
             />
-            <StatCard
-              icon={Wallet}
-              tone="amber"
+            <KpiCard
               label="Selesai, belum lunas"
-              value={formatRupiah(summary.completedUnpaidValue)}
+              value={Number(summary.completedUnpaidValue) || 0}
+              format={formatRupiah}
               caption={`${formatNumber(summary.completedUnpaid)} pesanan · ${formatNumber(summary.cancelled)} dibatalkan`}
             />
           </section>
@@ -451,9 +458,8 @@ export function DashboardPage() {
 
           <div className={`dash-grid${range.days === 1 ? ' is-single-day' : ''}`}>
             <TrendCard data={data} range={range} />
-            <AttentionCard attention={data.attention} features={features} />
-            {range.days > 1 && <PeakHoursCard data={data} />}
             <PaymentCard methods={data.paymentMethods} />
+            {range.days > 1 && <PeakHoursCard data={data} />}
             <PopularCard popular={data.popular} />
             <RecentCard recent={data.recent} />
           </div>

@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react'
 import { Ban, CalendarPlus, Check, FilePlus2, Gift, KeyRound, Minus, PackageCheck, Pencil, PlayCircle } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { AuditTable } from '../components/AuditTable.jsx'
+import { HealthCard, SetupCard } from '../components/Health.jsx'
+import { TimelineCard } from '../components/Timeline.jsx'
 import { InvoiceTable } from '../components/InvoiceTable.jsx'
 import { OutboxTable } from '../components/OutboxTable.jsx'
 import { useCrumbs } from '../components/shell/crumbs.js'
@@ -10,7 +12,7 @@ import {
   ChangePlanDialog, ExtendDialog, InvoiceDialog, OwnerWhatsAppDialog, ResetPasswordDialog, SuspendDialog, TrialDialog,
 } from '../components/SubscriptionDialogs.jsx'
 import { Badge, Button, Card, CardHeader, EmptyState, ErrorState, IconButton, PageHeader, SkeletonRows } from '../components/ui/index.js'
-import { FEATURES, LIMITS, rpc, STATE_META, useLoader } from '../lib/api.js'
+import { FEATURES, LIMITS, optional, rpc, STATE_META, useLoader } from '../lib/api.js'
 import { formatDate, formatDateTime, formatNumber, formatRupiah } from '../lib/format.js'
 import { formatWa } from '../lib/whatsapp.js'
 
@@ -25,6 +27,8 @@ export function CafeDetailPage() {
     rpc('pa_invoices_list', { p_cafe: cafeId, p_limit: 50 }),
     rpc('pa_audit_list', { p_cafe: cafeId, p_limit: 30 }),
     rpc('pa_cafe_outbox', { p_cafe: cafeId, p_limit: 30 }).catch(() => null), // null sebelum file 15
+    optional(rpc('pa_cafe_health', { p_cafe: cafeId, p_days: 90 })), // null sebelum file 16
+    optional(rpc('pa_cafe_timeline', { p_cafe: cafeId, p_limit: 100 })),
   ]), [cafeId])
   const { data, error, loading, reload } = useLoader(load)
   useCrumbs(data ? [{ label: data[0].cafe.name }] : [{ label: 'Detail' }])
@@ -32,7 +36,7 @@ export function CafeDetailPage() {
   if (error) return <div className="page"><PageHeader title="Detail kafe" /><ErrorState message={error} onRetry={reload} /></div>
   if (loading && !data) return <div className="page"><PageHeader title="Memuat…" /><Card><SkeletonRows rows={6} /></Card></div>
 
-  const [detail, plans, invoices, audit, outbox] = data
+  const [detail, plans, invoices, audit, outbox, health, timeline] = data
   const { cafe, subscription, summary, usage, effective_plan: effective } = detail
   const meta = STATE_META[summary.state] || STATE_META.active
   const owners = detail.members.filter((member) => member.role === 'owner')
@@ -63,6 +67,13 @@ export function CafeDetailPage() {
         <div className="pa-banner" role="status">
           <Ban size={16} aria-hidden="true" />
           <span>Dinonaktifkan {formatDateTime(cafe.suspended_at)}{cafe.suspended_reason ? ` — ${cafe.suspended_reason}` : ''}. Pesanan baru ditolak.</span>
+        </div>
+      )}
+
+      {health && (
+        <div className="fin-grid">
+          <HealthCard health={health} />
+          <SetupCard setup={health.setup} waCtx={waCtx} />
         </div>
       )}
 
@@ -157,6 +168,8 @@ export function CafeDetailPage() {
           ? <EmptyState compact title="Belum ada tagihan" description="Buat tagihan dari kartu Langganan." />
           : <InvoiceTable rows={invoices.rows} showCafe={false} onChanged={reload} />}
       </Card>
+
+      <TimelineCard cafeId={cafe.id} items={timeline} onChanged={reload} />
 
       {outbox && (
         <Card padding="none">

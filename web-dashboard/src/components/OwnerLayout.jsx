@@ -6,7 +6,7 @@ import { LoadingScreen } from './LoadingScreen.jsx'
 import { AccessState } from './shell/AccessState.jsx'
 import { AppShell } from './shell/AppShell.jsx'
 import { PlatformBanner } from './shell/PlatformBanner.jsx'
-import { cafeColumns, detectDbFeatures } from '../lib/db.js'
+import { cafeColumns, detectDbFeatures, setPlanBlockReporter } from '../lib/db.js'
 import { brandOf, cacheBrand, useDocumentBranding } from '../lib/branding.js'
 
 export function OwnerLayout() {
@@ -98,6 +98,17 @@ export function OwnerLayout() {
   useEffect(() => {
     if (brandKey) cacheBrand(JSON.parse(brandKey))
   }, [brandKey])
+
+
+  // Sinyal upgrade untuk admin platform saat terbentur batas/fitur paket (file 16; diam bila belum ada)
+  const cafeIdForSignal = ownerData?.cafe?.id
+  useEffect(() => {
+    if (!supabase || !cafeIdForSignal) return undefined
+    setPlanBlockReporter((kind, detail) => {
+      supabase.rpc('owner_log_plan_block', { p_cafe: cafeIdForSignal, p_kind: kind, p_detail: detail }).then(() => {}, () => {})
+    })
+    return () => setPlanBlockReporter(null)
+  }, [cafeIdForSignal, supabase])
 
   if (loading) return <LoadingScreen label="Memuat cafe Anda..." />
   if (profileRole === 'staff') return <Navigate to="/staff" replace />

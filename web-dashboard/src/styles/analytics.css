@@ -14,7 +14,7 @@
 .bi-down { color: var(--status-red-fg); }
 .bi-notice {
   display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 12px; padding: 14px 16px;
-  color: var(--text-primary); background: var(--surface-sunken); border-radius: var(--radius-lg);
+  color: var(--text-primary); background: var(--surface-sunken); border-radius: var(--radius-md);
 }
 .bi-notice svg { margin-top: 2px; color: var(--text-secondary); }
 .bi-notice strong { font-weight: 700; }
@@ -56,7 +56,7 @@
 }
 .advisor-ai-form textarea:focus { outline: none; border-color: var(--brand-600); box-shadow: var(--focus-ring); }
 .advisor-ai-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
-.advisor-ai-answer { margin: 0; padding: 14px 16px; color: var(--text-primary); background: var(--surface-canvas); border-radius: var(--radius-lg); font-size: var(--text-sm); line-height: 1.65; white-space: pre-wrap; }
+.advisor-ai-answer { margin: 0; padding: 14px 16px; color: var(--text-primary); background: var(--surface-canvas); border-radius: var(--radius-md); font-size: var(--text-sm); line-height: 1.65; white-space: pre-wrap; }
 .advisor-history { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .advisor-history li { border-top: 1px solid var(--border-subtle); }
 .advisor-history li:first-child { border-top: 0; }

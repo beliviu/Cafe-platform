@@ -33,15 +33,10 @@ Pengguna yang sama juga mendapat dua hal di `web-dashboard`:
 | Edge Function `subscription-billing` | Owner membayar lewat Midtrans Snap, plus webhook. Status lunas hanya berasal dari API Midtrans (signature diverifikasi, lalu status dicek ulang ke API). |
 | Audit | Setiap fungsi yang mengubah data menulis ke `platform_audit_logs` **di transaksi yang sama**. Kalau aksinya gagal, log-nya ikut batal. |
 
-Tes otomatis (`supabase/tests/test-14-platform-admin.mjs`, 256 pemeriksaan) membuktikan bahwa anon, customer, staff, owner, admin tanpa 2FA, dan admin nonaktif **ditolak** di setiap fungsi admin.
+Tes otomatis (`supabase/tests/test-14-platform-admin.mjs`, 256 pemeriksaan; `test-16-kesehatan-tiket.mjs`, 195 pemeriksaan) membuktikan bahwa anon, customer, staff, owner, admin tanpa 2FA, dan admin nonaktif **ditolak** di setiap fungsi admin.
 
-### Kenapa komponen UI disalin, bukan dibagi?
-Token warna, mesin tema (`lib/theme.js`), font, dan komponen `ui/` **disalin** dari `web-dashboard`. Kerangka (sidebar, bar atas, lonceng) di `components/shell/AdminShell.jsx` ditulis khusus untuk admin. Tiap file salinan punya baris pertama `Salinan dari web-dashboard/…`. Alasannya:
-1. Komponen `web-dashboard` bergantung pada `lib/` miliknya (status pesanan, mesin tema white-label per kafe). Mengekstraknya ke folder bersama berarti merefaktor aplikasi produksi, dan risikonya lebih besar daripada manfaatnya.
-2. Dua proyek di-deploy terpisah dengan *Root Directory* masing-masing. Kode di luar folder itu membuat build Vercel/Cloudflare lebih rumit.
-3. Admin memakai satu palet tetap (Espresso, gelap/terang) tanpa white-label.
-
-Kalau komponen aslinya berubah dan perubahannya juga dibutuhkan di sini, salin ulang file yang bersangkutan.
+### Design system bersama
+Komponen UI, mesin tema, kerangka (sidebar, palet perintah), dan grafik berasal dari folder `shared/ui/` di root repo, dipakai bersama dengan `web-dashboard` lewat alias `@dailybrew/ui`. Aturannya ada di `DESIGN.md`. Karena folder itu di luar `platform-admin/`, build di hosting harus bisa membaca root repo (lihat **Deploy dashboard**).
 
 ---
 
@@ -173,7 +168,27 @@ WhatsApp **tetap manual**: tombol **Chat WA** membuka `wa.me` dengan pesan templ
 
 Status kirim (Antre / Terkirim / Gagal + alasan) tampil di **detail kafe → Status email**. Baris WhatsApp di antrean selalu berstatus `skipped`. Kolom `channel` sudah disiapkan agar WhatsApp Business API bisa ditambahkan nanti tanpa mengubah tabel.
 
-### 9. Notifikasi realtime di lonceng
+### 9. Jalankan file SQL 16 (kesehatan kafe, analitik, tiket bantuan)
+SQL Editor → tempel isi `supabase/usulan/16-kesehatan-analitik-tiket.sql` → **Run**. Syarat: file 14 dan 15 sudah dijalankan.
+
+- **Hasil yang benar:** query verifikasi di akhir menampilkan **9 baris** (7 tabel + 2 trigger) dan **tidak ada** baris `tanpa_rls`.
+- **Data lama:** tidak ada yang diubah atau dihapus. File ini menambah 7 tabel, 2 kolom kosong di `cafe_settings`, dan bucket storage privat `support-attachments`. `cafe_mrr_monthly` diisi awal dari tagihan **lunas** yang sudah ada; skor kesehatan dan progres setup hari ini langsung dihitung.
+- **Jadwal:** tidak ada jadwal baru. `pa_daily_check()` (jadwal `dailybrew-harian` dari langkah 6) kini juga menghitung skor kesehatan, progres setup, MRR per kafe, dan sinyal upgrade. Uji manual: `select public.pa_daily_check() -> 'health';`
+- **Realtime:** file ini mendaftarkan `platform_tickets` ke publikasi `supabase_realtime` agar kotak masuk tiket langsung bertambah. Kalau tidak, centang tabel itu di **Database → Publications**.
+- **Storage:** kalau query di akhir gagal karena schema `storage`, buat bucket **support-attachments** (privat, 5 MB, JPG/PNG/WebP) dari menu Storage lalu jalankan ulang file ini.
+
+Fitur yang aktif setelah langkah ini:
+
+| Fitur | Di mana |
+|---|---|
+| Skor kesehatan 0–100 (pesanan 14 hari, login owner, modul, riwayat bayar) | Ringkasan, kolom **Kesehatan** di Kafe, kartu di detail kafe (komponen + tren) |
+| Progres setup 8 langkah + **Kirim panduan** (WA) | Ringkasan (kafe masa coba), detail kafe |
+| Sinyal upgrade (pemakaian ≥ 80% batas paket, atau ≥ 3× terbentur fitur terkunci dalam 14 hari) | **Perlu tindakan**, notifikasi admin seminggu sekali per kafe |
+| Pergerakan MRR, retensi per bulan daftar, rata-rata per kafe, nilai seumur hidup, tingkat berhenti | **Analitik** |
+| Linimasa + catatan internal (tidak terlihat owner) | Detail kafe |
+| Tiket bantuan owner → admin | **Tiket bantuan** (admin) · menu **Bantuan Dailybrew** di dashboard owner |
+
+### 10. Notifikasi realtime di lonceng
 File 15 otomatis mendaftarkan tabel `platform_notifications` ke Supabase Realtime. Kalau lonceng tidak langsung bertambah saat ada kejadian baru, cek **Database → Publications → supabase_realtime** dan pastikan `platform_notifications` tercentang. Lonceng tetap memuat ulang saat halaman dibuka.
 
 ---
@@ -182,7 +197,7 @@ File 15 otomatis mendaftarkan tabel `platform_notifications` ke Supabase Realtim
 
 ### Vercel
 1. **Add New → Project**, lalu import repo ini.
-2. **Root Directory:** `platform-admin`. Framework: Vite (terdeteksi otomatis).
+2. **Root Directory:** `platform-admin`, lalu centang **Include files outside the Root Directory in the Build Step** (dibutuhkan untuk `shared/ui`). Framework: Vite (terdeteksi otomatis).
 3. **Environment Variables:** `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`.
 4. Deploy, lalu pasang domain, mis. `admin.domainkamu.id`. File `vercel.json` sudah menangani refresh halaman SPA.
 
@@ -190,7 +205,7 @@ File 15 otomatis mendaftarkan tabel `platform_notifications` ke Supabase Realtim
 
 ### Cloudflare Pages (gratis, boleh komersial)
 1. **Workers & Pages → Create → Pages → Connect to Git**, lalu pilih repo ini.
-2. Isi **Root directory** `platform-admin`, **Build command** `npm run build`, dan **Output** `dist`.
+2. Kosongkan **Root directory** (root repo), isi **Build command** `cd platform-admin && npm ci && npm run build` dan **Output** `platform-admin/dist`. Root repo dibutuhkan karena `shared/ui` ada di luar folder aplikasi.
 3. Isi environment variables yang sama dengan Vercel. File `public/_redirects` sudah menangani refresh halaman SPA.
 
 Dashboard memasang `noindex`, jadi tidak muncul di mesin pencari. Lapisan keamanannya tetap login, 2FA, dan pemeriksaan di database.
@@ -211,6 +226,10 @@ Dashboard memasang `noindex`, jadi tidak muncul di mesin pencari. Lapisan keaman
 | Enterprise / harga khusus | Detail kafe → **Ganti paket** → isi **Harga kustom / bulan**, lalu harga itu ikut dihitung di MRR |
 | Kabari semua kafe | **Pengumuman** → tulis → semua kafe / kafe tertentu (opsional + email) |
 | Ganti warna dashboard | **Pengaturan → Tampilan** |
+| Kafe mulai sepi atau jarang login | Ringkasan → **Kesehatan kafe** → buka kafe → lihat alasan & tren, lalu **Chat WA** |
+| Kafe masa coba belum selesai setup | Ringkasan → **Progres setup** → **Kirim panduan** (pesan WA menyebut langkah yang macet) |
+| Owner kirim pertanyaan | **Tiket bantuan** → buka → tugaskan, balas, atau **Kirim & selesaikan**. Owner dapat notifikasi di dashboard. |
+| Catat hasil telepon / janji dengan owner | Detail kafe → **Linimasa** → Catatan internal |
 
 ## Belum termasuk versi ini
 - **WhatsApp otomatis.** Masih manual lewat wa.me karena WhatsApp Business API berbayar. Antrean sudah punya kolom `channel` untuk menambahkannya nanti.
@@ -218,3 +237,5 @@ Dashboard memasang `noindex`, jadi tidak muncul di mesin pencari. Lapisan keaman
 - Refund otomatis untuk pembayaran yang masuk setelah tagihan dibatalkan. Kasus ini tercatat sebagai `invoice.paid_after_void` dan muncul di Perlu tindakan.
 - Prorata saat ganti paket di tengah periode. Paket baru berlaku mulai dibayar.
 - Peran admin bertingkat. Semua admin punya hak penuh.
+- Lampiran gambar dari admin saat membalas tiket (owner sudah bisa melampirkan gambar).
+- Wizard setup 8 langkah di sisi owner. Saat ini progres dibaca dari data yang sudah ada dan hanya terlihat oleh admin.

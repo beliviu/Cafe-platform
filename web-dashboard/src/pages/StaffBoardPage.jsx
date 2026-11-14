@@ -16,6 +16,7 @@ import { useNow } from '../components/staff/useNow.js'
 import {
   Button, ConfirmDialog, Drawer, EmptyState, ErrorState, IconButton, PageHeader, SegmentedControl, Skeleton, useToast,
 } from '../components/ui/index.js'
+import { motionEnabled } from '../components/ui/index.js'
 import { playNewOrderSound, unlockAlertSound } from '../lib/alertSound.js'
 import { customerLabel, fetchCustomerNames, fetchOrderItems, friendlyError, orderColumns } from '../lib/db.js'
 import { formatNumber, formatQueueNumber, formatRupiah, jakartaDateKey, startOfJakartaDay } from '../lib/format.js'
@@ -65,6 +66,7 @@ export function StaffBoardPage() {
   const [selectedId, setSelectedId] = useState(null)
   const [detailId, setDetailId] = useState(null)
   const [busyId, setBusyId] = useState(null)
+  const [leavingId, setLeavingId] = useState(null)
   const [dialog, setDialog] = useState(null)
   const [panel, setPanel] = useState(null)
   const [mobileColumn, setMobileColumn] = useState('incoming')
@@ -230,6 +232,12 @@ export function StaffBoardPage() {
     setBusyId(order.id)
     try {
       const updated = await advanceOrderTo(supabase, order, action.target)
+      // Tiket meluncur keluar dulu (220 ms) baru hilang dari papan; dilewati bila animasi dimatikan
+      if (motionEnabled()) {
+        setLeavingId(order.id)
+        await new Promise((resolve) => { window.setTimeout(resolve, 220) })
+        setLeavingId(null)
+      }
       patchOrder(order.id, { order_status: updated.order_status })
       toast({
         title: `${formatQueueNumber(order)} · ${orderStatusMeta(updated.order_status).label}`,
@@ -370,6 +378,7 @@ export function StaffBoardPage() {
                         selected={selectedId === order.id}
                         isNew={newIds.has(order.id)}
                         busy={busyId === order.id}
+                        leaving={leavingId === order.id}
                         onSelect={setSelectedId}
                         onPrimary={(target) => runPrimary(target)}
                         onPay={(target) => setDialog({ type: 'pay', order: target })}

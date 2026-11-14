@@ -1,0 +1,93 @@
+/* Grafik — garis bantu tipis & resesif, data yang menonjol. Semua warna dari token. */
+
+.chart { position: relative; width: 100%; min-width: 0; margin: 0; border-radius: var(--radius-md); }
+.chart-plot { position: relative; width: 100%; min-width: 0; border-radius: var(--radius-md); }
+.chart:focus-visible, .chart-plot:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 4px; }
+.chart-svg { display: block; overflow: visible; }
+.chart-grid { stroke: var(--line); stroke-width: 1; shape-rendering: crispEdges; }
+.chart-baseline { stroke: var(--border-strong); stroke-width: 1; shape-rendering: crispEdges; }
+.chart-cross { stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart-tick { fill: var(--text-3); font: 500 12px var(--font-sans); font-variant-numeric: tabular-nums; }
+.chart-value-label { fill: var(--text); font: 700 12px var(--font-sans); font-variant-numeric: tabular-nums; }
+.chart-bar { fill: var(--accent); transition: fill var(--dur-1), opacity var(--dur-1); }
+.chart-bar.is-active { fill: var(--accent-ink); }
+.chart-bar.is-dimmed, .chart-stack.is-dimmed { opacity: .4; }
+.chart-stack { transition: opacity var(--dur-1); }
+
+/* Animasi masuk */
+.chart-reveal { animation: chart-reveal 1100ms var(--ease-out) backwards; }
+@keyframes chart-reveal { from { clip-path: inset(-8px 100% -8px -8px); } to { clip-path: inset(-8px -8px -8px -8px); } }
+.chart-grow { transform-box: fill-box; transform-origin: bottom; animation: chart-grow var(--dur-4) var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+.chart-stack.chart-grow { transform-box: view-box; }
+@keyframes chart-grow { from { transform: scaleY(0); } }
+.chart-dot-in { animation: ui-fade var(--dur-3) var(--ease-out) 700ms backwards; }
+
+/* Tooltip (mengikuti kursor) */
+.chart-tooltip {
+  position: absolute; z-index: 5; display: grid; gap: 2px; min-width: 120px; padding: 8px 12px;
+  color: var(--text); background: var(--panel-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-overlay); font-size: var(--text-xs); pointer-events: none; transform: translate(-50%, -100%); white-space: nowrap;
+  animation: ui-fade var(--dur-1) var(--ease-out);
+}
+.chart-tooltip.is-follow { transition: left 80ms linear, top 80ms linear; }
+.chart-tooltip strong { font-size: var(--text-base); font-weight: 700; }
+.chart-tooltip span { color: var(--text-2); }
+.chart-tooltip-row { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; }
+.chart-tooltip-row i, .chart-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.chart-tooltip-row strong { font-size: var(--text-xs); }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 12px; padding: 0; list-style: none; color: var(--text-2); font-size: var(--text-xs); font-weight: 600; }
+.chart-legend li { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Heatmap hari × jam — satu warna aksen, pudar → pekat */
+.heatmap-wrap { display: grid; gap: 12px; min-width: 0; }
+.heatmap {
+  display: grid; grid-template-columns: 34px repeat(var(--heatmap-cols), minmax(14px, 1fr)); gap: 3px;
+  min-width: 0; padding: 2px; border-radius: var(--radius-sm); overflow-x: auto;
+}
+.heatmap-hour { color: var(--text-3); font-size: var(--text-xs); text-align: left; }
+.heatmap-day { align-self: center; color: var(--text-2); font-size: var(--text-xs); font-weight: 600; }
+.heatmap-cell { display: block; min-height: 22px; border-radius: 4px; transition: box-shadow var(--dur-1); }
+.heatmap-cell.is-active { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
+.heatmap-l0 { background: var(--panel-2); }
+.heatmap-l1 { background: var(--brand-200); }
+.heatmap-l2 { background: var(--brand-300); }
+.heatmap-l3 { background: var(--brand-400); }
+.heatmap-l4 { background: var(--accent); }
+.heatmap-l5 { background: var(--accent-ink); }
+.heatmap-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.heatmap-readout { min-height: 20px; color: var(--text-2); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.heatmap-legend { display: inline-flex; align-items: center; gap: 4px; color: var(--text-3); font-size: var(--text-xs); }
+.heatmap-legend .heatmap-cell { width: 16px; min-height: 12px; height: 12px; border-radius: 3px; }
+.heatmap-legend .heatmap-cell:first-of-type { margin-left: 4px; }
+.heatmap-legend .heatmap-cell:last-of-type { margin-right: 4px; }
+
+/* Donut + legenda bernilai (menyesuaikan lebar kartu lewat container query) */
+.donut { container-type: inline-size; }
+.donut-layout { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 20px; }
+.donut-figure { position: relative; width: 148px; height: 148px; }
+.donut-figure svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.donut-arc {
+  stroke-linecap: butt; stroke-dasharray: 1; stroke-dashoffset: 0;
+  transition: opacity var(--dur-1), stroke-width var(--dur-2) var(--ease-spring);
+  animation: donut-draw var(--dur-4) var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * 90ms);
+}
+@keyframes donut-draw { from { stroke-dashoffset: 1; } }
+.donut-arc.is-dimmed { opacity: .3; }
+.donut-arc.is-active { stroke-width: 24; }
+.donut-center { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2px; text-align: center; pointer-events: none; }
+.donut-center strong { font: 600 var(--text-lg)/1.1 var(--font-serif); }
+.donut-center span { max-width: 92px; color: var(--text-3); font-size: var(--text-xs); line-height: 1.3; }
+.donut-legend { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.donut-legend li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 36px; padding: 4px 8px; border-radius: var(--radius-sm); transition: background var(--dur-1); }
+.donut-legend li.is-active { background: var(--panel-2); }
+.donut-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.donut-legend-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; min-width: 0; color: var(--text); font-size: var(--text-sm); font-weight: 600; }
+.donut-legend-name small, .donut-legend-value small { color: var(--text-3); font-size: var(--text-xs); font-weight: 500; }
+.donut-legend-value { display: flex; align-items: baseline; gap: 6px; color: var(--text); font-size: var(--text-sm); font-weight: 700; white-space: nowrap; }
+.donut-legend-value small { min-width: 30px; text-align: right; }
+@container (max-width: 440px) {
+  .donut-layout { grid-template-columns: 1fr; justify-items: center; gap: 16px; }
+  .donut-figure { width: 132px; height: 132px; }
+  .donut-legend { width: 100%; }
+}
+@media (forced-colors: active) { .chart-bar, .heatmap-cell, .donut-arc { forced-color-adjust: none; } }

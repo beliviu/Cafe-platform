@@ -150,7 +150,14 @@ export function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [attempt, setAttempt] = useState(0)
-  const [query, setQuery] = useState('')
+  // ?q=… dari palet perintah (Ctrl/Cmd+K) mengisi kotak cari; berubah lagi bila palet dipakai saat halaman ini terbuka
+  const urlQuery = searchParams.get('q') || ''
+  const [query, setQuery] = useState(urlQuery)
+  const [seenUrlQuery, setSeenUrlQuery] = useState(urlQuery)
+  if (urlQuery !== seenUrlQuery) {
+    setSeenUrlQuery(urlQuery)
+    setQuery(urlQuery)
+  }
   const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get('category') || 'all')
   const [statusFilter, setStatusFilter] = useState(() => (['available', 'unavailable'].includes(searchParams.get('status')) ? searchParams.get('status') : 'all'))
   const [sort, setSort] = useState('newest')

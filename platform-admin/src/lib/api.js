@@ -11,7 +11,7 @@ export function friendlyError(error) {
   const hint = error?.hint || ''
   if (hint === 'mfa_required' || /2FA/.test(message)) return 'Sesi belum terverifikasi 2FA. Masuk ulang.'
   if (hint === 'platform_admin_only') return 'Akun ini bukan admin platform.'
-  if (/could not find the function|schema cache/i.test(message)) return 'Fungsi database belum ada. Jalankan file SQL 14 & 15 di Supabase.'
+  if (/could not find the function|schema cache/i.test(message)) return 'Fungsi database belum ada. Jalankan file SQL terbaru (14–16) di Supabase.'
   if (/failed to fetch|network|load failed/i.test(message)) return 'Koneksi terputus. Periksa internet lalu coba lagi.'
   return message || 'Terjadi kesalahan. Coba lagi.'
 }
@@ -110,6 +110,38 @@ export const ACTION_LABELS = {
   'whatsapp.open': 'Chat WA dibuka',
   'settings.update': 'Pengaturan diubah',
   'announcement.create': 'Pengumuman dikirim',
+  'cafe.note': 'Catatan internal',
+  'ticket.reply': 'Tiket dibalas',
+  'ticket.update': 'Tiket diubah',
+}
+
+/** Label skor kesehatan (file 16). Selalu tampil sebagai kata, bukan warna saja. */
+export const HEALTH_META = {
+  healthy: { label: 'Sehat', tone: 'green' },
+  watch: { label: 'Pantau', tone: 'amber' },
+  risk: { label: 'Berisiko', tone: 'red' },
+}
+
+export const TICKET_STATUS = {
+  new: { label: 'Baru', tone: 'blue' },
+  in_progress: { label: 'Diproses', tone: 'amber' },
+  resolved: { label: 'Selesai', tone: 'green' },
+}
+export const TICKET_PRIORITY = {
+  urgent: { label: 'Mendesak', tone: 'red' },
+  high: { label: 'Tinggi', tone: 'amber' },
+  normal: { label: 'Normal', tone: 'neutral' },
+  low: { label: 'Rendah', tone: 'neutral' },
+}
+export const TICKET_CATEGORY = {
+  akun: 'Akun & login', tagihan: 'Tagihan & langganan', pesanan: 'Pesanan', menu: 'Menu & produk',
+  pembayaran: 'Pembayaran', aplikasi: 'Aplikasi customer', lainnya: 'Lainnya',
+}
+
+const MISSING_FUNCTION = /belum ada|SQL 1[4-9]/i
+/** Fungsi dari file SQL yang mungkin belum dijalankan: hasil null (bukan error) agar halaman tetap tampil. */
+export function optional(promise) {
+  return promise.catch((error) => (MISSING_FUNCTION.test(error.message) ? null : Promise.reject(error)))
 }
 
 /** Persen perubahan (null bila pembanding kosong/0). */

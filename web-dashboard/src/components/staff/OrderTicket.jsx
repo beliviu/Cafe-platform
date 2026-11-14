@@ -18,7 +18,7 @@ function waitLabel(minutes) {
 
 /** Kartu pesanan di papan staff — dibaca dari jauh, satu aksi utama. */
 export const OrderTicket = forwardRef(function OrderTicket({
-  order, shortcut, now, prefs, features, selected, isNew, busy, onSelect, onPrimary, onPay, onCancel, onOpen,
+  order, shortcut, now, prefs, features, selected, isNew, busy, leaving, onSelect, onPrimary, onPay, onCancel, onOpen,
 }, ref) {
   const minutes = minutesSince(order.created_at, now)
   const tone = waitTone(minutes, prefs)
@@ -31,7 +31,7 @@ export const OrderTicket = forwardRef(function OrderTicket({
   return (
     <article
       ref={ref}
-      className={`ticket ticket-wait-${tone}${selected ? ' is-selected' : ''}${isNew ? ' is-new' : ''}`}
+      className={`ticket ticket-wait-${tone}${selected ? ' is-selected' : ''}${isNew ? ' is-new' : ''}${leaving ? ' is-leaving' : ''}`}
       aria-label={`Pesanan ${queue}, ${customerLabel(order)}`}
       onPointerDown={() => onSelect(order.id)}
       onClick={(event) => {

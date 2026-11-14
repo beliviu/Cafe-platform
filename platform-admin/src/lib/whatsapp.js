@@ -11,7 +11,7 @@ export const WA_TEMPLATES = [
   { key: 'bebas', label: 'Pesan bebas' },
 ]
 
-/** ctx: { cafeName, ownerName, amount, dueAt, invoiceNumber, planName } */
+/** ctx: { cafeName, ownerName, amount, dueAt, invoiceNumber, planName, stuckStep?, setupDone?, upgradeReason? } */
 export function waMessage(template, ctx = {}) {
   const hi = `Halo Kak ${ctx.ownerName || ''}`.trim()
   const cafe = ctx.cafeName || 'kafe Kakak'
@@ -26,13 +26,16 @@ export function waMessage(template, ctx = {}) {
     case 'setup':
       return [
         `${hi}, salam dari Dailybrew.`,
-        `Ada yang bisa kami bantu untuk setup ${cafe}? Misalnya menambah menu, meja & QR, akun staff, atau pembayaran QRIS.`,
+        ctx.stuckStep
+          ? `Kami lihat setup ${cafe} sudah ${ctx.setupDone ?? 0} dari 8 langkah. Langkah berikutnya: ${ctx.stuckStep}. Mau kami pandu sekarang? Cukup 5–10 menit.`
+          : `Ada yang bisa kami bantu untuk setup ${cafe}? Misalnya menambah menu, meja & QR, akun staff, atau pembayaran QRIS.`,
         'Silakan balas pesan ini, kami pandu langkah demi langkah.',
       ].join('\n\n')
     case 'upgrade':
       return [
         `${hi}, salam dari Dailybrew.`,
         `Terima kasih sudah memakai Dailybrew di ${cafe}${ctx.planName ? ` (paket ${ctx.planName})` : ''}.`,
+        ...(ctx.upgradeReason ? [`Kami lihat ${cafe} sudah ${ctx.upgradeReason.charAt(0).toLowerCase()}${ctx.upgradeReason.slice(1)}, jadi mungkin sudah waktunya naik paket.`] : []),
         'Kalau Kakak butuh inventori & resep, laporan keuangan, member & poin, atau pesan lewat QR meja, paket Pro sudah mencakup semuanya. Mau kami bantu aktifkan atau jadwalkan demo singkat?',
       ].join('\n\n')
     default:

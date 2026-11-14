@@ -4,7 +4,7 @@
  * dan disalin ke localStorage agar layar pertama langsung berwarna benar (tanpa kedip).
  */
 import { useEffect } from 'react'
-import { buildTheme, DEFAULT_THEME_COLOR, isHex } from './theme.js'
+import { applyTheme, DEFAULT_THEME_COLOR, isHex } from './theme.js'
 import { useThemeMode } from './themeMode.js'
 
 const CACHE_KEY = 'dailybrew.platform.brand'
@@ -31,9 +31,6 @@ export function cacheTheme(theme) {
 export function useBrandTheme(color, color2) {
   const { mode } = useThemeMode()
   useEffect(() => {
-    const root = document.documentElement
-    const { vars } = buildTheme({ color: isHex(color) ? color : DEFAULT_THEME_COLOR, color2: isHex(color2) ? color2 : undefined, mode })
-    for (const [key, value] of Object.entries(vars)) root.style.setProperty(key, value)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', vars['--nav-bg'])
+    applyTheme({ color: isHex(color) ? color : DEFAULT_THEME_COLOR, color2: isHex(color2) ? color2 : undefined, mode })
   }, [color, color2, mode])
 }

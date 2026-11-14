@@ -1,4 +1,4 @@
-import { BookOpen, Boxes, Briefcase, Building2, ChefHat, ClipboardList, Gift, HeartHandshake, Home, Landmark, Layers3, LayoutDashboard, LifeBuoy, Lightbulb, Megaphone, Package2, PieChart, ReceiptText, Settings2, ShoppingBag, ShoppingCart, Star, TrendingUp, UserCheck, Users, Wallet, Warehouse } from 'lucide-react'
+import { BookOpen, Boxes, Briefcase, Building2, ChefHat, ClipboardList, Gift, HeartHandshake, Home, Landmark, Layers3, LayoutDashboard, LifeBuoy, Lightbulb, Megaphone, MessagesSquare, Package2, PieChart, ReceiptText, Settings2, ShoppingBag, ShoppingCart, Star, TrendingUp, UserCheck, Users, Wallet, Warehouse } from 'lucide-react'
 
 /** Menu owner. Hanya modul yang sudah berfungsi yang tampil. `icon` grup = ikon di rail sidebar. */
 export const OWNER_NAVIGATION = [
@@ -66,6 +66,7 @@ export const OWNER_NAVIGATION = [
     items: [
       { to: '/team', label: 'Tim', icon: Users },
       { to: '/settings', label: 'Pengaturan', icon: Settings2 },
+      { to: '/bantuan', label: 'Bantuan Dailybrew', icon: MessagesSquare },
     ],
   },
 ]

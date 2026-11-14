@@ -4,13 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0B0604" />
+    <meta name="theme-color" content="#17120F" />
     <script>
-      // Mode tampilan sebelum React jalan (lihat src/lib/themeMode.js) — mencegah kedip terang/gelap.
+      // Mode, sudut & animasi sebelum React jalan (lihat shared/ui/theme) — mencegah kedip terang/gelap.
       try {
         var pref = localStorage.getItem('dailybrew.theme') || 'dark'
         var mode = pref === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : pref
         document.documentElement.dataset.theme = mode === 'light' ? 'light' : 'dark'
+        var look = JSON.parse(localStorage.getItem('dailybrew.appearance') || '{}')
+        document.documentElement.dataset.radius = look.radius === 'sharp' ? 'sharp' : 'soft'
+        document.documentElement.dataset.motion = look.motion === false ? 'off' : 'on'
       } catch (e) { document.documentElement.dataset.theme = 'dark' }
     </script>
     <meta name="description" content="Dashboard owner dan staff kafe." />

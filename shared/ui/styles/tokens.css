@@ -1,0 +1,55 @@
+/*
+ * Design tokens Dailybrew "Warm Luxury" — skala (teks, spasi, radius, gerak).
+ * WARNA ada di tokens.generated.css (dibuat dari theme/theme.js) dan ditimpa applyTheme() saat aksen/mode berubah.
+ * Jangan menulis warna hex di komponen atau halaman — selalu pakai token. Lihat DESIGN.md.
+ */
+:root {
+  /* Tipografi: Fraunces hanya untuk judul halaman & angka besar; sisanya Plus Jakarta Sans */
+  --font-serif: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Segoe UI", system-ui, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 44px;
+
+  /* Spasi kelipatan 4 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-14: 56px;
+
+  /* Radius: sm = kontrol kecil (badge, chip), md = tombol/input/baris, lg = kartu & overlay */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+  --radius-xl: var(--radius-lg); /* nama lama */
+
+  /* Gerak */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);       /* masuk */
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1); /* indikator & tombol */
+  --ease: var(--ease-out);                         /* nama lama */
+  --dur-1: 150ms;
+  --dur-2: 250ms;
+  --dur-3: 400ms;
+  --dur-4: 550ms;
+
+  --tap-target: 44px;
+  --focus-ring: 0 0 0 3px var(--accent-soft);
+  --edge-light: 0 0 0 0 transparent; /* nama lama: kilau tepi dihapus */
+}
+
+/* Sudut "tegas" (Pengaturan → Tampilan) */
+:root[data-radius="sharp"] {
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
