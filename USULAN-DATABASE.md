@@ -28,6 +28,7 @@
 | 13. **Pesan tanpa login lewat QR meja (tamu)** — [`supabase/usulan/13-tamu-qr-meja.sql`](supabase/usulan/13-tamu-qr-meja.sql) + nyalakan *Allow anonymous sign-ins* | 🟢 **siap dijalankan** · diuji 11 skenario |
 | 14. **Dashboard platform, suspend kafe, tagihan & langganan otomatis** — [`supabase/usulan/14-platform-admin.sql`](supabase/usulan/14-platform-admin.sql) + Edge Function `platform-admin` & `subscription-billing` | 🟢 **siap dijalankan** · diuji 256 pemeriksaan · panduan lengkap: [`platform-admin/README.md`](platform-admin/README.md) |
 | 15. **Notifikasi platform & owner, Perlu tindakan, WA manual, pengaturan & tema platform, pengecekan harian** — [`supabase/usulan/15-notifikasi-platform.sql`](supabase/usulan/15-notifikasi-platform.sql) + Edge Function `notify` | 🟢 **siap dijalankan** · diuji 169 pemeriksaan · panduan: [`platform-admin/README.md`](platform-admin/README.md) langkah 5–9 |
+| 16. **Skor kesehatan kafe, progres setup, sinyal upgrade, analitik MRR, linimasa & catatan, tiket bantuan owner → admin** — [`supabase/usulan/16-kesehatan-analitik-tiket.sql`](supabase/usulan/16-kesehatan-analitik-tiket.sql) | 🟢 **siap dijalankan** (setelah 14 & 15) · diuji 195 pemeriksaan · tanpa jadwal baru · panduan: [`platform-admin/README.md`](platform-admin/README.md) langkah 9 |
 | 2. Migrasi checkout v2 (dine-in/meja, catatan per item, metode bayar) | 📝 draf — dibutuhkan di fase 5 |
 
 ### File 15 — Notifikasi platform, WhatsApp manual, pengaturan & tema
