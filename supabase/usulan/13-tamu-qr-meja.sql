@@ -6,9 +6,9 @@
 -- punya auth.uid(), jadi semua aturan keamanan (RLS) tetap berlaku —
 -- tamu hanya bisa melihat pesanannya sendiri.
 --
--- File ini menambah satu pengaman: akun TAMU hanya boleh membuat pesanan
--- untuk MEJA (table_id terisi). Pesan bawa pulang / terjadwal tetap wajib
--- login dengan akun biasa.
+-- Akun TAMU hanya boleh membuat pesanan untuk MEJA (table_id terisi) dan
+-- wajib memiliki nama. Voucher, poin, pesanan bawa pulang, dan jadwal tetap
+-- memerlukan akun customer biasa.
 --
 -- WAJIB setelah menjalankan file ini:
 --   Supabase Dashboard → Authentication → Sign In / Providers →
@@ -22,10 +22,23 @@ returns trigger
 language plpgsql
 set search_path = ''
 as $$
+declare
+  v_customer_name text;
 begin
   if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) and new.table_id is null then
     raise exception 'Pesan tanpa login hanya bisa lewat QR meja. Masuk atau daftar untuk pesan bawa pulang.'
       using errcode = '42501', hint = 'guest_table_only';
+  end if;
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then
+    select p.full_name
+    into v_customer_name
+    from public.profiles p
+    where p.id = new.customer_id;
+
+    if nullif(btrim(v_customer_name), '') is null or char_length(btrim(v_customer_name)) > 60 then
+      raise exception 'Nama wajib diisi (maksimal 60 karakter) untuk memesan sebagai tamu.'
+        using errcode = '22023', hint = 'guest_name_required';
+    end if;
   end if;
   return new;
 end;

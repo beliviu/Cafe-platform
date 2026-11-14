@@ -542,13 +542,21 @@ revoke all on function public.voucher_evaluate(uuid, text, uuid, numeric, boolea
 
 create or replace function public.voucher_check(p_cafe_id uuid, p_code text, p_subtotal numeric)
 returns jsonb
-language sql
+language plpgsql
 stable
 security definer
 set search_path = ''
 as $$
-  select jsonb_build_object('ok', e.problem is null, 'name', e.voucher_name, 'discount', e.discount, 'message', e.problem)
-  from public.voucher_evaluate(p_cafe_id, p_code, (select auth.uid()), p_subtotal, false) e
+begin
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then
+    return jsonb_build_object('ok', false, 'name', null, 'discount', 0, 'message', 'Masuk ke akun customer untuk memakai voucher.');
+  end if;
+
+  return (
+    select jsonb_build_object('ok', e.problem is null, 'name', e.voucher_name, 'discount', e.discount, 'message', e.problem)
+    from public.voucher_evaluate(p_cafe_id, p_code, (select auth.uid()), p_subtotal, false) e
+  );
+end;
 $$;
 revoke all on function public.voucher_check(uuid, text, numeric) from public, anon;
 grant execute on function public.voucher_check(uuid, text, numeric) to authenticated;
@@ -855,6 +863,11 @@ declare
 begin
   if v_uid is null then
     raise exception 'Login diperlukan untuk membuat pesanan' using errcode = '28000';
+  end if;
+  if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false)
+     and (nullif(btrim(coalesce(p_voucher_code, '')), '') is not null or coalesce(p_redeem_points, 0) > 0) then
+    raise exception 'Masuk ke akun customer untuk memakai voucher atau poin.'
+      using errcode = '42501', hint = 'member_benefits_required';
   end if;
   -- Kunci anti-dobel dipegang sejak awal (place_order memakai kunci yang sama)
   if v_key is not null then

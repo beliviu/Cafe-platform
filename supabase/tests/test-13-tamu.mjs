@@ -36,11 +36,16 @@ const U = { staff: '00000000-0000-0000-0000-0000000000a2', owner: '00000000-0000
 for (const id of Object.values(U)) await q('insert into auth.users (id) values ($1)', [id])
 const cafe = (await q("insert into cafes (name) values ('Kopi A') returning id"))[0].id
 await q("insert into profiles (id, cafe_id, full_name, role) values ($1,$2,'O','owner'),($3,$2,'S','staff'),($4,null,'R','customer'),($5,null,'Tamu Budi','customer'),($6,null,null,'customer')", [U.owner, cafe, U.staff, U.cust, U.guest, U.guest2])
+await q("insert into vouchers (cafe_id, code, name, discount_type, discount_value, is_public) values ($1, 'PUBLIK', 'Voucher publik', 'amount', 1000, true)", [cafe])
 const prod = (await q("insert into products (cafe_id, name, price) values ($1,'Latte',28000) returning id", [cafe]))[0].id
 const table = (await q("insert into cafe_tables (cafe_id, label) values ($1,'4') returning id, qr_token", [cafe]))[0]
 const items = JSON.stringify([{ product_id: prod, quantity: 1 }])
 
 await as(U.guest, true)
+const guestVoucher = (await q("select voucher_check($1, 'PUBLIK', 28000) result", [cafe]))[0].result
+check('tamu tidak bisa mengecek voucher', !guestVoucher.ok && /Masuk ke akun/.test(guestVoucher.message), JSON.stringify(guestVoucher))
+await fails('tamu tidak bisa memakai voucher saat checkout', "select customer_place_order($1, $2::jsonb, 'dine_in', $3, null, null, null, null, 'PUBLIK')", [cafe, items, table.qr_token], /Masuk ke akun/)
+await fails('tamu tidak bisa menukar poin saat checkout', "select customer_place_order($1, $2::jsonb, 'dine_in', $3, null, null, null, null, null, 1)", [cafe, items, table.qr_token], /Masuk ke akun/)
 await fails('tamu pesan bawa pulang → ditolak', 'select customer_place_order($1, $2::jsonb, $3)', [cafe, items, 'takeaway'], /hanya bisa lewat QR meja/)
 await fails('tamu lewat create_order lama → ditolak', 'select create_order($1, $2::jsonb)', [cafe, items], /hanya bisa lewat QR meja/)
 const guestOrder = (await q("select customer_place_order($1, $2::jsonb, 'dine_in', $3) id", [cafe, items, table.qr_token]))[0].id
@@ -51,6 +56,12 @@ check('tamu bisa melihat item pesanannya', (await q('select id from order_items 
 await q('select customer_use_static_qris($1)', [guestOrder]).catch(() => null) // QRIS belum dipasang → boleh gagal
 
 await as(U.guest2, true)
+await fails('tamu tanpa nama → ditolak', 'select customer_place_order($1, $2::jsonb, $3, $4)', [cafe, items, 'dine_in', table.qr_token], /Nama wajib diisi/)
+await db.exec('reset role')
+await q("update profiles set full_name = 'Tamu Dewi' where id = $1", [U.guest2])
+await as(U.guest2, true)
+const namedGuestOrder = (await q("select customer_place_order($1, $2::jsonb, 'dine_in', $3) id", [cafe, items, table.qr_token]))[0].id
+check('tamu dengan nama bisa pesan lewat QR meja', Boolean(namedGuestOrder))
 check('tamu lain tidak bisa melihat pesanan tamu pertama', (await q('select id from orders where id = $1', [guestOrder])).length === 0)
 
 await as(U.cust)

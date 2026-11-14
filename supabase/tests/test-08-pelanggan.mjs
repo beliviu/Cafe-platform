@@ -14,6 +14,9 @@ const num = Number
 {
   const lite = new PGlite()
   await lite.exec(fs.readFileSync(new URL('./base-schema.sql', import.meta.url), 'utf8'))
+  await lite.exec(`create or replace function auth.jwt() returns jsonb language sql stable as $$
+    select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+    grant execute on function auth.jwt() to anon, authenticated;`)
   for (const file of ['04-owner-dashboard.sql', '05-inventori-supplier.sql', '06-pesanan-v2-pos.sql']) await lite.exec(usulan(file))
   const result = await lite.exec(usulan('08-pelanggan-qr.sql'))
   check('tanpa 07: verifikasi 32 baris', result.at(-1).rows.length === 32, result.at(-1).rows.length)
@@ -40,6 +43,9 @@ async function fails(name, sql, params, pattern) {
 }
 
 await db.exec(fs.readFileSync(new URL('./base-schema.sql', import.meta.url), 'utf8'))
+await db.exec(`create or replace function auth.jwt() returns jsonb language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+  grant execute on function auth.jwt() to anon, authenticated;`)
 await db.exec("set timezone to 'Asia/Jakarta'") // current_date di tes = tanggal WIB (sama dengan kode)
 for (const file of ['04-owner-dashboard.sql', '05-inventori-supplier.sql', '06-pesanan-v2-pos.sql', '07-akuntansi.sql']) await db.exec(usulan(file))
 const results = await db.exec(usulan('08-pelanggan-qr.sql'))
