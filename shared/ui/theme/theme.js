@@ -1,7 +1,7 @@
 /*
  * Mesin tema "Warm Luxury" — dipakai web owner, web staff, dan dashboard platform.
  *
- * Dasar (latar, sidebar, panel, teks, status) TETAP per mode gelap/terang.
+ * Dasar (latar, sidebar, panel, garis, teks) mengikuti HUE warna pilihan (deriveBase); status tetap.
  * Yang berubah hanya AKSEN: dari satu warna pilihan (bawaan Terakota), dihitung otomatis
  *   accent       isian tombol utama (dijaga ≥ 3:1 terhadap panel agar tetap terlihat)
  *   accent-deep  versi lebih gelap (hover, ujung gradien kartu utama)
@@ -18,12 +18,17 @@ export const DEFAULT_ACCENT = '#C8734A' // Terakota
 /** @deprecated nama lama */
 export const DEFAULT_THEME_COLOR = DEFAULT_ACCENT
 
+// Preset versi awal + Hijau senja. Memilih preset mewarnai SELURUH tampilan (latar, sidebar, kartu, grafik), bukan hanya tombol.
 export const ACCENT_PRESETS = [
   { color: '#C8734A', label: 'Terakota' },
+  { color: '#B0805A', label: 'Espresso' },
   { color: '#C9963B', label: 'Emas' },
-  { color: '#6E9A78', label: 'Sage' },
+  { color: '#7F9A5E', label: 'Matcha' },
+  { color: '#4F9A8A', label: 'Hijau senja' },
   { color: '#4F86C6', label: 'Samudra' },
-  { color: '#9A6BB5', label: 'Plum' },
+  { color: '#7A78C4', label: 'Lavender' },
+  { color: '#B0708C', label: 'Mawar' },
+  { color: '#8C939C', label: 'Grafit' },
 ]
 /** @deprecated nama lama */
 export const THEME_PRESETS = ACCENT_PRESETS
@@ -158,13 +163,44 @@ export function onColor(fill) {
   return contrast('#000000', fill) >= contrast('#FFFFFF', fill) ? '#000000' : '#FFFFFF'
 }
 
+/* ---------- Palet dasar mengikuti warna pilihan ---------- */
+const NEUTRAL_KEYS = ['bg', 'sidebar', 'panel', 'panel2', 'hover', 'sand', 'line', 'lineDefault', 'lineStrong', 'text', 'text2', 'text3', 'placeholder']
+const TEXT_KEYS = new Set(['text', 'text2', 'text3', 'placeholder'])
+const DEFAULT_CHROMA = hexToOklch(DEFAULT_ACCENT).c
+
+/**
+ * Latar, sidebar, panel, garis, dan teks memakai HUE warna pilihan (lightness tetap seperti palet dasar),
+ * jadi memilih hijau membuat seluruh tampilan kehijauan — bukan hanya tombol & grafik.
+ * Kekuatan tint mengikuti chroma warna pilihan: warna abu-abu → hampir netral, warna jenuh → tint lebih terasa.
+ * Teks sekunder dijaga tetap ≥ 4,5:1 terhadap panel, latar, dan sidebar.
+ */
+export function deriveBase(color, mode = 'dark') {
+  const dark = mode !== 'light'
+  const base = BASE[dark ? 'dark' : 'light']
+  const seed = isHex(color) ? color.toUpperCase() : DEFAULT_ACCENT
+  const { c: seedChroma, h } = hexToOklch(seed)
+  const strength = clamp(seedChroma / DEFAULT_CHROMA, 0.12, 1.6) * (dark ? 1.9 : 1.4)
+  const out = { ...base }
+  for (const key of NEUTRAL_KEYS) {
+    const { l, c } = hexToOklch(base[key])
+    out[key] = oklch(l, c * strength * (TEXT_KEYS.has(key) ? 0.75 : 1), h)
+  }
+  const surfaces = [out.panel, out.panel2, out.bg, out.sidebar]
+  const direction = dark ? 1 : -1
+  out.text = towardContrast(out.text, surfaces, 12, direction)
+  out.text2 = towardContrast(out.text2, surfaces, 6, direction)
+  out.text3 = towardContrast(out.text3, [...surfaces, out.hover], 4.5, direction)
+  out.placeholder = towardContrast(out.placeholder, [out.panel, out.sidebar], 3.2, direction)
+  return out
+}
+
 /**
  * Turunan aksen untuk satu mode.
  * Hasil: { accent, deep, soft, mid, ink, on, softSolid }
  */
 export function deriveAccent(color, mode = 'dark') {
   const dark = mode !== 'light'
-  const base = BASE[dark ? 'dark' : 'light']
+  const base = deriveBase(color, mode)
   const seed = isHex(color) ? color.toUpperCase() : DEFAULT_ACCENT
   // Isian harus tetap terlihat di atas panel (kontras non-teks ≥ 3:1)
   const accent = towardContrast(seed, base.panel, 3, dark ? 1 : -1)
@@ -182,7 +218,7 @@ export function deriveAccent(color, mode = 'dark') {
  */
 export function buildTheme({ color, color2, mode = 'dark' } = {}) {
   const dark = mode !== 'light'
-  const base = BASE[dark ? 'dark' : 'light']
+  const base = deriveBase(color, mode)
   const a = deriveAccent(color, mode)
   const second = isHex(color2) ? towardContrast(color2.toUpperCase(), base.panel, 3, dark ? 1 : -1) : null
   // Gradasi hanya dipakai bila teks di atasnya tetap terbaca di kedua ujung
@@ -202,7 +238,7 @@ export function buildTheme({ color, color2, mode = 'dark' } = {}) {
   const chroma = clamp(ac, 0.04, 0.14) * 0.9
   const chart = (dark ? [0.86, 0.76, 0.66, 0.56, 0.47] : [0.36, 0.46, 0.56, 0.66, 0.75]).map((L) => oklch(L, chroma, ah))
 
-  const shadowInk = dark ? '#000000' : '#3A2A1E'
+  const shadowInk = dark ? '#000000' : mix(base.text, '#000000', 0.2)
   const vars = {
     // ---- Token baru ----
     '--bg': base.bg,
@@ -229,7 +265,7 @@ export function buildTheme({ color, color2, mode = 'dark' } = {}) {
     '--warn-soft': status.amber.bg,
     '--bad-soft': status.red.bg,
     '--info-soft': status.blue.bg,
-    '--overlay': alpha(dark ? '#000000' : '#2A1E17', dark ? 0.48 : 0.34),
+    '--overlay': alpha(dark ? '#000000' : base.text, dark ? 0.48 : 0.34),
     '--shadow-hover': `0 10px 28px -12px ${alpha(shadowInk, dark ? 0.7 : 0.28)}`,
     '--shadow-overlay': `0 24px 60px -18px ${alpha(shadowInk, dark ? 0.8 : 0.34)}, 0 2px 8px ${alpha(shadowInk, dark ? 0.4 : 0.08)}`,
 
@@ -241,7 +277,7 @@ export function buildTheme({ color, color2, mode = 'dark' } = {}) {
     '--surface-hover': base.hover,
     '--surface-sand': base.sand,
     '--surface-field': dark ? base.sidebar : base.panel,
-    '--surface-overlay': alpha(dark ? '#000000' : '#2A1E17', dark ? 0.48 : 0.34),
+    '--surface-overlay': alpha(dark ? '#000000' : base.text, dark ? 0.48 : 0.34),
     '--canvas-glow': 'transparent',
     '--nav-bg': base.sidebar,
     '--nav-panel': base.sidebar,
@@ -280,7 +316,7 @@ export function buildTheme({ color, color2, mode = 'dark' } = {}) {
     '--sand': dark ? base.text2 : base.sand,
     '--taupe': base.text3,
     '--walnut': a.accent,
-    '--espresso': '#17120F',
+    '--espresso': dark ? base.sidebar : mix(base.text, '#000000', 0.3),
     '--brand-50': tint(0.08),
     '--brand-100': a.softSolid,
     '--brand-200': tint(0.24),

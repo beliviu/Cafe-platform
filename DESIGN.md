@@ -28,7 +28,9 @@ Di dalam aplikasi, impor tetap dari `components/ui/index.js` (meneruskan semua i
 
 Skala ada di [`shared/ui/styles/tokens.css`](shared/ui/styles/tokens.css). Warna dihitung oleh [`shared/ui/theme/theme.js`](shared/ui/theme/theme.js); nilai bawaannya dicetak ke `tokens.generated.css` (jangan diubah manual, jalankan `node shared/ui/scripts/build-tokens.mjs` setelah mengubah `theme.js`).
 
-### Warna dasar (tetap per mode)
+### Warna dasar (mengikuti warna pilihan)
+
+Latar, sidebar, panel, garis, dan teks memakai **hue warna pilihan** (`deriveBase()`): lightness tetap seperti tabel di bawah, hanya rona yang ikut. Memilih Hijau senja membuat seluruh tampilan kehijauan, bukan hanya tombol dan grafik. Kekuatan rona mengikuti kejenuhan warna pilihan (Grafit hampir netral). Warna status (hijau/kuning/merah/biru) tidak ikut berubah. Nilai di tabel = Terakota bawaan sebelum diberi rona.
 
 | Token | Gelap | Terang | Untuk |
 |---|---|---|---|
@@ -45,11 +47,11 @@ Skala ada di [`shared/ui/styles/tokens.css`](shared/ui/styles/tokens.css). Warna
 | `--bad` / `--bad-soft` | `#F08C7B` | `#B4432F` | gagal, telat, berisiko |
 | `--info` / `--info-soft` | `#8DB7E6` | `#2F5F96` | informasi, sedang diproses |
 
-Semua pasangan teks/latar di atas sudah diuji ≥ 4,5:1.
+Semua pasangan teks/latar sudah diuji ≥ 4,5:1 untuk setiap preset di kedua mode; `deriveBase()` menggeser lightness teks sekunder bila kontras kurang.
 
 ### Aksen (dinamis)
 
-Bawaan **Terakota `#C8734A`**. Pilihan: Emas `#C9963B`, Sage `#6E9A78`, Samudra `#4F86C6`, Plum `#9A6BB5`, atau warna bebas. Dari satu warna, `deriveAccent()` menghitung:
+Bawaan **Terakota `#C8734A`**. Pilihan: Espresso `#B0805A`, Emas `#C9963B`, Matcha `#7F9A5E`, Hijau senja `#4F9A8A`, Samudra `#4F86C6`, Lavender `#7A78C4`, Mawar `#B0708C`, Grafit `#8C939C`, atau warna bebas. Dari satu warna, `deriveAccent()` menghitung:
 
 | Token | Isi |
 |---|---|
@@ -126,7 +128,7 @@ Yang sudah ada:
 | `Skeleton`, `SkeletonRows`, `SkeletonText` | loading isi halaman memakai skeleton, **bukan spinner** |
 | `EmptyState`, `ErrorState` | kosong = ikon + kalimat + tombol aksi; error = pesan + "Coba lagi" |
 | `Progress`, `CheckMark`, `Menu`, `Pagination`, `PageHeader` | |
-| `AppShell` | sidebar + bar atas + palet perintah. `grouped` (grup buka-tutup, untuk menu banyak), `mobileNav="bottom"` (menu bawah di HP), `search` (pencarian data di Ctrl/Cmd+K), `actions`, `extraCrumbs` |
+| `AppShell` | sidebar mengambang (berjarak `--sb-gap` 12px dari tepi, sudut `--radius-lg`, bayangan halus) + bar atas + palet perintah. `grouped` (grup buka-tutup, untuk menu banyak), `mobileNav="bottom"` (menu bawah di HP), `search` (pencarian data di Ctrl/Cmd+K), `actions`, `extraCrumbs` |
 | `CommandPalette`, `AppearancePanel` | |
 | `LineChart`, `BarChart`, `StackedBarChart`, `DonutChart`, `Sparkline` | SVG buatan sendiri, warna dari token, bisa dibaca dengan keyboard dan pembaca layar |
 
