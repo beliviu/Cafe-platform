@@ -4,6 +4,8 @@
 // Aksi (POST JSON, header Authorization: Bearer <token owner>):
 //   { action: 'checkout', invoice_id, return_url? }  → { checkout_url }  (halaman bayar Midtrans: QRIS, VA, e-wallet, kartu)
 //   { action: 'status',   invoice_id }               → cek ulang ke Midtrans (bila webhook terlambat)
+//   { action: 'receipt',  invoice_id }               → kuitansi PDF tagihan lunas (file SQL 17). Owner kafe itu ATAU
+//        admin platform (2FA). Hak akses dicek SQL invoice_receipt() dengan token pemanggil; tidak butuh kunci Midtrans.
 // Webhook Midtrans (tanpa token): POST ?webhook=midtrans
 //   URL webhook dikirim otomatis per transaksi lewat header X-Override-Notification, jadi TIDAK
 //   bentrok dengan webhook pesanan kafe (Edge Function "payments") walau memakai akun Midtrans yang sama.
@@ -22,6 +24,7 @@
 //           PLATFORM_MIDTRANS_ENV         = sandbox | production (bila kosong → MIDTRANS_ENV, default sandbox)
 // =====================================================================
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1'
+import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -75,6 +78,123 @@ function safeReturnUrl(value: unknown) {
   return undefined
 }
 
+// ---------- Kuitansi PDF (pdf-lib, huruf standar Helvetica — tanpa berkas font) ----------
+type Receipt = {
+  receipt_number: string; invoice_number: string
+  issuer: { name: string; address?: string | null; email?: string | null; tax_id?: string | null }
+  cafe: { name: string; address?: string | null; phone?: string | null }
+  owner?: { name?: string | null; email?: string | null } | null
+  plan_name: string; months: number; period_start: string; period_end: string
+  list_amount: number; promo_code?: string | null; promo_discount: number; referral_discount: number; credit_amount: number; amount: number
+  paid_at: string; method: string; payment_ref?: string | null
+}
+
+const DATE = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' })
+const rupiah = (value: number) => `Rp ${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Math.round(Number(value) || 0))}`
+const METHOD: Record<string, string> = { gateway: 'Pembayaran online (Midtrans)', manual_transfer: 'Transfer bank', credit: 'Kredit / diskon' }
+// Helvetica standar hanya mengenal WinAnsi: ganti karakter di luar itu
+const ascii = (value: unknown) => String(value ?? '').replace(/[–—]/g, '-').replace(/[^\x20-\x7E -ÿ]/g, '?')
+
+async function receiptPdf(r: Receipt) {
+  const doc = await PDFDocument.create()
+  doc.setTitle(`Kuitansi ${r.receipt_number}`)
+  doc.setAuthor(ascii(r.issuer.name))
+  const page = doc.addPage([595.28, 841.89]) // A4
+  const regular = await doc.embedFont(StandardFonts.Helvetica)
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold)
+  const ink = rgb(0.13, 0.11, 0.09)
+  const muted = rgb(0.42, 0.38, 0.34)
+  const accent = rgb(0.69, 0.5, 0.35)
+  const left = 56
+  const right = 595.28 - 56
+  let y = 841.89 - 64
+
+  const text = (value: unknown, x: number, size = 10, font = regular, color = ink) => page.drawText(ascii(value), { x, y, size, font, color })
+  const textRight = (value: unknown, size = 10, font = regular, color = ink) => {
+    const content = ascii(value)
+    page.drawText(content, { x: right - font.widthOfTextAtSize(content, size), y, size, font, color })
+  }
+  const rule = (thickness = 0.6, color = rgb(0.85, 0.82, 0.78)) => page.drawLine({ start: { x: left, y }, end: { x: right, y }, thickness, color })
+
+  // Kepala
+  text(r.issuer.name, left, 18, bold)
+  textRight('KUITANSI', 18, bold, accent)
+  y -= 16
+  for (const line of [r.issuer.address, r.issuer.email, r.issuer.tax_id ? `NPWP ${r.issuer.tax_id}` : null].filter(Boolean)) {
+    text(line, left, 9, regular, muted)
+    y -= 12
+  }
+  y -= 8
+  rule(1.2, accent)
+  y -= 28
+
+  // Identitas
+  const meta: [string, string][] = [
+    ['Nomor kuitansi', r.receipt_number],
+    ['Nomor tagihan', r.invoice_number],
+    ['Tanggal bayar', DATE.format(new Date(r.paid_at))],
+    ['Metode', METHOD[r.method] || r.method],
+    ...(r.payment_ref ? [['Referensi', r.payment_ref] as [string, string]] : []),
+  ]
+  const top = y
+  for (const [label, value] of meta) {
+    text(label, left, 9, regular, muted)
+    text(value, left + 92, 10, bold)
+    y -= 15
+  }
+  const after = y
+  y = top
+  const billX = 340
+  text('Diterima dari', billX, 9, regular, muted)
+  y -= 15
+  text(r.cafe.name, billX, 11, bold)
+  y -= 14
+  for (const line of [r.owner?.name, r.owner?.email, r.cafe.address, r.cafe.phone].filter(Boolean)) {
+    text(String(line).slice(0, 48), billX, 9, regular, muted)
+    y -= 12
+  }
+  y = Math.min(after, y) - 20
+
+  // Rincian
+  rule()
+  y -= 16
+  text('Uraian', left, 9, bold, muted)
+  textRight('Jumlah', 9, bold, muted)
+  y -= 10
+  rule()
+  y -= 18
+  text(`Langganan Dailybrew ${r.plan_name} - ${r.months} bulan`, left, 11, bold)
+  textRight(rupiah(r.list_amount), 11)
+  y -= 14
+  text(`Periode ${DATE.format(new Date(r.period_start))} s.d. ${DATE.format(new Date(r.period_end))}`, left, 9, regular, muted)
+  y -= 22
+  const lines: [string, number][] = [
+    ...(Number(r.promo_discount) > 0 ? [[`Diskon promo ${r.promo_code || ''}`.trim(), -r.promo_discount] as [string, number]] : []),
+    ...(Number(r.referral_discount) > 0 ? [['Diskon referral', -r.referral_discount] as [string, number]] : []),
+    ...(Number(r.credit_amount) > 0 ? [['Kredit dipakai', -r.credit_amount] as [string, number]] : []),
+  ]
+  for (const [label, value] of lines) {
+    text(label, left, 10)
+    textRight(`- ${rupiah(Math.abs(value))}`, 10)
+    y -= 18
+  }
+  rule()
+  y -= 22
+  text('Total dibayar', left, 12, bold)
+  textRight(rupiah(r.amount), 14, bold)
+  y -= 34
+
+  // Cap LUNAS
+  const stamp = 'LUNAS'
+  page.drawRectangle({ x: left, y: y - 8, width: bold.widthOfTextAtSize(stamp, 14) + 24, height: 26, borderColor: rgb(0.2, 0.55, 0.35), borderWidth: 1.4 })
+  page.drawText(stamp, { x: left + 12, y: y, size: 14, font: bold, color: rgb(0.2, 0.55, 0.35) })
+  y -= 48
+  text('Kuitansi ini dibuat otomatis oleh sistem dan sah tanpa tanda tangan.', left, 9, regular, muted)
+  y -= 12
+  text(`Dicetak ${DATE.format(new Date())}.`, left, 9, regular, muted)
+  return await doc.save()
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return fail('Metode tidak didukung', 405)
@@ -85,7 +205,7 @@ Deno.serve(async (req) => {
   const serverKey = Deno.env.get('PLATFORM_MIDTRANS_SERVER_KEY') || Deno.env.get('MIDTRANS_SERVER_KEY') || ''
   const production = (Deno.env.get('PLATFORM_MIDTRANS_ENV') || Deno.env.get('MIDTRANS_ENV')) === 'production'
   if (!url || !anonKey || !serviceKey) return fail('Konfigurasi server belum lengkap', 500)
-  if (!serverKey) return fail('Pembayaran online langganan belum diaktifkan. Hubungi Dailybrew untuk transfer manual.', 503)
+  const gatewayOff = () => fail('Pembayaran online langganan belum diaktifkan. Hubungi Dailybrew untuk transfer manual.', 503)
 
   const apiBase = production ? 'https://api.midtrans.com' : 'https://api.sandbox.midtrans.com'
   const snapBase = production ? 'https://app.midtrans.com' : 'https://app.sandbox.midtrans.com'
@@ -116,6 +236,7 @@ Deno.serve(async (req) => {
 
   // ---------- Webhook Midtrans ----------
   if (new URL(req.url).searchParams.get('webhook') === 'midtrans') {
+    if (!serverKey) return gatewayOff()
     let note: Json
     try {
       note = await req.json()
@@ -149,6 +270,25 @@ Deno.serve(async (req) => {
   const invoiceId = String(body.invoice_id ?? '')
   if (!UUID_PATTERN.test(invoiceId)) return fail('Tagihan tidak dipilih')
 
+  // Kuitansi: dibaca dengan token pemanggil (owner kafe itu / admin 2FA) — bukan service role
+  if (body.action === 'receipt') {
+    const { data, error } = await userClient.rpc('invoice_receipt', { p_invoice: invoiceId })
+    if (error) return fail(error.message || 'Kuitansi tidak tersedia', /tidak ditemukan/i.test(error.message) ? 404 : 400)
+    const pdf = await receiptPdf(data as Receipt)
+    return new Response(new Blob([pdf as Uint8Array<ArrayBuffer>], { type: 'application/octet-stream' }), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Expose-Headers': 'Content-Disposition',
+        // octet-stream → supabase-js functions.invoke mengembalikan Blob
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${(data as Receipt).receipt_number}.pdf"`,
+        'Cache-Control': 'no-store',
+      },
+    })
+  }
+
+  if (!serverKey) return gatewayOff()
   try {
     switch (body.action) {
       case 'checkout': {
