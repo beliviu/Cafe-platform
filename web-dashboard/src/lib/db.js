@@ -152,6 +152,7 @@ export function friendlyError(error, fallback = 'Terjadi kesalahan. Coba lagi.')
   if (!error) return ''
   const message = String(error.message || '')
   reportPlanBlock(error, message)
+  if (error.hint === 'impersonation_read_only' || /hanya bisa melihat/i.test(message)) return 'Mode lihat-sebagai: hanya bisa melihat, perubahan tidak disimpan.'
   if (error.code === 'PGRST202' || error.code === '42883') return DB_UPDATE_REQUIRED
   if (error.code === '42501' || /permission denied|row-level security/i.test(message)) return 'Akses ditolak untuk aksi ini.'
   if (/failed to fetch|network/i.test(message)) return 'Koneksi terputus. Periksa internet lalu coba lagi.'

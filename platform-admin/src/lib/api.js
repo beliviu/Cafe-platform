@@ -11,7 +11,8 @@ export function friendlyError(error) {
   const hint = error?.hint || ''
   if (hint === 'mfa_required' || /2FA/.test(message)) return 'Sesi belum terverifikasi 2FA. Masuk ulang.'
   if (hint === 'platform_admin_only') return 'Akun ini bukan admin platform.'
-  if (/could not find the function|schema cache/i.test(message)) return 'Fungsi database belum ada. Jalankan file SQL terbaru (14–17) di Supabase.'
+  if (hint === 'role_forbidden') return message || 'Peran Anda tidak boleh melakukan aksi ini.'
+  if (/could not find the function|schema cache/i.test(message)) return 'Fungsi database belum ada. Jalankan file SQL terbaru (14–18) di Supabase.'
   if (/failed to fetch|network|load failed/i.test(message)) return 'Koneksi terputus. Periksa internet lalu coba lagi.'
   return message || 'Terjadi kesalahan. Coba lagi.'
 }
@@ -149,6 +150,20 @@ export const ACTION_LABELS = {
   'billing_group.delete': 'Grup cabang dihapus',
   'cafe.billing_group': 'Grup cabang kafe diganti',
   'settings.billing': 'Pengaturan penagihan diubah',
+  'admin.add': 'Anggota tim ditambahkan',
+  'admin.update': 'Anggota tim diubah',
+  'settings.platform': 'Pengaturan platform diubah',
+  'flag.set': 'Flag fitur diubah',
+  'feature.upsert': 'Fitur beta ditambahkan',
+  'impersonation.start': 'Lihat sebagai owner (mulai)',
+  'impersonation.end': 'Lihat sebagai owner (selesai)',
+  'incident.create': 'Insiden diumumkan',
+  'incident.update': 'Insiden diperbarui',
+  'service.status': 'Status layanan diubah',
+  'cafe.signup': 'Kafe mendaftar sendiri',
+  'signup.approve': 'Pendaftaran disetujui',
+  'signup.reject': 'Pendaftaran ditolak',
+  'email_template.update': 'Template email diubah',
 }
 
 /** Label skor kesehatan (file 16). Selalu tampil sebagai kata, bukan warna saja. */

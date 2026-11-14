@@ -209,7 +209,38 @@ SQL Editor → tempel isi `supabase/usulan/17-penagihan-otomatis.sql` → **Run*
 | Harga multi-cabang (cabang ke-2 dst. didiskon) | **Keuangan → Multi-cabang** · detail kafe → **Grup cabang** |
 | Kas masuk per bulan, piutang & umurnya, perkiraan 30 hari, ketepatan bayar, metode | **Keuangan → Ringkasan** |
 
-### 11. Notifikasi realtime di lonceng
+### 11. Jalankan file SQL 18 (daftar sendiri, peran tim, feature flag, lihat-sebagai, status, Tanya AI)
+SQL Editor → tempel isi `supabase/usulan/18-skala-platform.sql` → **Run**. Syarat: file 14–17 sudah dijalankan.
+
+- **Hasil yang benar:** query verifikasi menampilkan **11 baris `table`**, **1 baris `penjaga_baca_saja`** (jumlah tabel yang dijaga, puluhan), dan **tidak ada** baris `tanpa_rls`.
+- **Data lama:** tidak dihapus. Semua admin yang sudah ada otomatis berperan **Super admin**. Masa tenggang tetap 7 hari sampai diubah.
+- **Penjaga baca-saja** dipasang ke semua tabel `public` (trigger tingkat statement, ringan). Menambah tabel baru di kemudian hari? Jalankan `select public.pa_install_read_only_guards();`.
+
+Langkah manual setelahnya:
+
+1. **Peran tim:** menu **Tim admin** → undang anggota (Super / Finance / Support). Peran ditegakkan di database dan Edge Function, bukan hanya menu.
+2. **Deploy ulang Edge Function `platform-admin`** (cek peran + aksi undang anggota) dan **`notify`** (template email).
+3. **Deploy Edge Function baru `self-signup`** (Verify JWT: OFF). Secrets: `TURNSTILE_SECRET_KEY`, `APP_URL_OWNER`, opsional `SIGNUP_IP_SALT`.
+   - Cloudflare → **Turnstile** → Add widget (domain web owner) → salin **Site key** ke `VITE_TURNSTILE_SITE_KEY` web owner, **Secret key** ke Secrets.
+   - Supabase → **Authentication → Sign In / Providers → Email** → nyalakan **Confirm email** (pendaftar wajib verifikasi).
+   - Supabase → **Authentication → URL Configuration** → tambahkan alamat web owner di Redirect URLs.
+4. **Deploy Edge Function baru `platform-advisor`** (Verify JWT: ON). Pakai `ANTHROPIC_API_KEY` yang sama dengan advisor owner. Tanpa kunci, halaman Tanya AI tetap menampilkan tabel risiko dari SQL.
+5. **Lihat sebagai owner:** isi `VITE_OWNER_APP_URL` (dashboard ini) dan `VITE_ADMIN_APP_URL` (web owner), lalu deploy ulang keduanya.
+6. **Template reset password:** Pengaturan → Template email → Reset password → **Salin HTML untuk Supabase** → tempel di Supabase → Authentication → Email Templates → Reset Password.
+
+| Fitur | Di mana |
+|---|---|
+| Daftar sendiri (`/daftar`) dengan Turnstile, batas 5/jam & 20/hari per IP, email verifikasi, trial dari pengaturan | Web owner `/daftar` · admin **Pendaftaran** |
+| Mode persetujuan: kafe baru menunggu (tidak bisa menerima pesanan) sampai disetujui | **Pengaturan → Pendaftaran & langganan** · **Pendaftaran** |
+| Peran Super / Finance / Support (menu & tombol menyesuaikan; database menolak yang tidak boleh) | **Tim admin** |
+| Feature flag per kafe (nyala/mati/ikuti paket, massal, berakhir otomatis, fitur beta) | **Feature flag** · detail kafe |
+| Lihat sebagai owner — baca-saja, 30 menit, alasan wajib, tercatat di log audit | Detail kafe → **Lihat sebagai owner** |
+| Status sistem publik + insiden; banner otomatis di web owner/staff | **Status sistem** · web owner `/status` |
+| Tanya AI platform (angka dari SQL, kuota per admin, riwayat) | **Tanya AI** |
+| Masa coba & paket bawaan, masa tenggang, kuota AI, template email + pratinjau | **Pengaturan** |
+| Wizard setup 8 langkah untuk owner | Web owner `/mulai` + kartu di Dashboard |
+
+### 12. Notifikasi realtime di lonceng
 File 15 otomatis mendaftarkan tabel `platform_notifications` ke Supabase Realtime. Kalau lonceng tidak langsung bertambah saat ada kejadian baru, cek **Database → Publications → supabase_realtime** dan pastikan `platform_notifications` tercentang. Lonceng tetap memuat ulang saat halaman dibuka.
 
 ---
@@ -261,7 +292,7 @@ Dashboard memasang `noindex`, jadi tidak muncul di mesin pencari. Lapisan keaman
 - Refund otomatis untuk pembayaran yang masuk setelah tagihan dibatalkan. Kasus ini tercatat sebagai `invoice.paid_after_void` dan muncul di Perlu tindakan.
 - Prorata saat ganti paket di tengah periode. Paket baru berlaku mulai dibayar.
 - Konsep cabang di dalam satu akun owner. Multi-cabang saat ini berupa grup tagihan yang diatur admin; tiap cabang tetap kafe terpisah dengan akun owner sendiri.
+- Lihat-sebagai: tautan di dalam halaman owner yang memakai alamat penuh (bukan menu samping) keluar dari mode lihat-sebagai; buka lewat menu samping. Lampiran privat (struk pengeluaran) tidak tampil di mode ini.
+- Turnstile hanya di /daftar; login owner & admin belum memakai captcha.
 - Faktur pajak (e-Faktur). Kuitansi PDF adalah bukti bayar, bukan faktur pajak.
-- Peran admin bertingkat. Semua admin punya hak penuh.
 - Lampiran gambar dari admin saat membalas tiket (owner sudah bisa melampirkan gambar).
-- Wizard setup 8 langkah di sisi owner. Saat ini progres dibaca dari data yang sudah ada dan hanya terlihat oleh admin.

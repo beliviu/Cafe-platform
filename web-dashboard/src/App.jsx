@@ -15,10 +15,18 @@ const OwnerPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/OwnerPreview.jsx').then((module) => ({ default: module.OwnerPreview })))
   : null
 
+const PublicPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/PublicPreview.jsx').then((module) => ({ default: module.PublicPreview })))
+  : null
 const StaffPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/StaffPreview.jsx').then((module) => ({ default: module.StaffPreview })))
   : null
 
+// File SQL 18: daftar sendiri, status publik, wizard setup, lihat-sebagai (admin, baca-saja)
+const SignupPage = lazy(() => import('./pages/public/SignupPage.jsx').then((module) => ({ default: module.SignupPage })))
+const StatusPage = lazy(() => import('./pages/public/StatusPage.jsx').then((module) => ({ default: module.StatusPage })))
+const StartPage = lazy(() => import('./pages/StartPage.jsx').then((module) => ({ default: module.StartPage })))
+const ImpersonationLayout = lazy(() => import('./components/ImpersonationLayout.jsx').then((module) => ({ default: module.ImpersonationLayout })))
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage.jsx').then((module) => ({ default: module.DashboardPage })),
 )
@@ -86,6 +94,7 @@ function ownerRoutes() {
   return (
     <>
       <Route index element={<DashboardPage />} />
+      <Route path="mulai" element={<StartPage />} />
       <Route path="products" element={<ProductsPage />} />
       <Route path="categories" element={<CategoriesPage />} />
       <Route path="orders" element={<OrdersPage />} />
@@ -170,6 +179,17 @@ function AppRoutes() {
     <Suspense fallback={<LoadingScreen label="Membuka halaman..." />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/daftar" element={<SignupPage />} />
+        <Route path="/status" element={<StatusPage />} />
+        <Route path="/lihat-sebagai" element={<ImpersonationLayout />}>
+          {ownerRoutes()}
+        </Route>
+        {PublicPreview && (
+          <Route path="/preview/public" element={<PublicPreview />}>
+            <Route path="daftar" element={<SignupPage />} />
+            <Route path="status" element={<StatusPage />} />
+          </Route>
+        )}
         {DesignSystemPage && <Route path="/design" element={<DesignSystemPage />} />}
         {StaffPreview && (
           <Route path="/preview/staff" element={<StaffPreview />}>

@@ -16,7 +16,7 @@ export { BrandMark } from '../ui/index.js'
 
 const BRAND = { name: 'Dailybrew', tagline: 'Platform' }
 
-export function AdminShell({ sections, account, children }) {
+export function AdminShell({ sections, account, banner, children }) {
   const navigate = useNavigate()
   const [extraCrumbs, setExtraCrumbs] = useState([])
 
@@ -46,6 +46,7 @@ export function AdminShell({ sections, account, children }) {
         actions={<NotificationBell />}
         search={search}
         searchLabel="Cari halaman atau kafe…"
+        banner={banner}
       >
         {children}
       </AppShell>

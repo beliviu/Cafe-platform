@@ -3,6 +3,7 @@
  * Data contoh: 6 kafe, tagihan, notifikasi, perlu tindakan, riwayat 12 bulan.
  */
 import { billingInvoke, billingRpc } from './mockBilling.js'
+import { platformSettingsExtra, scaleInvoke, scaleRpc, whoamiExtra } from './mockScale.js'
 
 const day = 86400000
 const now = Date.now()
@@ -194,7 +195,8 @@ const RPC = {
     return ticket
   },
   ...billingRpc({ cafes }),
-  pa_whoami: () => ({ is_admin: true, aal: 'aal2', full_name: 'Iwan Iqlal' }),
+  ...scaleRpc({ cafes }),
+  pa_whoami: () => ({ is_admin: true, aal: 'aal2', full_name: 'Iwan Iqlal', ...whoamiExtra() }),
   pa_theme: () => ({ color: settings.theme_color, color2: settings.theme_color2 }),
   pa_overview: () => ({
     total: 6, active: 4, past_due: 1, trial: 1, inactive: 1, suspended: 1, expired: 0, mrr: 1196000, trial_potential: 349000, new_cafes_30d: 1,
@@ -239,7 +241,7 @@ const RPC = {
     notifications = notifications.map((item) => (!ids || ids.includes(item.id) ? { ...item, read_at: item.read_at || iso(0) } : item))
     return 1
   },
-  pa_settings_get: () => settings,
+  pa_settings_get: () => ({ ...settings, ...platformSettingsExtra }),
   pa_settings_update: ({ p_patch: patch }) => { settings = { ...settings, ...patch }; return settings },
   pa_announcements_list: () => [{ id: 'a1', title: 'Fitur baru: laporan laba rugi', body: 'Kini owner bisa melihat laba rugi bulanan langsung dari menu Keuangan.', target_cafe_ids: null, send_email: true, recipients: 6, read_count: 3, created_at: iso(-5), created_by_email: 'admin@dailybrew.id' }],
   pa_log_whatsapp: () => null,
@@ -269,6 +271,6 @@ export function createMockSupabase() {
     channel: () => channel,
     storage: { from: () => ({ createSignedUrl: async (path) => ({ data: { signedUrl: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='480' height='320'><rect width='100%' height='100%' fill='%23272019'/><text x='50%' y='50%' fill='%23BCAB9B' font-family='sans-serif' font-size='20' text-anchor='middle'>${path.split('/').pop()}</text></svg>`.replace(/%23/g, '#')) }, error: null }) }) },
     removeChannel: () => null,
-    functions: { invoke: async (name, { body } = {}) => billingInvoke(name, body) || { data: { ok: true, cafe_id: 'c4' }, error: null } },
+    functions: { invoke: async (name, { body } = {}) => billingInvoke(name, body) || scaleInvoke(name, body) || { data: { ok: true, cafe_id: 'c4' }, error: null } },
   }
 }

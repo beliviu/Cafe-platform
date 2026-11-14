@@ -1,8 +1,12 @@
 import { useCallback, useState } from 'react'
-import { Ban, CalendarPlus, Check, FilePlus2, Gift, KeyRound, Minus, PackageCheck, Pencil, PlayCircle } from 'lucide-react'
+import { Ban, CalendarPlus, Check, Eye, FilePlus2, Gift, KeyRound, Minus, PackageCheck, Pencil, PlayCircle } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { AuditTable } from '../components/AuditTable.jsx'
 import { CafeBillingCard } from '../components/CafeBilling.jsx'
+import { FlagsCard } from '../components/FeatureFlags.jsx'
+import { ImpersonateDialog, ImpersonationHistory } from '../components/Impersonation.jsx'
+import { useAuth } from '../auth/useAuth.js'
+import { can } from '../lib/roles.js'
 import { HealthCard, SetupCard } from '../components/Health.jsx'
 import { TimelineCard } from '../components/Timeline.jsx'
 import { InvoiceTable } from '../components/InvoiceTable.jsx'
@@ -21,7 +25,9 @@ const SUB_STATUS = { active: 'Aktif', trialing: 'Masa coba', past_due: 'Telat ba
 
 export function CafeDetailPage() {
   const { cafeId } = useParams()
+  const { admin } = useAuth()
   const [dialog, setDialog] = useState(null)
+  const canBilling = can(admin, 'pa_cafe_billing')
   const load = useCallback(() => Promise.all([
     rpc('pa_cafe_detail', { p_cafe: cafeId }),
     rpc('pa_plans_list'),
@@ -30,8 +36,8 @@ export function CafeDetailPage() {
     rpc('pa_cafe_outbox', { p_cafe: cafeId, p_limit: 30 }).catch(() => null), // null sebelum file 15
     optional(rpc('pa_cafe_health', { p_cafe: cafeId, p_days: 90 })), // null sebelum file 16
     optional(rpc('pa_cafe_timeline', { p_cafe: cafeId, p_limit: 100 })),
-    optional(rpc('pa_cafe_billing', { p_cafe: cafeId })), // null sebelum file 17
-  ]), [cafeId])
+    canBilling ? optional(rpc('pa_cafe_billing', { p_cafe: cafeId })) : null, // null sebelum file 17 / peran Support
+  ]), [cafeId, canBilling])
   const { data, error, loading, reload } = useLoader(load)
   useCrumbs(data ? [{ label: data[0].cafe.name }] : [{ label: 'Detail' }])
 
@@ -57,9 +63,14 @@ export function CafeDetailPage() {
         actions={(
           <div className="pa-actions">
             <WhatsAppButton ctx={waCtx} size="md" defaultTemplate={openInvoice ? 'tagihan' : 'bebas'} onMissingPhone={() => setDialog({ type: 'whatsapp' })} />
-            <Button variant={cafe.suspended_at ? 'primary' : 'danger-soft'} icon={cafe.suspended_at ? PlayCircle : Ban} onClick={() => setDialog({ type: 'suspend' })}>
-              {cafe.suspended_at ? 'Aktifkan kembali' : 'Nonaktifkan'}
-            </Button>
+            {can(admin, 'pa_impersonate_start') && (
+              <Button variant="secondary" icon={Eye} onClick={() => setDialog({ type: 'impersonate' })}>Lihat sebagai owner</Button>
+            )}
+            {can(admin, 'pa_cafe_set_suspended') && (
+              <Button variant={cafe.suspended_at ? 'primary' : 'danger-soft'} icon={cafe.suspended_at ? PlayCircle : Ban} onClick={() => setDialog({ type: 'suspend' })}>
+                {cafe.suspended_at ? 'Aktifkan kembali' : 'Nonaktifkan'}
+              </Button>
+            )}
           </div>
         )}>
         <div className="pa-actions"><Badge tone={meta.tone}>{meta.label}</Badge>{summary.plan_name && <span className="pa-muted">Paket {summary.plan_name}</span>}</div>
@@ -93,12 +104,14 @@ export function CafeDetailPage() {
             <div><dt>Fitur yang berlaku sekarang</dt><dd>Paket {effective.name}</dd></div>
             {subscription?.notes && <div><dt>Catatan</dt><dd>{subscription.notes}</dd></div>}
           </dl>
-          <div className="pa-actions pa-card-actions">
-            <Button size="sm" variant="secondary" icon={PackageCheck} onClick={() => setDialog({ type: 'plan' })}>Ganti paket</Button>
-            <Button size="sm" variant="secondary" icon={CalendarPlus} onClick={() => setDialog({ type: 'extend' })}>Perpanjang</Button>
-            <Button size="sm" variant="secondary" icon={Gift} onClick={() => setDialog({ type: 'trial' })}>Beri masa coba</Button>
-            <Button size="sm" icon={FilePlus2} onClick={() => setDialog({ type: 'invoice' })}>Buat tagihan</Button>
-          </div>
+          {can(admin, 'pa_subscription_extend') && (
+            <div className="pa-actions pa-card-actions">
+              <Button size="sm" variant="secondary" icon={PackageCheck} onClick={() => setDialog({ type: 'plan' })}>Ganti paket</Button>
+              <Button size="sm" variant="secondary" icon={CalendarPlus} onClick={() => setDialog({ type: 'extend' })}>Perpanjang</Button>
+              <Button size="sm" variant="secondary" icon={Gift} onClick={() => setDialog({ type: 'trial' })}>Beri masa coba</Button>
+              <Button size="sm" icon={FilePlus2} onClick={() => setDialog({ type: 'invoice' })}>Buat tagihan</Button>
+            </div>
+          )}
         </Card>
 
         <CafeBillingCard cafeId={cafe.id} billing={billing} onChanged={reload} />
@@ -118,7 +131,7 @@ export function CafeDetailPage() {
               {owners.map((member) => (
                 <li key={member.id}>
                   <span className="pa-cell-main"><strong>{member.full_name || '—'}</strong><small>{member.email} · masuk terakhir {member.last_sign_in_at ? formatDateTime(member.last_sign_in_at) : 'belum pernah'}</small></span>
-                  <IconButton icon={KeyRound} label="Reset password owner" size="sm" onClick={() => setDialog({ type: 'password', member })} />
+                  {can(admin, 'pa_reset_owner_password') && <IconButton icon={KeyRound} label="Reset password owner" size="sm" onClick={() => setDialog({ type: 'password', member })} />}
                 </li>
               ))}
             </ul>
@@ -128,7 +141,7 @@ export function CafeDetailPage() {
               <dt>WhatsApp owner</dt>
               <dd>
                 {cafe.owner_whatsapp ? formatWa(cafe.owner_whatsapp) : <span className="pa-muted">Belum diisi</span>}
-                <IconButton icon={Pencil} label="Ubah nomor WhatsApp owner" size="sm" onClick={() => setDialog({ type: 'whatsapp' })} />
+                {can(admin, 'pa_cafe_set_owner_whatsapp') && <IconButton icon={Pencil} label="Ubah nomor WhatsApp owner" size="sm" onClick={() => setDialog({ type: 'whatsapp' })} />}
               </dd>
             </div>
           </dl>
@@ -176,6 +189,11 @@ export function CafeDetailPage() {
           : <InvoiceTable rows={invoices.rows} showCafe={false} onChanged={reload} />}
       </Card>
 
+      <div className="fin-grid">
+        <FlagsCard cafeId={cafe.id} canEdit={can(admin, 'pa_flag_set')} />
+        {can(admin, 'pa_impersonations_list') && <ImpersonationHistory cafeId={cafe.id} />}
+      </div>
+
       <TimelineCard cafeId={cafe.id} items={timeline} onChanged={reload} />
 
       {outbox && (
@@ -197,6 +215,7 @@ export function CafeDetailPage() {
       {dialog?.type === 'trial' && <TrialDialog {...dialogProps} />}
       {dialog?.type === 'invoice' && <InvoiceDialog {...dialogProps} />}
       {dialog?.type === 'suspend' && <SuspendDialog {...dialogProps} />}
+      {dialog?.type === 'impersonate' && <ImpersonateDialog cafe={cafe} onClose={() => setDialog(null)} />}
       {dialog?.type === 'password' && <ResetPasswordDialog {...dialogProps} member={dialog.member} />}
       {dialog?.type === 'whatsapp' && <OwnerWhatsAppDialog {...dialogProps} />}
     </div>

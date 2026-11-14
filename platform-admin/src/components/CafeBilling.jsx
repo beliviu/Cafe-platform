@@ -28,7 +28,7 @@ export function CafeBillingCard({ cafeId, billing, onChanged }) {
         <div>
           <dt>Nonaktif otomatis</dt>
           <dd>{billing.suspended_kind === 'billing' ? 'Sedang nonaktif karena tagihan' : billing.suspend_at ? formatDate(billing.suspend_at) : 'Tidak dijadwalkan'}
-            {billing.billing_pause_until && new Date(billing.billing_pause_until) > new Date() ? ` · ditunda sampai ${formatDateTime(billing.billing_pause_until)}` : ''}</dd>
+            {billing.billing_pause_until && billing.suspend_at === billing.billing_pause_until ? ` · ditunda sampai ${formatDateTime(billing.billing_pause_until)}` : ''}</dd>
         </div>
       </dl>
       <div className="pa-billing-actions">

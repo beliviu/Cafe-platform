@@ -17,6 +17,12 @@ const AnnouncementsPage = page(() => import('./pages/AnnouncementsPage.jsx'), 'A
 const SettingsPage = page(() => import('./pages/SettingsPage.jsx'), 'SettingsPage')
 const AnalyticsPage = page(() => import('./pages/AnalyticsPage.jsx'), 'AnalyticsPage')
 const FinancePage = page(() => import('./pages/FinancePage.jsx'), 'FinancePage')
+// File SQL 18
+const TeamPage = page(() => import('./pages/TeamPage.jsx'), 'TeamPage')
+const SignupsPage = page(() => import('./pages/SignupsPage.jsx'), 'SignupsPage')
+const FlagsPage = page(() => import('./pages/FlagsPage.jsx'), 'FlagsPage')
+const StatusAdminPage = page(() => import('./pages/StatusAdminPage.jsx'), 'StatusAdminPage')
+const AiPage = page(() => import('./pages/AiPage.jsx'), 'AiPage')
 const TicketsPage = page(() => import('./pages/TicketsPage.jsx'), 'TicketsPage')
 const TicketDetailPage = page(() => import('./pages/TicketDetailPage.jsx'), 'TicketDetailPage')
 
@@ -40,6 +46,11 @@ export default function App() {
                 <Route path="pengaturan" element={<SettingsPage />} />
                 <Route path="analitik" element={<AnalyticsPage />} />
                 <Route path="keuangan" element={<FinancePage />} />
+                <Route path="tim" element={<TeamPage />} />
+                <Route path="pendaftaran" element={<SignupsPage />} />
+                <Route path="fitur" element={<FlagsPage />} />
+                <Route path="status-sistem" element={<StatusAdminPage />} />
+                <Route path="tanya-ai" element={<AiPage />} />
                 <Route path="tiket" element={<TicketsPage />} />
                 <Route path="tiket/:ticketId" element={<TicketDetailPage />} />
               </Route>

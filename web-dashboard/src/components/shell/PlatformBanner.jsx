@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatDate } from '../../lib/format.js'
 import { useOwnerNotifications, usePlatformStatus } from '../../lib/platformBilling.js'
+import { INCIDENT_STATUS, useActiveIncidents } from '../../lib/platformScale.js'
 import { ContactDailybrew } from '../platform/ContactDailybrew.jsx'
 
 const TONE = { danger: '', warning: ' is-warning', info: ' is-info', success: ' is-info' }
@@ -11,8 +12,27 @@ const TONE = { danger: '', warning: ' is-warning', info: ' is-info', success: ' 
  * - kafe dinonaktifkan (owner & staff) + tombol hubungi Dailybrew (owner)
  * - langganan lewat jatuh tempo / masa tenggang (owner)
  * - notifikasi owner (file 15): tagihan H-7, H-1, telat, masa coba habis, pengumuman admin — bisa ditutup
+ * - file 18: insiden sistem yang sedang berlangsung (halaman /status), pendaftaran menunggu persetujuan
  */
-export function PlatformBanner({ supabase, cafeId, cafeName, isOwner }) {
+export function PlatformBanner(props) {
+  const incidents = useActiveIncidents(props.supabase)
+  return (
+    <>
+      {incidents.slice(0, 2).map((incident) => (
+        <div key={incident.id} className={`shell-banner${incident.impact === 'major' ? '' : ' is-warning'}`} role="status">
+          <span>
+            <strong>{incident.impact === 'maintenance' ? 'Pemeliharaan' : 'Gangguan'}: {incident.title}.</strong>
+            {' '}{(INCIDENT_STATUS[incident.status] || INCIDENT_STATUS.investigating).label}{incident.updates?.[0]?.body ? ` — ${incident.updates[0].body}` : ''}
+          </span>
+          <span className="shell-banner-actions"><a href="/status" target="_blank" rel="noreferrer">Status layanan</a></span>
+        </div>
+      ))}
+      <AccountBanner {...props} />
+    </>
+  )
+}
+
+function AccountBanner({ supabase, cafeId, cafeName, isOwner }) {
   const status = usePlatformStatus(supabase, cafeId)
   const { items, dismiss } = useOwnerNotifications(supabase, cafeId, isOwner)
   const cafe = { id: cafeId, name: cafeName }
@@ -26,6 +46,20 @@ export function PlatformBanner({ supabase, cafeId, cafeName, isOwner }) {
           {' '}{isOwner ? 'Kafe aktif lagi otomatis begitu pembayaran terkonfirmasi.' : 'Hubungi owner kafe.'}
         </span>
         {isOwner && <span className="shell-banner-actions"><Link to="/settings/subscription">Bayar sekarang</Link></span>}
+      </div>
+    )
+  }
+
+  // File 18: daftar sendiri saat mode persetujuan menyala
+  if (status?.suspended && status.suspended_kind === 'approval') {
+    const rejected = /ditolak/i.test(status.suspended_reason || '')
+    return (
+      <div className={`shell-banner${rejected ? '' : ' is-info'}`} role="status">
+        <span>
+          <strong>{rejected ? 'Pendaftaran tidak disetujui.' : 'Pendaftaran sedang ditinjau Dailybrew.'}</strong>
+          {' '}{rejected ? (status.suspended_reason || '') : 'Sambil menunggu, Anda bisa menyiapkan menu, meja, dan pengaturan. Pesanan bisa diterima setelah disetujui.'}
+        </span>
+        {isOwner && <ContactDailybrew cafe={cafe} topic="Saya baru mendaftar dan ingin menanyakan status persetujuan." label="Hubungi Dailybrew" size="sm" />}
       </div>
     )
   }

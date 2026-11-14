@@ -5,6 +5,7 @@ import {
   Flame, PackageOpen, ShoppingBag, TriangleAlert, Wallet,
 } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
+import { SetupCard } from './StartPage.jsx'
 import { ColumnChart } from '../components/charts/ColumnChart.jsx'
 import { DonutChart } from '../components/charts/DonutChart.jsx'
 import { HourHeatmap } from '../components/charts/HourHeatmap.jsx'
@@ -401,6 +402,8 @@ export function DashboardPage() {
           actions={<DateRangePicker value={rangeValue} onChange={setRangeValue} />}
         />
       </div>
+
+      <SetupCard supabase={supabase} cafeId={cafe.id} />
 
       {errorMessage ? (
         <Card><ErrorState message={errorMessage} onRetry={() => setAttempt((value) => value + 1)} /></Card>

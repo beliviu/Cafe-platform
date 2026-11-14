@@ -24,6 +24,14 @@ Use the Supabase publishable/anon key only. Never put a service-role key in
 this app. `.env.local` is ignored by Git; `.env.example` contains placeholders.
 Restart the Vite server after changing environment variables.
 
+SQL file 18 adds optional values (see `.env.example`):
+
+- `VITE_TURNSTILE_SITE_KEY` — Cloudflare Turnstile site key for the public signup page `/daftar`.
+- `VITE_ADMIN_APP_URL` — platform admin URL; only windows opened from it may use read-only "lihat sebagai" mode (`/lihat-sebagai`).
+
+Public routes: `/daftar` (self-signup), `/status` (system status). Owner route: `/mulai` (8-step setup wizard).
+Dev-only previews with mock data: `/preview/public/daftar`, `/preview/public/status`, `/lihat-sebagai?sesi=demo&mock=1`.
+
 ## Database setup
 
 Apply the migrations in the workspace `supabase/migrations/` directory to the

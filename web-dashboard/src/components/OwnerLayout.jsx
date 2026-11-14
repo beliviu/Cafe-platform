@@ -8,6 +8,7 @@ import { AppShell } from './shell/AppShell.jsx'
 import { PlatformBanner } from './shell/PlatformBanner.jsx'
 import { cafeColumns, detectDbFeatures, setPlanBlockReporter } from '../lib/db.js'
 import { brandOf, cacheBrand, useDocumentBranding } from '../lib/branding.js'
+import { fetchCafeFlags } from '../lib/platformScale.js'
 
 export function OwnerLayout() {
   const { session, supabase } = useAuth()
@@ -60,7 +61,10 @@ export function OwnerLayout() {
       if (cafeError) {
         setLoadError(`Data cafe tidak dapat dimuat: ${cafeError.message}`)
       } else if (cafe) {
-        setOwnerData({ profile, cafe, features })
+        // Feature flag per kafe (file 18): { kunci: true/false }, {} sebelum file 18
+        const flags = await fetchCafeFlags(supabase, cafe.id)
+        if (!active) return
+        setOwnerData({ profile, cafe, features, flags })
       } else {
         setLoadError('Cafe untuk akun owner ini tidak ditemukan.')
       }

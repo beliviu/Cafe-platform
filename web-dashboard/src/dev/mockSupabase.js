@@ -11,6 +11,7 @@ import { createPaymentFixtures, paymentInvoke, paymentRpc, payLatestIntent } fro
 import { advisorInvoke, biRpc } from './mockBi.js'
 import { createSupportFixtures, supportRpc } from './mockPlatformSupport.js'
 import { billingInvoke, billingRpc, createBillingFixtures } from './mockPlatformBilling.js'
+import { scaleRpc } from './mockPlatformScale.js'
 
 function seeded(seed) {
   let value = seed
@@ -428,6 +429,8 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
         return billingResult
       }
+      const scaleResult = scaleRpc(fixtures, name, args)
+      if (scaleResult) return scaleResult
       return { data: null, error: { message: `RPC ${name} tidak ada di mock` } }
     },
     storage: {
@@ -446,6 +449,10 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
         await new Promise((resolve) => window.setTimeout(resolve, 300))
         if (_name === 'payments') return paymentInvoke(store, body, userId)
         if (_name === 'subscription-billing') return billingInvoke(body)
+        if (_name === 'self-signup') {
+          if (String(body.email || '').startsWith('gagal')) return { data: { error: 'Nomor WhatsApp tidak valid', field: 'whatsapp' }, error: null }
+          return { data: { ok: true, pending: false, message: 'Pendaftaran diterima. Cek email untuk verifikasi, lalu masuk ke dashboard.' }, error: null }
+        }
         if (_name === 'advisor') {
           await new Promise((resolve) => window.setTimeout(resolve, 900))
           return advisorInvoke(store, body)

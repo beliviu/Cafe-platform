@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { BrandMark } from '../components/shell/AppShell.jsx'
 import { Button, TextField } from '../components/ui/index.js'
@@ -115,7 +115,7 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <p className="login-footnote">Lupa password atau belum punya akun? Hubungi owner kafe Anda.</p>
+          <p className="login-footnote">Lupa password? Hubungi owner kafe Anda. Pemilik kafe baru? <Link to="/daftar">Daftar gratis</Link> · <Link to="/status">Status layanan</Link></p>
         </div>
       </section>
     </main>

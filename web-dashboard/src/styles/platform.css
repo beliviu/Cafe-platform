@@ -1,0 +1,65 @@
+/* File SQL 18: daftar sendiri, status publik, wizard setup, lihat-sebagai. Semua warna dari token tema. */
+
+/* ---------- /daftar ---------- */
+.signup-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.signup-captcha { display: grid; gap: 8px; min-height: 65px; }
+.signup-captcha.is-preview { place-items: center; padding: 12px; color: var(--text-3); background: var(--panel-2); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); font-size: var(--text-xs); text-align: center; }
+.signup-muted { margin: 0; color: var(--text-3); font-size: var(--text-xs); line-height: 1.5; }
+.signup-done { display: grid; justify-items: start; gap: 12px; }
+.signup-done h2 { margin: 0; color: var(--text); font: 600 var(--text-2xl)/1.15 var(--font-serif); }
+.signup-done p { margin: 0; color: var(--text-2); line-height: 1.55; }
+.signup-done-icon { display: grid; place-items: center; width: 56px; height: 56px; color: var(--accent-ink); background: var(--accent-soft); border-radius: var(--radius-lg); }
+@media (max-width: 479px) { .signup-row { grid-template-columns: 1fr; } }
+
+/* ---------- /status ---------- */
+.status-page { display: grid; gap: 24px; width: min(100% - 32px, 760px); margin: 0 auto; padding: 24px 0 48px; }
+.status-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.status-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font: 600 var(--text-lg)/1 var(--font-serif); text-decoration: none; }
+.status-hero { display: flex; align-items: center; gap: 16px; padding: 24px; color: var(--good); background: var(--good-soft); border-radius: var(--radius-lg); }
+.status-hero h1 { margin: 0; color: var(--text); font: 600 var(--text-2xl)/1.2 var(--font-serif); }
+.status-hero p { margin: 4px 0 0; color: var(--text-2); font-size: var(--text-sm); }
+.status-hero-icon { display: grid; flex: none; place-items: center; }
+.status-hero.is-degraded, .status-hero.is-partial_outage { color: var(--warn); background: var(--warn-soft); }
+.status-hero.is-major_outage { color: var(--bad); background: var(--bad-soft); }
+.status-hero.is-maintenance { color: var(--info); background: var(--info-soft); }
+.status-section { display: grid; gap: 12px; }
+.status-section h2 { margin: 0; color: var(--text); font-size: var(--text-md); font-weight: 700; }
+.status-services { display: grid; margin: 0; padding: 0; overflow: hidden; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.status-services li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--line); }
+.status-services li:first-child { border-top: 0; }
+.status-services li > span { display: grid; gap: 2px; }
+.status-services strong { color: var(--text); font-size: var(--text-sm); }
+.status-services small { color: var(--text-3); font-size: var(--text-xs); }
+.status-incident { display: grid; gap: 8px; padding: 16px 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.status-incident header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.status-incident h3 { margin: 0; color: var(--text); font-size: var(--text-md); }
+.status-incident-meta { margin: 0; color: var(--text-3); font-size: var(--text-xs); }
+.status-updates { display: grid; gap: 10px; margin: 4px 0 0; padding: 0 0 0 14px; list-style: none; border-left: 2px solid var(--line-strong); }
+.status-updates li { display: grid; gap: 2px; font-size: var(--text-sm); }
+.status-updates strong { color: var(--text); }
+.status-updates span { color: var(--text-2); line-height: 1.5; }
+.status-updates time { color: var(--text-3); font-size: var(--text-xs); }
+.status-foot { color: var(--text-3); font-size: var(--text-sm); text-align: center; }
+.status-foot a { color: var(--accent-ink); }
+
+/* ---------- /mulai ---------- */
+.start-progress { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; margin-bottom: 16px; }
+.start-progress strong { color: var(--text); font-size: var(--text-sm); }
+.start-done { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; padding: 12px 14px; color: var(--good); background: var(--good-soft); border-radius: var(--radius-md); font-size: var(--text-sm); font-weight: 600; }
+.start-steps { display: grid; margin: 0; padding: 0; list-style: none; }
+.start-steps li { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 10px 0; border-top: 1px solid var(--line); }
+.start-steps li:first-child { border-top: 0; }
+.start-mark { display: grid; flex: none; place-items: center; width: 32px; height: 32px; color: var(--text-3); background: var(--panel-2); border-radius: var(--radius-full); font-size: var(--text-sm); font-weight: 700; }
+.start-steps li.is-done .start-mark { color: var(--on-accent); background: var(--accent); }
+.start-steps li.is-next .start-mark { color: var(--accent-ink); background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent-mid); }
+.start-text { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.start-text strong { color: var(--text); font-size: var(--text-sm); }
+.start-text small { color: var(--text-3); font-size: var(--text-xs); }
+.start-steps li.is-done .start-text strong { color: var(--text-2); }
+.start-card { margin-bottom: 16px; }
+.start-card .start-progress { margin-bottom: 0; }
+
+/* ---------- Lihat-sebagai (admin, baca-saja) ---------- */
+.shell-banner.is-impersonation { color: var(--accent-ink); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-mid); }
+.shell-banner.is-impersonation > span:first-child svg { display: inline-block; vertical-align: -3px; }
+.shell-banner.is-impersonation .shell-banner-actions button { display: inline-flex; gap: 6px; width: auto; padding: 0 12px; }
