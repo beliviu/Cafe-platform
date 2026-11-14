@@ -1,18 +1,18 @@
 /* Gaya halaman login, layar memuat, dan error boundary.
  * Halaman owner & staff memakai styles/ui.css, shell.css, owner.css, staff.css, charts.css. */
 
-.route-error { display: grid; min-height: 100vh; align-content: center; justify-items: center; gap: 12px; padding: 24px; color: var(--text-primary); background: var(--surface-canvas); text-align: center; }
+.route-error { display: grid; min-height: 100vh; align-content: center; justify-items: center; gap: 12px; padding: 24px; color: var(--text-primary); background: transparent; text-align: center; }
 .route-error h1 { margin: 0; font-family: var(--font-serif); font-size: var(--text-xl); font-weight: 600; }
 .route-error p { max-width: 430px; margin: 0; color: var(--text-muted); font-size: var(--text-sm); line-height: 1.6; }
 .route-error button { min-height: 44px; margin-top: 5px; padding: 0 16px; color: var(--text-on-primary); background: var(--brand-600); border: 0; border-radius: var(--radius-md); font: inherit; font-weight: 650; cursor: pointer; }
 
-.loading-screen { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: 12px; color: var(--text-muted); background: var(--surface-canvas); font-size: var(--text-sm); }
+.loading-screen { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: 12px; color: var(--text-muted); background: transparent; font-size: var(--text-sm); }
 .loading-mark { width: 24px; height: 24px; border: 2px solid var(--brand-100); border-top-color: var(--brand-600); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- Login ---------- */
-.login-loading { display: grid; min-height: 100vh; place-items: center; color: var(--text-muted); background: var(--surface-canvas); font-size: var(--text-sm); }
-.login-page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100vh; background: var(--surface-canvas); }
+.login-loading { display: grid; min-height: 100vh; place-items: center; color: var(--text-muted); background: transparent; font-size: var(--text-sm); }
+.login-page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 100vh; background: transparent; }
 
 .login-intro {
   position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; overflow: hidden;

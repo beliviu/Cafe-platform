@@ -2,7 +2,11 @@
 :root {
   font-family: var(--font-sans);
   color: var(--text);
-  background: var(--bg);
+  background-color: var(--bg);
+  /* Latar bergradasi dari warna tema (diam saat halaman digulir) */
+  background-image: var(--page-gradient, none);
+  background-attachment: fixed;
+  min-height: 100%;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

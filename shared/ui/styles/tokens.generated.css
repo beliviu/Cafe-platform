@@ -3,12 +3,13 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #150D09;
+  --page-gradient: radial-gradient(70% 60% at 0% 0%, rgb(200 115 74 / 50%) 0%, transparent 70%), radial-gradient(60% 55% at 100% 10%, rgb(163 139 34 / 43%) 0%, transparent 70%), radial-gradient(75% 65% at 90% 100%, rgb(196 111 131 / 38%) 0%, transparent 72%), radial-gradient(55% 50% at 5% 95%, rgb(163 139 34 / 25%) 0%, transparent 70%), linear-gradient(155deg, #351F15 0%, #150D09 48%, #2A200D 100%);
   --sidebar: #1B100C;
   --panel: #211510;
   --panel-2: #2E1D14;
   --text: #FCE9E0;
-  --text-2: #C6A798;
-  --text-3: #A68677;
+  --text-2: #DABBAB;
+  --text-3: #DAB8A8;
   --line: #322018;
   --line-strong: #442D22;
   --accent: #C8734A;
@@ -42,7 +43,7 @@
   --nav-panel: #1B100C;
   --nav-panel-top: #1B100C;
   --nav-text: #FCE9E0;
-  --nav-text-muted: #C6A798;
+  --nav-text-muted: #DABBAB;
   --nav-hover: #2E1D14;
   --nav-active: rgb(200 115 74 / 14%);
   --nav-border: #322018;
@@ -50,8 +51,8 @@
   --nav-accent: #D07B52;
   --on-dark: #F4ECE1;
   --text-primary: #FCE9E0;
-  --text-secondary: #C6A798;
-  --text-muted: #A68677;
+  --text-secondary: #DABBAB;
+  --text-muted: #DAB8A8;
   --text-placeholder: #8E7164;
   --text-on-primary: #1A120D;
   --on-brand-muted: rgb(26 18 13 / 78%);
@@ -72,8 +73,8 @@
   --shadow-md: 0 10px 28px -12px rgb(0 0 0 / 70%);
   --shadow-lg: 0 24px 60px -18px rgb(0 0 0 / 80%), 0 2px 8px rgb(0 0 0 / 40%);
   --ivory: #F4ECE1;
-  --sand: #C6A798;
-  --taupe: #A68677;
+  --sand: #DABBAB;
+  --taupe: #DAB8A8;
   --walnut: #C8734A;
   --espresso: #1B100C;
   --brand-50: #2E1D15;
@@ -111,12 +112,13 @@
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: #FCECE6;
+  --page-gradient: radial-gradient(70% 60% at 0% 0%, rgb(200 115 74 / 42%) 0%, transparent 70%), radial-gradient(60% 55% at 100% 10%, rgb(163 139 34 / 36%) 0%, transparent 70%), radial-gradient(75% 65% at 90% 100%, rgb(196 111 131 / 32%) 0%, transparent 72%), radial-gradient(55% 50% at 5% 95%, rgb(163 139 34 / 21%) 0%, transparent 70%), linear-gradient(155deg, #F4DACF 0%, #FCECE6 48%, #F0DFCD 100%);
   --sidebar: #F7E3D9;
   --panel: #FFFCFA;
   --panel-2: #FBE7DE;
   --text: #2B1D17;
   --text-2: #614A40;
-  --text-3: #785E51;
+  --text-3: #62493D;
   --line: #F5DDD2;
   --line-strong: #E9CBBE;
   --accent: #C8734A;
@@ -159,7 +161,7 @@
   --on-dark: #F4ECE1;
   --text-primary: #2B1D17;
   --text-secondary: #614A40;
-  --text-muted: #785E51;
+  --text-muted: #62493D;
   --text-placeholder: #91776C;
   --text-on-primary: #1A120D;
   --on-brand-muted: rgb(26 18 13 / 78%);
@@ -181,7 +183,7 @@
   --shadow-lg: 0 24px 60px -18px rgb(34 23 18 / 34%), 0 2px 8px rgb(34 23 18 / 8%);
   --ivory: #F4ECE1;
   --sand: #F1D5C9;
-  --taupe: #785E51;
+  --taupe: #62493D;
   --walnut: #C8734A;
   --espresso: #1E1410;
   --brand-50: #FBF1EC;

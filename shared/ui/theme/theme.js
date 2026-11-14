@@ -238,10 +238,33 @@ export function buildTheme({ color, color2, mode = 'dark' } = {}) {
   const chroma = clamp(ac, 0.04, 0.14) * 0.9
   const chart = (dark ? [0.86, 0.76, 0.66, 0.56, 0.47] : [0.36, 0.46, 0.56, 0.66, 0.75]).map((L) => oklch(L, chroma, ah))
 
+  // Latar halaman bergradasi (diagonal + cahaya dari beberapa sudut) dari warna utama, warna kedua (bila ada),
+  // dan rona turunannya. Kekuatan diturunkan otomatis bila teks redup jadi kurang terbaca di titik terkuat.
+  const { l: al, c: acc } = hexToOklch(a.accent)
+  const glowA = a.accent
+  const glowB = isHex(color2) ? color2.toUpperCase() : oklch(al, acc, (ah + 50) % 360)
+  const glowC = oklch(al, acc * 0.9, (ah + 320) % 360)
+  // Gradasi tegas; teks (utama, sekunder, redup) digeser lightness-nya sampai tetap lolos kontras AA di titik terkuat.
+  const strength = dark ? 0.5 : 0.42
+  const peaks = [glowA, glowB, glowC].map((glow) => mix(base.bg, glow, strength))
+  const direction = dark ? 1 : -1
+  base.text = towardContrast(base.text, [base.panel, base.panel2, ...peaks], 7, direction)
+  base.text2 = towardContrast(base.text2, [base.panel, base.panel2, ...peaks], 4.5, direction)
+  base.text3 = towardContrast(base.text3, [base.panel, base.panel2, base.hover, ...peaks], 4.5, direction)
+  const s = (factor) => Math.round(strength * factor * 100) / 100
+  const pageGradient = [
+    `radial-gradient(70% 60% at 0% 0%, ${alpha(glowA, s(1))} 0%, transparent 70%)`,
+    `radial-gradient(60% 55% at 100% 10%, ${alpha(glowB, s(0.85))} 0%, transparent 70%)`,
+    `radial-gradient(75% 65% at 90% 100%, ${alpha(glowC, s(0.75))} 0%, transparent 72%)`,
+    `radial-gradient(55% 50% at 5% 95%, ${alpha(glowB, s(0.5))} 0%, transparent 70%)`,
+    `linear-gradient(155deg, ${mix(base.bg, glowA, s(0.35))} 0%, ${base.bg} 48%, ${mix(base.bg, glowB, s(0.3))} 100%)`,
+  ].join(', ')
+
   const shadowInk = dark ? '#000000' : mix(base.text, '#000000', 0.2)
   const vars = {
     // ---- Token baru ----
     '--bg': base.bg,
+    '--page-gradient': pageGradient,
     '--sidebar': base.sidebar,
     '--panel': base.panel,
     '--panel-2': base.panel2,
