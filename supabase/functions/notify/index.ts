@@ -27,6 +27,19 @@ type Outbox = {
   body: string | null, cta_label: string | null, cta_url: string | null, status: string, attempts: number
 }
 type Mail = { to: string, subject: string, html: string, text: string, fromName: string }
+type Template = { key: string, subject: string, heading: string, body: string, cta_label: string | null }
+
+// Template email (file SQL 18, menu Pengaturan → Template email). Jenis notifikasi → template.
+const TEMPLATE_FOR_KIND: Record<string, string> = {
+  cafe_welcome: 'welcome',
+  invoice_due_7: 'invoice',
+  invoice_due_1: 'reminder', invoice_overdue: 'reminder', invoice_overdue_3: 'reminder', suspend_warning: 'reminder',
+  cafe_suspended: 'reminder', trial_ending: 'reminder',
+}
+/** {{nama}} → nilai; variabel tak dikenal dibiarkan kosong. */
+function fillTemplate(text: string, vars: Record<string, string>) {
+  return text.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, name: string) => vars[name] ?? '')
+}
 type SendResult = { ok: true, id?: string } | { ok: false, error: string }
 
 function json(body: unknown, status = 200) {
@@ -131,6 +144,21 @@ Deno.serve(async (req) => {
     return json(result, result.ok ? 200 : 502)
   }
 
+  // Template & nama kafe/owner untuk variabel (diam bila file 18 belum dijalankan)
+  const { data: templateRows } = await admin.from('platform_email_templates').select('key, subject, heading, body, cta_label')
+  const templates = new Map(((templateRows ?? []) as Template[]).map((row) => [row.key, row]))
+  const cafeInfo = new Map<string, { cafe: string, owner: string }>()
+  async function varsFor(item: Outbox & { cafe_id?: string | null }) {
+    let info = item.cafe_id ? cafeInfo.get(item.cafe_id) : undefined
+    if (item.cafe_id && !info) {
+      const { data: cafeRow } = await admin.from('cafes').select('name').eq('id', item.cafe_id).maybeSingle()
+      const { data: ownerRow } = await admin.from('profiles').select('full_name').eq('cafe_id', item.cafe_id).eq('role', 'owner').order('created_at').limit(1).maybeSingle()
+      info = { cafe: cafeRow?.name ?? '', owner: ownerRow?.full_name ?? '' }
+      cafeInfo.set(item.cafe_id, info)
+    }
+    return { platform: fromName, nama_kafe: info?.cafe ?? '', nama_owner: info?.owner || 'Kak', judul: item.title, isi: item.body ?? '' }
+  }
+
   const record = payload.record as { id?: number } | undefined
   let query = admin.from('notification_outbox').select('*')
   query = record?.id
@@ -158,8 +186,19 @@ Deno.serve(async (req) => {
     if (!claimed) continue
 
     const ctaUrl = absoluteUrl(item.cta_url, item.audience)
-    const { html, text } = renderEmail(item, ctaUrl, color, fromName)
-    const result = await send({ to: item.recipient, subject: item.subject, html, text, fromName }, apiKey, from)
+    const template = item.audience === 'owner' ? templates.get(TEMPLATE_FOR_KIND[item.kind] ?? '') : undefined
+    let mail = { title: item.title, body: item.body, cta_label: item.cta_label, subject: item.subject }
+    if (template) {
+      const vars = await varsFor(item)
+      mail = {
+        title: fillTemplate(template.heading, vars),
+        body: fillTemplate(template.body, vars),
+        cta_label: template.cta_label || item.cta_label,
+        subject: fillTemplate(template.subject, vars),
+      }
+    }
+    const { html, text } = renderEmail(mail, ctaUrl, color, fromName)
+    const result = await send({ to: item.recipient, subject: mail.subject, html, text, fromName }, apiKey, from)
     await admin.from('notification_outbox').update(result.ok
       ? { status: 'sent', sent_at: new Date().toISOString(), provider: providerName, provider_id: result.id ?? null, error: null }
       : { status: 'failed', provider: providerName, error: result.error }).eq('id', item.id)

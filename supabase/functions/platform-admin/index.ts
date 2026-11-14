@@ -4,10 +4,12 @@
 // Aksi (POST JSON, header Authorization: Bearer <token admin platform>):
 //   { action: 'create_cafe', cafe_name, owner_name, email, password, plan, trial_days, owner_whatsapp? }
 //   { action: 'reset_owner_password', cafe_id, user_id, password }
+//   { action: 'invite_admin', email, full_name, role, password }   (file SQL 18: anggota tim admin, khusus Super admin)
 //
 // Aturan keamanan:
 //   - Token diverifikasi ke Supabase Auth (getUser), lalu claim "aal" WAJIB "aal2" (sudah 2FA).
 //   - Pemanggil wajib ada & aktif di tabel platform_admins.
+//   - File SQL 18: setiap aksi dicek per PERAN lewat pa_admin_can (buat kafe, reset password, undang tim = Super admin).
 //   - Email yang sudah terdaftar ditolak — tidak mengambil alih akun orang.
 //   - Kafe + profil owner + langganan + log audit dibuat atomik oleh SQL pa_cafe_create_for_owner;
 //     bila gagal, akun login yang baru dibuat dihapus lagi.
@@ -99,7 +101,44 @@ Deno.serve(async (req) => {
     return fail('Format permintaan tidak valid')
   }
 
+  // Peran (file SQL 18). Sebelum file 18: semua admin aktif boleh (perilaku lama).
+  const ACTION_FN: Record<string, string> = {
+    create_cafe: 'pa_cafe_create_for_owner',
+    reset_owner_password: 'pa_reset_owner_password',
+    invite_admin: 'pa_admin_add',
+  }
+  const fnName = ACTION_FN[String(body.action)]
+  if (fnName) {
+    const { data: allowed, error: roleError } = await admin.rpc('pa_admin_can', { p_actor: actorId, p_fn: fnName })
+    if (roleError && !/could not find the function|schema cache/i.test(roleError.message)) return fail('Peran admin tidak dapat diperiksa', 500)
+    if (!roleError && !allowed) return fail('Peran Anda tidak boleh melakukan aksi ini. Hubungi Super admin.', 403)
+  }
+
   switch (body.action) {
+    case 'invite_admin': {
+      const email = cleanText(body.email, 254).toLowerCase()
+      const fullName = cleanText(body.full_name, 80)
+      const role = cleanText(body.role, 20)
+      if (!EMAIL_PATTERN.test(email)) return fail('Email tidak valid')
+      if (fullName.length < 2) return fail('Nama minimal 2 karakter')
+      if (!['super', 'finance', 'support'].includes(role)) return fail('Pilih peran: Super, Finance, atau Support')
+      if (!validPassword(body.password)) return fail('Password sementara minimal 8 karakter')
+      const { data: created, error: createError } = await admin.auth.admin.createUser({
+        email, password: body.password, email_confirm: true, user_metadata: { full_name: fullName },
+      })
+      if (createError || !created.user) {
+        const message = createError?.message ?? ''
+        if (/already|registered|exists/i.test(message)) return fail('Email ini sudah punya akun. Pakai email lain untuk anggota tim.', 409)
+        return fail(`Akun gagal dibuat: ${message}`, 500)
+      }
+      const { error: addError } = await admin.rpc('pa_admin_add', { p_actor: actorId, p_user: created.user.id, p_full_name: fullName, p_role: role })
+      if (addError) {
+        await admin.auth.admin.deleteUser(created.user.id)
+        return fail(addError.message || 'Anggota tim gagal ditambahkan', 400)
+      }
+      return json({ ok: true, user_id: created.user.id })
+    }
+
     case 'create_cafe': {
       const cafeName = cleanText(body.cafe_name, 80)
       const ownerName = cleanText(body.owner_name, 80)
