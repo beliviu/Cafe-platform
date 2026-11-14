@@ -2,6 +2,8 @@
  * Supabase tiruan untuk pratinjau tampilan (VITE_MOCK=1 npm run dev). Tidak dipakai di build produksi.
  * Data contoh: 6 kafe, tagihan, notifikasi, perlu tindakan, riwayat 12 bulan.
  */
+import { billingInvoke, billingRpc } from './mockBilling.js'
+
 const day = 86400000
 const now = Date.now()
 const iso = (offsetDays) => new Date(now + offsetDays * day).toISOString()
@@ -32,8 +34,8 @@ const revenueHistory = Array.from({ length: 12 }, (_, index) => ({ month: monthK
 
 const invoices = [
   { id: 'i1', number: 'INV-2611-00012', cafe_id: 'c2', cafe_name: 'Teras Kopi Bandung', plan_code: 'pro', plan_name: 'Pro', months: 1, period_start: iso(-3), period_end: iso(27), amount: 349000, status: 'pending', state: 'overdue', due_at: iso(-3), source: 'system' },
-  { id: 'i2', number: 'INV-2611-00013', cafe_id: 'c1', cafe_name: 'Kopi Senja', plan_code: 'pro', plan_name: 'Pro', months: 1, period_start: iso(18), period_end: iso(48), amount: 349000, status: 'pending', state: 'pending', due_at: iso(18), source: 'system' },
-  { id: 'i3', number: 'INV-2611-00009', cafe_id: 'c5', cafe_name: 'Basecamp Coffee', plan_code: 'basic', plan_name: 'Basic', months: 3, period_start: iso(-65), period_end: iso(25), amount: 447000, status: 'paid', state: 'paid', due_at: iso(-60), paid_at: iso(-62), method: 'gateway', payment_ref: 'INV-2611-00009-261110', source: 'owner' },
+  { id: 'i2', number: 'INV-2611-00013', cafe_id: 'c1', cafe_name: 'Kopi Senja', plan_code: 'pro', plan_name: 'Pro', months: 1, period_start: iso(18), period_end: iso(48), amount: 299000, list_amount: 349000, credit_amount: 50000, promo_discount: 0, referral_discount: 0, status: 'pending', state: 'pending', due_at: iso(18), source: 'system' },
+  { id: 'i3', number: 'INV-2611-00009', cafe_id: 'c5', cafe_name: 'Basecamp Coffee', plan_code: 'basic', plan_name: 'Basic', months: 3, period_start: iso(-65), period_end: iso(25), amount: 357600, list_amount: 447000, promo_code: 'HEMAT20', promo_discount: 89400, referral_discount: 0, credit_amount: 0, status: 'paid', state: 'paid', due_at: iso(-60), paid_at: iso(-62), method: 'gateway', payment_ref: 'INV-2611-00009-261110', source: 'owner' },
 ]
 
 const actions = [
@@ -191,6 +193,7 @@ const RPC = {
     if (unassign) Object.assign(ticket, { assigned_to: null, assigned_name: null })
     return ticket
   },
+  ...billingRpc({ cafes }),
   pa_whoami: () => ({ is_admin: true, aal: 'aal2', full_name: 'Iwan Iqlal' }),
   pa_theme: () => ({ color: settings.theme_color, color2: settings.theme_color2 }),
   pa_overview: () => ({
@@ -266,6 +269,6 @@ export function createMockSupabase() {
     channel: () => channel,
     storage: { from: () => ({ createSignedUrl: async (path) => ({ data: { signedUrl: 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='480' height='320'><rect width='100%' height='100%' fill='%23272019'/><text x='50%' y='50%' fill='%23BCAB9B' font-family='sans-serif' font-size='20' text-anchor='middle'>${path.split('/').pop()}</text></svg>`.replace(/%23/g, '#')) }, error: null }) }) },
     removeChannel: () => null,
-    functions: { invoke: async () => ({ data: { ok: true, cafe_id: 'c4' }, error: null }) },
+    functions: { invoke: async (name, { body } = {}) => billingInvoke(name, body) || { data: { ok: true, cafe_id: 'c4' }, error: null } },
   }
 }

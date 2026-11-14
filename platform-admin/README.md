@@ -188,7 +188,28 @@ Fitur yang aktif setelah langkah ini:
 | Linimasa + catatan internal (tidak terlihat owner) | Detail kafe |
 | Tiket bantuan owner → admin | **Tiket bantuan** (admin) · menu **Bantuan Dailybrew** di dashboard owner |
 
-### 10. Notifikasi realtime di lonceng
+### 10. Jalankan file SQL 17 (penagihan otomatis, promo, referral, multi-cabang, keuangan)
+SQL Editor → tempel isi `supabase/usulan/17-penagihan-otomatis.sql` → **Run**. Syarat: file 14, 15, dan 16 sudah dijalankan.
+
+- **Hasil yang benar:** query verifikasi menampilkan **9 baris** (6 tabel + 3 trigger) dan **tidak ada** baris `tanpa_rls`.
+- **Data lama:** tidak dihapus. Tagihan lama mendapat `list_amount` = nominalnya, dan setiap kafe mendapat kode referral. Nomor tagihan berikutnya melanjutkan nomor bulan ini tanpa loncat.
+- **Nonaktif otomatis langsung menyala**, tetapi hanya untuk langganan yang masa berlakunya habis **setelah** file ini dijalankan. Tunggakan lama tidak ikut dinonaktifkan. Atur atau matikan di **Keuangan → Pengaturan**.
+- **Deploy ulang Edge Function `subscription-billing`** (langkah 4) dengan isi terbaru `supabase/functions/subscription-billing/index.ts`. Versi ini menambah kuitansi PDF dan tetap mengenali order Midtrans lama saat nominal tagihan berubah karena promo atau kredit. Secrets tidak berubah.
+- **Jadwal:** tidak ada jadwal baru. `pa_daily_check()` kini juga mengirim pengingat telat 3 hari, peringatan 2 hari sebelum nonaktif (email dipaksa), dan menonaktifkan kafe yang lewat batas.
+- **Isi data penerbit kuitansi** (nama, alamat, email, NPWP) di **Keuangan → Pengaturan**.
+
+| Fitur | Di mana |
+|---|---|
+| Pengingat bertahap: H-7, H-1, telat, telat 3 hari, 2 hari sebelum nonaktif | Otomatis (banner + email owner) |
+| Nonaktif otomatis N hari (bawaan 14) setelah masa berlaku habis; aktif lagi otomatis begitu lunas | **Keuangan → Ringkasan** (daftar nonaktif & akan nonaktif) · banner owner dengan tombol **Bayar sekarang** |
+| Kuitansi PDF tagihan lunas | Owner: **Langganan → Riwayat pembayaran → Kuitansi** · Admin: ikon unduh di **Tagihan** |
+| Kode promo (persen/nominal, kuota, paket, minimal bulan, khusus pembayaran pertama, masa berlaku) | **Keuangan → Kode promo** · owner memasukkan kode di tagihan |
+| Referral: diskon tagihan pertama kafe baru + kredit untuk pengundang | Owner: kartu **Ajak kafe lain** · Admin: **Keuangan → Referral** |
+| Kredit kafe (otomatis memotong tagihan; total 0 langsung lunas) | Detail kafe → **Penagihan → Atur kredit** |
+| Harga multi-cabang (cabang ke-2 dst. didiskon) | **Keuangan → Multi-cabang** · detail kafe → **Grup cabang** |
+| Kas masuk per bulan, piutang & umurnya, perkiraan 30 hari, ketepatan bayar, metode | **Keuangan → Ringkasan** |
+
+### 11. Notifikasi realtime di lonceng
 File 15 otomatis mendaftarkan tabel `platform_notifications` ke Supabase Realtime. Kalau lonceng tidak langsung bertambah saat ada kejadian baru, cek **Database → Publications → supabase_realtime** dan pastikan `platform_notifications` tercentang. Lonceng tetap memuat ulang saat halaman dibuka.
 
 ---
@@ -221,7 +242,10 @@ Dashboard memasang `noindex`, jadi tidak muncul di mesin pencari. Lapisan keaman
 | Owner bayar online | Tidak perlu apa-apa. Webhook Midtrans menandai lunas dan memperpanjang langganan. Hasilnya terlihat di Tagihan dan Log audit. |
 | Kasih bonus atau kompensasi | Detail kafe → **Perpanjang** (tanpa tagihan) atau **Beri masa coba** |
 | Harga khusus | Detail kafe → **Ganti paket** → isi *Harga khusus / bulan* |
-| Kafe tidak bayar | Biarkan sistem: setelah tenggang 7 hari, kafe otomatis turun ke Basic. Untuk menghentikan total: Detail kafe → **Nonaktifkan** (pesanan baru ditolak, data tetap aman). |
+| Kafe tidak bayar | Biarkan sistem: pengingat terkirim otomatis, fitur turun ke Basic setelah tenggang 7 hari, dan kafe nonaktif otomatis setelah 14 hari (file 17). Begitu owner membayar, kafe aktif lagi sendiri. Membuka manual dari detail kafe menunda nonaktif otomatis 7 hari. |
+| Beri diskon / kompensasi uang | **Keuangan → Kode promo**, atau detail kafe → **Penagihan → Atur kredit** |
+| Owner punya beberapa cabang | **Keuangan → Multi-cabang → Grup baru**, lalu detail tiap kafe → **Grup cabang** |
+| Owner minta kuitansi | **Tagihan** → ikon unduh di tagihan lunas (owner juga bisa unduh sendiri) |
 | Ingatkan owner lewat WA | Ringkasan → **Perlu tindakan** → **Chat WA** (template sudah berisi nominal & jatuh tempo), atau dari detail kafe |
 | Enterprise / harga khusus | Detail kafe → **Ganti paket** → isi **Harga kustom / bulan**, lalu harga itu ikut dihitung di MRR |
 | Kabari semua kafe | **Pengumuman** → tulis → semua kafe / kafe tertentu (opsional + email) |
@@ -236,6 +260,8 @@ Dashboard memasang `noindex`, jadi tidak muncul di mesin pencari. Lapisan keaman
 - Notifikasi push ke HP admin, dan email ringkasan harian.
 - Refund otomatis untuk pembayaran yang masuk setelah tagihan dibatalkan. Kasus ini tercatat sebagai `invoice.paid_after_void` dan muncul di Perlu tindakan.
 - Prorata saat ganti paket di tengah periode. Paket baru berlaku mulai dibayar.
+- Konsep cabang di dalam satu akun owner. Multi-cabang saat ini berupa grup tagihan yang diatur admin; tiap cabang tetap kafe terpisah dengan akun owner sendiri.
+- Faktur pajak (e-Faktur). Kuitansi PDF adalah bukti bayar, bukan faktur pajak.
 - Peran admin bertingkat. Semua admin punya hak penuh.
 - Lampiran gambar dari admin saat membalas tiket (owner sudah bisa melampirkan gambar).
 - Wizard setup 8 langkah di sisi owner. Saat ini progres dibaca dari data yang sudah ada dan hanya terlihat oleh admin.

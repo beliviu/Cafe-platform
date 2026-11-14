@@ -11,7 +11,7 @@ export function friendlyError(error) {
   const hint = error?.hint || ''
   if (hint === 'mfa_required' || /2FA/.test(message)) return 'Sesi belum terverifikasi 2FA. Masuk ulang.'
   if (hint === 'platform_admin_only') return 'Akun ini bukan admin platform.'
-  if (/could not find the function|schema cache/i.test(message)) return 'Fungsi database belum ada. Jalankan file SQL terbaru (14–16) di Supabase.'
+  if (/could not find the function|schema cache/i.test(message)) return 'Fungsi database belum ada. Jalankan file SQL terbaru (14–17) di Supabase.'
   if (/failed to fetch|network|load failed/i.test(message)) return 'Koneksi terputus. Periksa internet lalu coba lagi.'
   return message || 'Terjadi kesalahan. Coba lagi.'
 }
@@ -39,6 +39,31 @@ export async function platformAction(action, payload = {}) {
     throw new Error(message)
   }
   return data
+}
+
+/** Unduh kuitansi PDF tagihan lunas (Edge Function subscription-billing, aksi receipt — file 17). */
+export async function downloadReceipt(invoice) {
+  if (!supabase) throw new Error('Koneksi ke server belum tersedia.')
+  const { data, error } = await supabase.functions.invoke('subscription-billing', { body: { action: 'receipt', invoice_id: invoice.id } })
+  if (error) {
+    let message = error.message
+    try {
+      const body = await error.context?.json?.()
+      if (body?.error) message = body.error
+    } catch {
+      // badan respons bukan JSON
+    }
+    throw new Error(/failed to send a request|not found/i.test(message) ? 'Edge Function subscription-billing belum di-deploy ulang.' : message)
+  }
+  if (!(data instanceof Blob)) throw new Error(data?.error || 'Kuitansi belum tersedia. Deploy ulang Edge Function subscription-billing.')
+  const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `Kuitansi-${String(invoice.number || 'Dailybrew').replace(/^INV-/, 'KW-')}.pdf`
+  document.body.append(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
 
 /** Muat data dari fungsi async; ulangi saat `load` berubah atau reload() dipanggil. */
@@ -113,6 +138,17 @@ export const ACTION_LABELS = {
   'cafe.note': 'Catatan internal',
   'ticket.reply': 'Tiket dibalas',
   'ticket.update': 'Tiket diubah',
+  'invoice.promo': 'Kode promo dipasang',
+  'promo.create': 'Promo dibuat',
+  'promo.update': 'Promo diubah',
+  'referral.claim': 'Kode referral dipakai',
+  'referral.rewarded': 'Kredit referral diberikan',
+  'credit.adjust': 'Kredit diubah',
+  'billing_group.create': 'Grup cabang dibuat',
+  'billing_group.update': 'Grup cabang diubah',
+  'billing_group.delete': 'Grup cabang dihapus',
+  'cafe.billing_group': 'Grup cabang kafe diganti',
+  'settings.billing': 'Pengaturan penagihan diubah',
 }
 
 /** Label skor kesehatan (file 16). Selalu tampil sebagai kata, bukan warna saja. */

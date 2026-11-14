@@ -2,12 +2,13 @@
  * Pengaturan → Langganan (file 10): paket, status, fitur, pemakaian vs batas.
  * Bayar & ganti paket sendiri lewat BillingCard (file 14 + Edge Function subscription-billing).
  */
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { Check, Minus } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth.js'
 import { Badge, Card, CardHeader, EmptyState, ErrorState, SkeletonRows } from '../../components/ui/index.js'
 import { BillingCard } from '../../components/settings/BillingCard.jsx'
+import { ReferralCard } from '../../components/settings/ReferralCard.jsx'
 import { friendlyError, SECURITY_REQUIRED } from '../../lib/db.js'
 import { formatDate, formatNumber, formatRupiah } from '../../lib/format.js'
 import { useLoader } from '../../lib/inventory.js'
@@ -41,6 +42,7 @@ export function SubscriptionSettings() {
     return { ...data, checked_at: Date.now() }
   }, [cafe.id, supabase])
   const { data, error, reload } = useLoader(features?.security ? load : null)
+  const [billingKey, setBillingKey] = useState(0)
 
   if (!features?.security) return <Card className="settings-card"><CardHeader title="Langganan" /><EmptyState compact title="Belum tersedia" description={SECURITY_REQUIRED} /></Card>
   if (error) return <Card className="settings-card"><ErrorState compact message={error} onRetry={reload} /></Card>
@@ -61,7 +63,8 @@ export function SubscriptionSettings() {
         {trialOver && <p className="ui-field-error">Masa coba berakhir: fitur paket Pro dikunci sampai langganan diaktifkan. Data tetap aman.</p>}
       </Card>
 
-      <BillingCard supabase={supabase} cafeId={cafe.id} cafeName={cafe.name} plans={data.plans} currentPlan={data.subscribed_plan} onPaid={reload} />
+      <BillingCard key={billingKey} supabase={supabase} cafeId={cafe.id} cafeName={cafe.name} plans={data.plans} currentPlan={data.subscribed_plan} onPaid={reload} />
+      <ReferralCard supabase={supabase} cafeId={cafe.id} cafeName={cafe.name} onClaimed={() => setBillingKey((value) => value + 1)} />
 
       <div className="fin-grid">
         <Card className="settings-card">

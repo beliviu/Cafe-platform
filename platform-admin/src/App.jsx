@@ -16,6 +16,7 @@ const AuditPage = page(() => import('./pages/AuditPage.jsx'), 'AuditPage')
 const AnnouncementsPage = page(() => import('./pages/AnnouncementsPage.jsx'), 'AnnouncementsPage')
 const SettingsPage = page(() => import('./pages/SettingsPage.jsx'), 'SettingsPage')
 const AnalyticsPage = page(() => import('./pages/AnalyticsPage.jsx'), 'AnalyticsPage')
+const FinancePage = page(() => import('./pages/FinancePage.jsx'), 'FinancePage')
 const TicketsPage = page(() => import('./pages/TicketsPage.jsx'), 'TicketsPage')
 const TicketDetailPage = page(() => import('./pages/TicketDetailPage.jsx'), 'TicketDetailPage')
 
@@ -38,6 +39,7 @@ export default function App() {
                 <Route path="pengumuman" element={<AnnouncementsPage />} />
                 <Route path="pengaturan" element={<SettingsPage />} />
                 <Route path="analitik" element={<AnalyticsPage />} />
+                <Route path="keuangan" element={<FinancePage />} />
                 <Route path="tiket" element={<TicketsPage />} />
                 <Route path="tiket/:ticketId" element={<TicketDetailPage />} />
               </Route>

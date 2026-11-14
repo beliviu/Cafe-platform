@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { BarChart3, Coffee, FileClock, LayoutDashboard, LifeBuoy, Megaphone, Package, Receipt, Settings, Store } from 'lucide-react'
+import { BarChart3, Coffee, FileClock, LayoutDashboard, LifeBuoy, Megaphone, Package, Receipt, Settings, Store, Wallet } from 'lucide-react'
 import { optional, rpc } from '../lib/api.js'
 import { useAuth } from '../auth/useAuth.js'
 import { AdminShell } from './shell/AdminShell.jsx'
@@ -11,6 +11,7 @@ const sections = (ticketBadge) => [
     { to: '/', label: 'Ringkasan', icon: LayoutDashboard, end: true },
     { to: '/kafe', label: 'Kafe', icon: Store },
     { to: '/tagihan', label: 'Tagihan', icon: Receipt },
+    { to: '/keuangan', label: 'Keuangan', icon: Wallet },
     { to: '/analitik', label: 'Analitik', icon: BarChart3 },
   ] },
   { label: 'Layanan', items: [

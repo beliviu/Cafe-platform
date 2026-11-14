@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { AuthContext } from '../auth/AuthContext.js'
 import { AppShell } from '../components/shell/AppShell.jsx'
+import { PlatformBanner } from '../components/shell/PlatformBanner.jsx'
 import { OWNER_NAVIGATION } from '../config/ownerNavigation.js'
 import { brandOf, useDocumentBranding } from '../lib/branding.js'
 import { createFixtures, createMockSupabase } from './mockSupabase.js'
@@ -27,7 +28,9 @@ export function OwnerPreview() {
 
   return (
     <AuthContext.Provider value={auth}>
-      <AppShell brand={brandOf(cafe)} navigation={navigation} account={{ title: profile.full_name, subtitle: `Owner · ${cafe.name} (pratinjau)`, onSignOut: () => {} }}>
+      <AppShell brand={brandOf(cafe)} navigation={navigation} account={{ title: profile.full_name, subtitle: `Owner · ${cafe.name} (pratinjau)`, onSignOut: () => {} }}
+        // Banner Dailybrew: di pratinjau hanya muncul dengan ?mock_billing=suspended|warning
+        banner={<PlatformBanner supabase={supabase} cafeId={cafe.id} cafeName={cafe.name} isOwner={true} />}>
         <Outlet
           context={{
             cafe,

@@ -10,6 +10,7 @@ import { createCustomerFixtures, customerRpc } from './mockCustomer.js'
 import { createPaymentFixtures, paymentInvoke, paymentRpc, payLatestIntent } from './mockPayments.js'
 import { advisorInvoke, biRpc } from './mockBi.js'
 import { createSupportFixtures, supportRpc } from './mockPlatformSupport.js'
+import { billingInvoke, billingRpc, createBillingFixtures } from './mockPlatformBilling.js'
 
 function seeded(seed) {
   let value = seed
@@ -421,6 +422,12 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
         await new Promise((resolve) => window.setTimeout(resolve, 150))
         return supportResult
       }
+      fixtures.billing ||= createBillingFixtures(fixtures.cafe.id)
+      const billingResult = billingRpc(fixtures.billing, name, args)
+      if (billingResult) {
+        await new Promise((resolve) => window.setTimeout(resolve, 150))
+        return billingResult
+      }
       return { data: null, error: { message: `RPC ${name} tidak ada di mock` } }
     },
     storage: {
@@ -438,6 +445,7 @@ export function createMockSupabase(fixtures, { userId = 'owner-1' } = {}) {
       invoke: async (_name, { body }) => {
         await new Promise((resolve) => window.setTimeout(resolve, 300))
         if (_name === 'payments') return paymentInvoke(store, body, userId)
+        if (_name === 'subscription-billing') return billingInvoke(body)
         if (_name === 'advisor') {
           await new Promise((resolve) => window.setTimeout(resolve, 900))
           return advisorInvoke(store, body)

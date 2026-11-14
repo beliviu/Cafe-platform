@@ -52,6 +52,47 @@ export async function callBilling(supabase, body) {
   return data
 }
 
+/* ---------- File 17: promo, referral, kuitansi ---------- */
+
+/** Pasang (atau lepas bila kode kosong) kode promo. Kode salah → Error dengan pesan dari server. */
+export async function applyPromo(supabase, cafeId, invoiceId, code) {
+  const { data, error } = await supabase.rpc('owner_invoice_apply_promo', { p_cafe_id: cafeId, p_invoice: invoiceId, p_code: code })
+  if (error) throw new Error(MISSING.test(error.message) ? 'Kode promo belum tersedia.' : error.message)
+  if (!data?.ok) throw new Error(data?.error || 'Kode promo tidak bisa dipakai')
+  return data.invoice
+}
+
+/** Info referral & kredit (null bila file 17 belum dijalankan). */
+export async function fetchReferralInfo(supabase, cafeId) {
+  const { data, error } = await supabase.rpc('owner_referral_info', { p_cafe_id: cafeId })
+  if (error) {
+    if (MISSING.test(error.message)) return null
+    throw new Error(error.message)
+  }
+  return data
+}
+
+export async function claimReferral(supabase, cafeId, code) {
+  const { data, error } = await supabase.rpc('owner_referral_claim', { p_cafe_id: cafeId, p_code: code })
+  if (error) throw new Error(error.message)
+  if (!data?.ok) throw new Error(data?.error || 'Kode referral tidak bisa dipakai')
+  return data
+}
+
+/** Unduh kuitansi PDF tagihan lunas (Edge Function subscription-billing, aksi receipt). */
+export async function downloadReceipt(supabase, invoice) {
+  const data = await callBilling(supabase, { action: 'receipt', invoice_id: invoice.id })
+  if (!(data instanceof Blob)) throw new Error('Kuitansi belum tersedia. Edge Function subscription-billing perlu dideploy ulang.')
+  const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `Kuitansi-${String(invoice.number || 'Dailybrew').replace(/^INV-/, 'KW-')}.pdf`
+  document.body.append(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
 export const INVOICE_STATE = {
   pending: { label: 'Menunggu bayar', tone: 'blue' },
   overdue: { label: 'Lewat jatuh tempo', tone: 'amber' },

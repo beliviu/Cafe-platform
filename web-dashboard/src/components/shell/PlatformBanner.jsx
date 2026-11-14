@@ -17,6 +17,19 @@ export function PlatformBanner({ supabase, cafeId, cafeName, isOwner }) {
   const { items, dismiss } = useOwnerNotifications(supabase, cafeId, isOwner)
   const cafe = { id: cafeId, name: cafeName }
 
+  // File 17: nonaktif otomatis karena tagihan → owner cukup membayar, kafe aktif lagi otomatis
+  if (status?.suspended && status.suspended_kind === 'billing') {
+    return (
+      <div className="shell-banner" role="alert">
+        <span>
+          <strong>Kafe dinonaktifkan sementara karena langganan belum dibayar.</strong> Pesanan baru belum bisa diterima; data tetap aman.
+          {' '}{isOwner ? 'Kafe aktif lagi otomatis begitu pembayaran terkonfirmasi.' : 'Hubungi owner kafe.'}
+        </span>
+        {isOwner && <span className="shell-banner-actions"><Link to="/settings/subscription">Bayar sekarang</Link></span>}
+      </div>
+    )
+  }
+
   if (status?.suspended) {
     return (
       <div className="shell-banner" role="alert">
@@ -30,10 +43,16 @@ export function PlatformBanner({ supabase, cafeId, cafeName, isOwner }) {
   }
 
   // Banner tagihan dari notifikasi sudah mencakup masa tenggang; tampilkan pesan tenggang hanya bila tidak ada
-  const hasInvoiceNote = (items || []).some((item) => item.kind.startsWith('invoice_'))
+  const hasInvoiceNote = (items || []).some((item) => item.kind.startsWith('invoice_') || item.kind === 'suspend_warning')
   return (
     <>
-      {status?.in_grace && isOwner && !hasInvoiceNote && (
+      {status?.suspend_at && isOwner && !hasInvoiceNote && (
+        <div className="shell-banner" role="alert">
+          <span>Langganan belum dibayar. Kafe dinonaktifkan otomatis pada {formatDate(status.suspend_at)} bila tagihan belum lunas.</span>
+          <Link to="/settings/subscription">Bayar sekarang</Link>
+        </div>
+      )}
+      {!status?.suspend_at && status?.in_grace && isOwner && !hasInvoiceNote && (
         <div className="shell-banner is-warning" role="status">
           <span>Langganan sudah lewat jatuh tempo. Fitur paket tetap jalan sampai {formatDate(status.grace_until)}.</span>
           <Link to="/settings/subscription">Bayar sekarang</Link>
@@ -45,7 +64,7 @@ export function PlatformBanner({ supabase, cafeId, cafeName, isOwner }) {
             <strong>{item.title}.</strong> {item.body}
           </span>
           <span className="shell-banner-actions">
-            {item.link && <Link to={item.link}>{item.kind.startsWith('invoice_') ? 'Bayar sekarang' : 'Lihat'}</Link>}
+            {item.link && <Link to={item.link}>{item.kind.startsWith('invoice_') || item.kind === 'suspend_warning' || item.kind === 'cafe_suspended' ? 'Bayar sekarang' : 'Lihat'}</Link>}
             <button type="button" aria-label="Tutup pemberitahuan" onClick={() => dismiss(item.id)}><X size={16} aria-hidden="true" /></button>
           </span>
         </div>

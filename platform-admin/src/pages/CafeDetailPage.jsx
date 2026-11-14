@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { Ban, CalendarPlus, Check, FilePlus2, Gift, KeyRound, Minus, PackageCheck, Pencil, PlayCircle } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { AuditTable } from '../components/AuditTable.jsx'
+import { CafeBillingCard } from '../components/CafeBilling.jsx'
 import { HealthCard, SetupCard } from '../components/Health.jsx'
 import { TimelineCard } from '../components/Timeline.jsx'
 import { InvoiceTable } from '../components/InvoiceTable.jsx'
@@ -29,6 +30,7 @@ export function CafeDetailPage() {
     rpc('pa_cafe_outbox', { p_cafe: cafeId, p_limit: 30 }).catch(() => null), // null sebelum file 15
     optional(rpc('pa_cafe_health', { p_cafe: cafeId, p_days: 90 })), // null sebelum file 16
     optional(rpc('pa_cafe_timeline', { p_cafe: cafeId, p_limit: 100 })),
+    optional(rpc('pa_cafe_billing', { p_cafe: cafeId })), // null sebelum file 17
   ]), [cafeId])
   const { data, error, loading, reload } = useLoader(load)
   useCrumbs(data ? [{ label: data[0].cafe.name }] : [{ label: 'Detail' }])
@@ -36,7 +38,7 @@ export function CafeDetailPage() {
   if (error) return <div className="page"><PageHeader title="Detail kafe" /><ErrorState message={error} onRetry={reload} /></div>
   if (loading && !data) return <div className="page"><PageHeader title="Memuat…" /><Card><SkeletonRows rows={6} /></Card></div>
 
-  const [detail, plans, invoices, audit, outbox, health, timeline] = data
+  const [detail, plans, invoices, audit, outbox, health, timeline, billing] = data
   const { cafe, subscription, summary, usage, effective_plan: effective } = detail
   const meta = STATE_META[summary.state] || STATE_META.active
   const owners = detail.members.filter((member) => member.role === 'owner')
@@ -66,7 +68,10 @@ export function CafeDetailPage() {
       {cafe.suspended_at && (
         <div className="pa-banner" role="status">
           <Ban size={16} aria-hidden="true" />
-          <span>Dinonaktifkan {formatDateTime(cafe.suspended_at)}{cafe.suspended_reason ? ` — ${cafe.suspended_reason}` : ''}. Pesanan baru ditolak.</span>
+          <span>
+            Dinonaktifkan {formatDateTime(cafe.suspended_at)}{cafe.suspended_reason ? ` — ${cafe.suspended_reason}` : ''}. Pesanan baru ditolak.
+            {billing?.suspended_kind === 'billing' && ' Otomatis karena tagihan: aktif lagi begitu tagihan lunas. Bila diaktifkan manual, nonaktif otomatis ditunda 7 hari.'}
+          </span>
         </div>
       )}
 
@@ -95,6 +100,8 @@ export function CafeDetailPage() {
             <Button size="sm" icon={FilePlus2} onClick={() => setDialog({ type: 'invoice' })}>Buat tagihan</Button>
           </div>
         </Card>
+
+        <CafeBillingCard cafeId={cafe.id} billing={billing} onChanged={reload} />
 
         <Card>
           <CardHeader title="Profil" />

@@ -1,11 +1,20 @@
 import { useState } from 'react'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { CheckCircle2, FileDown, XCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Badge, Button, CheckMark, ConfirmDialog, Dialog, IconButton, TextField, motionEnabled, useToast } from './ui/index.js'
-import { INVOICE_META, rpc } from '../lib/api.js'
+import { downloadReceipt, INVOICE_META, rpc } from '../lib/api.js'
 import { formatDate, formatRupiah, jakartaDateKey } from '../lib/format.js'
 
-const METHOD = { manual_transfer: 'Transfer', gateway: 'Midtrans' }
+const METHOD = { manual_transfer: 'Transfer', gateway: 'Midtrans', credit: 'Kredit/diskon' }
+
+/** "dari Rp 349.000 · promo HEMAT20 · kredit" — rincian singkat untuk tagihan yang dipotong (file 17) */
+function adjustmentNote(invoice) {
+  const parts = [`dari ${formatRupiah(invoice.list_amount)}`]
+  if (Number(invoice.promo_discount) > 0) parts.push(`promo ${invoice.promo_code}`)
+  if (Number(invoice.referral_discount) > 0) parts.push('referral')
+  if (Number(invoice.credit_amount) > 0) parts.push(`kredit ${formatRupiah(invoice.credit_amount)}`)
+  return parts.join(' · ')
+}
 
 function MarkPaidDialog({ invoice, onClose, onDone }) {
   const { toast } = useToast()
@@ -68,6 +77,18 @@ export function InvoiceTable({ rows, showCafe = true, onChanged }) {
   const [paying, setPaying] = useState(null)
   const [voiding, setVoiding] = useState(null)
   const [voidNote, setVoidNote] = useState('')
+  const [downloading, setDownloading] = useState(null)
+
+  async function receipt(invoice) {
+    setDownloading(invoice.id)
+    try {
+      await downloadReceipt(invoice)
+    } catch (caught) {
+      toast({ tone: 'danger', title: 'Kuitansi gagal diunduh', description: caught.message })
+    } finally {
+      setDownloading(null)
+    }
+  }
 
   return (
     <>
@@ -92,7 +113,12 @@ export function InvoiceTable({ rows, showCafe = true, onChanged }) {
                   <td><span className="pa-cell-main"><strong className="tabular">{invoice.number}</strong><small>{invoice.plan_name} · {invoice.months} bln{invoice.source === 'owner' ? ' · diminta owner' : invoice.source === 'system' ? ' · otomatis' : ''}</small></span></td>
                   {showCafe && <td><Link to={`/kafe/${invoice.cafe_id}`} className="link-button">{invoice.cafe_name}</Link></td>}
                   <td className="tabular">{formatDate(invoice.period_start)} – {formatDate(invoice.period_end)}</td>
-                  <td className="num tabular">{formatRupiah(invoice.amount)}</td>
+                  <td className="num tabular">
+                    <span className="pa-cell-main is-num">
+                      <span>{formatRupiah(invoice.amount)}</span>
+                      {Number(invoice.list_amount) > Number(invoice.amount) && <small>{adjustmentNote(invoice)}</small>}
+                    </span>
+                  </td>
                   <td>
                     <span className="pa-cell-main">
                       <Badge tone={meta.tone}>{meta.label}</Badge>
@@ -106,6 +132,10 @@ export function InvoiceTable({ rows, showCafe = true, onChanged }) {
                         <Button size="sm" variant="secondary" icon={CheckCircle2} onClick={() => setPaying(invoice)}>Lunas</Button>
                         <IconButton icon={XCircle} label="Batalkan tagihan" size="sm" onClick={() => { setVoidNote(''); setVoiding(invoice) }} />
                       </span>
+                    )}
+                    {invoice.status === 'paid' && (
+                      <IconButton icon={FileDown} label={`Unduh kuitansi ${invoice.number}`} size="sm" disabled={downloading === invoice.id}
+                        onClick={() => receipt(invoice)} />
                     )}
                   </td>
                 </tr>
