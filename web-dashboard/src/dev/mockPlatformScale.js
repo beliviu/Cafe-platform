@@ -59,6 +59,9 @@ export function scaleRpc(fixtures, name, args) {
         session_id: args.p_session, cafe_id: fixtures.cafe.id, expires_at: iso(23), started_at: iso(-7),
         cafe_name: fixtures.cafe.name, admin_name: 'Sapto (Support)', owner: { ...fixtures.profile, role: 'owner' },
       })
+    case 'owner_reset_transactions':
+      if (String(args.p_confirm || '').trim() !== fixtures.cafe.name) return { data: null, error: { message: `Ketik nama kafe persis "${fixtures.cafe.name}" untuk konfirmasi` } }
+      return ok({ ok: true, orders: 33, deleted: { orders: 33 } })
     case 'pa_impersonate_end':
       return ok({ ended: 1 })
     default:
