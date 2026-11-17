@@ -148,6 +148,11 @@ function AdjustDialog({ cafe, member, onClose, onSaved }) {
 /* ---------- Voucher ---------- */
 
 const VOUCHER_COLUMNS = 'id, code, name, discount_type, discount_value, max_discount, min_subtotal, starts_at, ends_at, usage_limit, per_customer_limit, is_public, is_active, created_at'
+const AUDIENCE_OPTIONS = [
+  { value: 'all', label: 'Semua pelanggan (termasuk tamu QR meja tanpa login)' },
+  { value: 'members', label: 'Hanya pelanggan yang login' },
+]
+const isMissingAudience = (error) => /audience/i.test(error?.message || '') && /does not exist|schema cache|could not find/i.test(error?.message || '')
 
 function voucherState(voucher) {
   const now = new Date().toISOString()
@@ -162,10 +167,17 @@ function Vouchers({ cafe }) {
   const { toast } = useToast()
   const [editing, setEditing] = useState(null)
   const load = useCallback(async () => {
-    const [vouchers, uses] = await Promise.all([
-      supabase.from('vouchers').select(VOUCHER_COLUMNS).eq('cafe_id', cafe.id).order('created_at', { ascending: false }),
+    const listVouchers = (columns) => supabase.from('vouchers').select(columns).eq('cafe_id', cafe.id).order('created_at', { ascending: false })
+    let [vouchers, uses] = await Promise.all([
+      listVouchers(`${VOUCHER_COLUMNS}, audience`),
       supabase.from('voucher_redemptions').select('voucher_id, amount, status').eq('cafe_id', cafe.id).eq('status', 'applied'),
     ])
+    // Kolom audience baru ada setelah file SQL 20 dijalankan
+    let supportsAudience = true
+    if (vouchers.error && isMissingAudience(vouchers.error)) {
+      supportsAudience = false
+      vouchers = await listVouchers(VOUCHER_COLUMNS)
+    }
     const failure = vouchers.error || uses.error
     if (failure) throw new Error(friendlyError(failure))
     const usage = new Map()
@@ -173,7 +185,7 @@ function Vouchers({ cafe }) {
       const entry = usage.get(row.voucher_id) || { count: 0, total: 0 }
       usage.set(row.voucher_id, { count: entry.count + 1, total: entry.total + Number(row.amount) })
     }
-    return { vouchers: vouchers.data || [], usage }
+    return { vouchers: vouchers.data || [], usage, supportsAudience }
   }, [cafe.id, supabase])
   const { data, error, reload, loading } = useLoader(load)
 
@@ -204,7 +216,7 @@ function Vouchers({ cafe }) {
                   const usage = data.usage.get(voucher.id) || { count: 0, total: 0 }
                   return (
                     <tr key={voucher.id} className={voucher.is_active ? '' : 'is-muted'}>
-                      <td><span className="inv-name"><strong className="tabular">{voucher.code}</strong><small>{voucher.name}{voucher.is_public ? ' · tampil di app' : ' · kode rahasia'}</small></span></td>
+                      <td><span className="inv-name"><strong className="tabular">{voucher.code}</strong><small>{voucher.name}{voucher.is_public ? ' · tampil di app' : ' · kode rahasia'}{voucher.audience === 'all' ? ' · bisa tamu' : voucher.audience === 'members' ? ' · khusus member' : ''}</small></span></td>
                       <td className="nowrap">{voucher.discount_type === 'percent' ? `${Number(voucher.discount_value)}%` : formatRupiah(voucher.discount_value)}{voucher.max_discount ? <small className="cell-sub">maks. {formatRupiah(voucher.max_discount)}</small> : null}</td>
                       <td>{Number(voucher.min_subtotal) ? `Min. ${formatRupiah(voucher.min_subtotal)}` : 'Tanpa minimal'}<small className="cell-sub">{voucher.per_customer_limit}× per pelanggan{voucher.usage_limit ? ` · kuota ${voucher.usage_limit}` : ''}</small></td>
                       <td className="nowrap">{voucher.starts_at || voucher.ends_at ? `${voucher.starts_at ? formatDate(voucher.starts_at) : 'Sekarang'} – ${voucher.ends_at ? formatDate(voucher.ends_at) : 'seterusnya'}` : 'Tanpa batas'}</td>
@@ -222,7 +234,7 @@ function Vouchers({ cafe }) {
           </div>
         )}
       </Card>
-      {editing && <VoucherDrawer cafe={cafe} voucher={editing.id ? editing : null} onClose={() => setEditing(null)} onSaved={reload} />}
+      {editing && <VoucherDrawer cafe={cafe} voucher={editing.id ? editing : null} supportsAudience={Boolean(data?.supportsAudience)} onClose={() => setEditing(null)} onSaved={reload} />}
     </>
   )
 }
@@ -230,7 +242,7 @@ function Vouchers({ cafe }) {
 const toLocalInput = (iso) => (iso ? new Date(new Date(iso).getTime() + 7 * 3600000).toISOString().slice(0, 16) : '')
 const fromLocalInput = (value) => (value ? new Date(`${value}:00+07:00`).toISOString() : null)
 
-function VoucherDrawer({ cafe, voucher, onClose, onSaved }) {
+function VoucherDrawer({ cafe, voucher, supportsAudience, onClose, onSaved }) {
   const { supabase } = useAuth()
   const { toast } = useToast()
   const [form, setForm] = useState(() => ({
@@ -238,6 +250,7 @@ function VoucherDrawer({ cafe, voucher, onClose, onSaved }) {
     max_discount: voucher?.max_discount ? Number(voucher.max_discount) : '', min_subtotal: voucher ? Number(voucher.min_subtotal) || '' : '',
     starts_at: toLocalInput(voucher?.starts_at), ends_at: toLocalInput(voucher?.ends_at), usage_limit: voucher?.usage_limit ? String(voucher.usage_limit) : '',
     per_customer_limit: String(voucher?.per_customer_limit || 1), is_public: voucher?.is_public ?? true, is_active: voucher?.is_active ?? true,
+    audience: voucher?.audience || 'members',
   }))
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -258,6 +271,7 @@ function VoucherDrawer({ cafe, voucher, onClose, onSaved }) {
       min_subtotal: Number(form.min_subtotal) || 0, starts_at: fromLocalInput(form.starts_at), ends_at: fromLocalInput(form.ends_at),
       usage_limit: Number(form.usage_limit) > 0 ? Number(form.usage_limit) : null, per_customer_limit: Math.max(1, Number(form.per_customer_limit) || 1),
       is_public: form.is_public, is_active: form.is_active,
+      ...(supportsAudience ? { audience: form.audience } : {}),
     }
     const result = voucher
       ? await supabase.from('vouchers').update(row).eq('id', voucher.id).select('id').maybeSingle()
@@ -293,6 +307,12 @@ function VoucherDrawer({ cafe, voucher, onClose, onSaved }) {
           <TextField label="Mulai (WIB)" type="datetime-local" value={form.starts_at} onChange={set('starts_at')} hint="Kosong = langsung berlaku" />
           <TextField label="Berakhir (WIB)" type="datetime-local" value={form.ends_at} onChange={set('ends_at')} hint="Kosong = tanpa batas" />
         </div>
+        {supportsAudience ? (
+          <Select label="Siapa yang bisa memakai" value={form.audience} onChange={set('audience')} options={AUDIENCE_OPTIONS}
+            hint={form.audience === 'all' ? 'Tamu dihitung per HP/browser. Isi kuota total agar promo tidak dipakai tanpa batas.' : 'Tamu QR meja diminta masuk atau daftar dulu.'} />
+        ) : (
+          <p className="text-muted">Voucher saat ini khusus pelanggan yang login. Jalankan file SQL 20 agar voucher bisa dipakai tamu QR meja.</p>
+        )}
         <TextField label="Kuota total" suffix="pemakaian" inputMode="numeric" value={form.usage_limit} placeholder="Tanpa batas" onChange={(event) => set('usage_limit')(event.target.value.replace(/\D/g, ''))} />
         <div className="inv-switch-line">
           <span><strong>Tampilkan di app</strong><small>Mati = kode rahasia (hanya yang tahu kodenya, mis. dari Instagram).</small></span>

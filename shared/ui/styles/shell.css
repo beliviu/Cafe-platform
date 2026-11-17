@@ -241,3 +241,4 @@
 .access-v2-mark { width: 52px; height: 52px; border-radius: var(--radius-md); }
 .access-v2-card h1 { font-size: var(--text-xl); }
 .access-v2-card p { margin: 0 0 8px; color: var(--text-2); font-size: var(--text-base); line-height: 1.6; }
+.access-v2-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }

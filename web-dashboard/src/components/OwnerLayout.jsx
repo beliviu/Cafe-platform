@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth.js'
 import { OWNER_NAVIGATION } from '../config/ownerNavigation.js'
 import { LoadingScreen } from './LoadingScreen.jsx'
 import { AccessState } from './shell/AccessState.jsx'
+import { Button } from './ui/index.js'
 import { AppShell } from './shell/AppShell.jsx'
 import { PlatformBanner } from './shell/PlatformBanner.jsx'
 import { cafeColumns, detectDbFeatures, setPlanBlockReporter } from '../lib/db.js'
@@ -126,10 +127,27 @@ export function OwnerLayout() {
     )
   }
   if (!ownerData) {
+    // Pelanggan yang baru klik link verifikasi email mendarat di sini (Site URL Supabase = web owner).
+    // Tampilkan ucapan selamat, bukan "akses ditolak", supaya tidak salah paham.
+    if (profileRole !== 'owner') {
+      const customerAppUrl = import.meta.env.VITE_CUSTOMER_APP_URL
+      return (
+        <AccessState
+          title="Selamat, email kamu sudah terverifikasi"
+          message="Akun kamu sudah aktif. Kembali ke aplikasi kafe, lalu masuk dengan email dan password yang tadi kamu daftarkan. Halaman ini boleh ditutup."
+          action={(
+            <div className="access-v2-actions">
+              {customerAppUrl && <Button onClick={() => window.location.assign(customerAppUrl)}>Buka aplikasi kafe</Button>}
+              <Button variant="ghost" onClick={handleSignOut}>Tutup</Button>
+            </div>
+          )}
+        />
+      )
+    }
     return (
       <AccessState
-        title="Akses owner diperlukan"
-        message="Akun ini belum terhubung sebagai owner ke sebuah cafe. Hubungi administrator untuk menyiapkan akses."
+        title="Kafe belum terhubung"
+        message="Akun owner ini sudah aktif, tetapi belum terhubung ke sebuah kafe. Hubungi administrator Dailybrew untuk menyelesaikan penyiapan."
       />
     )
   }
